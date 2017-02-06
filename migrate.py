@@ -1,29 +1,29 @@
 import requests
 import json 
 
-Helium Comedy Club  - 1
 
-Helium Comedy Club Portland - 5
+def load_config():
+    with open('config.json', 'r') as f:
+        return json.load(f)
 
-Helium Portland Store - 6
 
-Helium Philly Store - 7
+def get_venue_shows(venue_id):
+    url = "/api/venues/%s/shows" % venue_id
+    res = requests(url, header=auth)
+    return json.dumps(res)
 
-Helium & Elements Restaurant - 21
 
-Helium Buffalo Store - 23
+def get_show_orders(venue_id, show_id):
+    url = "seatengine.com/api/venues/%s/shows/%s/willcall" % (venue_id, show_id)
 
-Goodnights & Factory Restaurant - 53
 
-Goodnights Store - 63
+def main():
+    pass
 
-Levé's Annual Charity Ball Sponsoring New Avenues For Youth  - 131
 
-Helium & Elements Restaurant - 133
+venue_ids = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133]
+auth = load_config()
+print auth['X-User-Token']
 
-venue_ids = []
-show_id = ""
-user_id = ""
-
-get_shows_url = "/api/venues/%s/shows" % venue_id
-get_willcall_url = "seatengine.com/api/venues/%s/shows/%s/willcall" % (venue_id, show_id)
+if __name__ == '__main__':
+    main()
