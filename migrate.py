@@ -2,7 +2,8 @@ import requests
 import json 
 from datetime import datetime
 from csv import DictWriter
-import pysftp
+# import pysftp
+import paramiko
 
 
 def load_config():
@@ -36,7 +37,8 @@ def get_show_information(venue_id, show_id, header):
         show = json.loads(res.text)['data']
         # build out events and tickets objects
         event = show['event']   
-        event['id'] = show['id']
+        event['venue_id'] = venue_id
+        event['id'] = show_id
         event["sold_out"] = show["sold_out"]
         return event
     else:
@@ -53,7 +55,7 @@ def get_show_orders(venue_id, show_id, header):
         return False
 
 
-def create_objects_from_orders(orders, event_id, venue_id):
+def create_objects_from_orders(orders, event_id):
     customers_info = []
     orders_info = []
     orderlines_info = []
@@ -101,26 +103,28 @@ def create_objects_from_orders(orders, event_id, venue_id):
 def main():
     configs = load_config()
     auth_header = {e:configs[e] for e in configs if "X-" in e}
+
     data = {
-        "venues": [5, 1, 5, 6, 7, 21, 23, 53, 63, 131, 133],
+        "venues": [1, 5, 6, 7, 21, 23, 53, 63, 131, 133],
         "events": [],
         "orderlines": [],
         "orders": [],
-        "customers": []
+        "contacts": []
     }
 
     # collect and process all data from API source
     for venue_id in data['venues']:
+        print "Processing venue: " + str(venue_id)
         for show_id in get_venue_shows(venue_id, auth_header):
             show_info = get_show_information(venue_id, show_id, auth_header)
             if show_info:
                 data['events'] += [show_info]
             show_orders = get_show_orders(venue_id, show_id, auth_header)
             if show_orders:
-                order_info_objs = create_objects_from_orders(show_orders, show_id, venue_id)
+                order_info_objs = create_objects_from_orders(show_orders, show_id)
                 data['orders'] += order_info_objs[0]
                 data['orderlines'] += order_info_objs[1]
-                data['customers'] += order_info_objs[2]
+                data['contacts'] += order_info_objs[2]
 
     # build salesforce ready csv files from the API source data collected
     for dt in data:
@@ -128,17 +132,14 @@ def main():
             the_file = open("SE_%s.csv" % dt, "w")
             writer = DictWriter(the_file, data[dt][0].keys())
             writer.writeheader()
-            writer.writerows(data[dt])
+            writer.writerows(set(data[dt]))
             the_file.close()
 
-    # push CSV files up to SalesForce up to Import endpoint folder
-    srv = pysftp.Connection(host=configs['SE-url'], 
-                            username=configs['SE-user'],
-                            password=configs['SE-pass'],
-                            log="./temp/pysftp.log")
-    with srv.cd('Import'):
-        srv.put('SE_*.csv')
-        srv.close()
+        # SFTP push CSV files up to SalesForce Import endpoint folder
+        t = paramiko.Transport((configs['host'], configs['port'])) 
+        t.connect(username=configs['username'],password=configs['password'])
+        with paramiko.SFTPClient.from_transport(t) as sftp:
+            sftp.put('%s/SE_%s.csv' % (config['source'], dt),'/Import/SE_%s.csv' % dt)
 
 
 if __name__ == '__main__':

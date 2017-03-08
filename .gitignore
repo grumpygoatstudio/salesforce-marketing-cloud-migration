@@ -1,6 +1,7 @@
 # custom app/project files
 .DS_Store
 config.json
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
