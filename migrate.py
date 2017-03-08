@@ -1,5 +1,7 @@
 import requests
 import json 
+from datetime import datetime
+from csv import DictWriter
 
 
 def load_config():
@@ -7,15 +9,38 @@ def load_config():
         return json.load(f)
 
 
+def get_venue(venue_id, headers):
+    url = "https://api-2.seatengine.com/api/venues/" % venue_id
+    res = requests.get(url, headers=header)
+    if res.status_code == 200:
+        data = json.loads(res.text)['data']
+    else:
+        return False
+
+
 def get_venue_shows(venue_id, header):
     url = "https://api-2.seatengine.com/api/venues/%s/shows" % venue_id
     res = requests.get(url, headers=header)
     if res.status_code == 200:
         data = json.loads(res.text)['data']
-        print data
-        return {show['event']['id']:[] for show in data}
+        return [show['event']['id'] for show in data]
+    else:
+        return []
+
+
+def get_show_information(venue_id, show_id, header):
+    url = "https://api-2.seatengine.com/api/venues/%s/shows/%s" % (venue_id, show_id)
+    res = requests.get(url, headers=header)
+    if res.status_code == 200:
+        show = json.loads(res.text)['data']
+        # build out events and tickets objects
+        event = show['event']   
+        event['id'] = show['id']
+        event["sold_out"] = show["sold_out"]
+        return event
     else:
         return False
+
 
 def get_show_orders(venue_id, show_id, header):
     url = "https://api-2.seatengine.com/api/venues/%s/shows/%s/willcall" % (venue_id, show_id)
@@ -27,40 +52,83 @@ def get_show_orders(venue_id, show_id, header):
         return False
 
 
-def create_ticketevents_from_orders(orders):
-    order_info = []
+def create_objects_from_orders(orders, event_id, venue_id):
+    customers_info = []
+    orders_info = []
+    orderlines_info = []
+
     for order in orders:
-        temp = {
-            'order_number': order['order_number'],
-            'purchase_date': order['purchase_at'],
-            'booking_type': order['booking_type'],
-            'new_customer': order['customer']['new_customer'],
-            'cust_id': order['customer']['id'],
-            'name': order['customer']['name'],
-            'email': order['customer']['email'],
-            'order_total': 0,
-            'tickets': {}
+        temp_cust = {
+            'cust_id': str(order['customer']['id']),
+            'name': str(order['customer']['name']),
+            'email': str(order['customer']['email']),
+            'new_customer': str(order['customer']['new_customer'])
         }
+
+        temp_order = {
+            'id': str(order['id']),
+            'order_number': str(order['order_number']),
+            'cust_id': str(order['customer']['id']),
+            'purchase_date': str(order['purchase_at']),
+            'booking_type': str(order['booking_type']), 
+            'order_total': 0,
+        }
+        
+        temp_orderlines = []
+
         for tix_type in order['tickets']:
             prices = [tix['price'] for tix in order['tickets'][tix_type]]
-            temp['tickets'][tix_type] = prices
-            temp['order_total'] += sum(prices)
-            # POST NEW ORDERLINE FOR TICKET TYPE
-        order_info.append(temp)
-    return order_info
+            # add ticket costs to ORDER total
+            temp_order['order_total'] += sum(prices)
+            # add tickets purchased to ORDERLINE
+            temp_orderline = {
+                'order_number': str(order['order_number']),
+                'line_subtotal': sum(prices),
+                'ticket_price': prices[0],
+                'qty': len(prices),
+                'ticket_name': str(tix_type),
+                'event_id': str(event_id)
+            }
+            orderlines_info += [temp_orderline]
+
+        orders_info += [temp_order]
+        customers_info += [temp_cust]
+
+    return (orders_info, orderlines_info, customers_info)
 
 
 def main():
-    venues = [5] #[1, 5, 6, 7, 21, 23, 53, 63, 131, 133]
+    data = { 
+        "venues": [5], #[1, 5, 6, 7, 21, 23, 53, 63, 131, 133]
+        "events": [],
+        "orderlines": [],
+        "orders": [],
+        "customers": []
+    }
+    
+    # collect and process all data from API source
     auth_header = load_config()    
     salesforce_data = {}
-    for venue in venues:
-        shows = get_venue_shows(venue, auth_header)
-        salesforce_data[venue] = shows if shows else []
-        for show in salesforce_data[venue]:
-            orders = get_show_orders(venue, show, auth_header)
-            salesforce_data[venue][show] = create_ticketevents_from_orders(orders) if orders else []
-    print salesforce_data
+    for venue_id in data['venues']:
+        for show_id in get_venue_shows(venue_id, auth_header):
+            show_info = get_show_information(venue_id, show_id, auth_header)
+            if show_info:
+                data['events'] += [show_info]
+            show_orders = get_show_orders(venue_id, show_id, auth_header)
+            if show_orders:
+                order_info_objs = create_objects_from_orders(show_orders, show_id, venue_id)
+                data['orders'] += order_info_objs[0]
+                data['orderlines'] += order_info_objs[1]
+                data['customers'] += order_info_objs[2]
+
+    # build salesforce ready csv files from the API source data collected
+    for dt in data:
+        if dt != 'venues':
+            the_file = open("SE_%s.csv" % dt, "w")
+            writer = DictWriter(the_file, data[dt][0].keys())
+            writer.writeheader()
+            writer.writerows(data[dt])
+            the_file.close()
 
 
 if __name__ == '__main__':
