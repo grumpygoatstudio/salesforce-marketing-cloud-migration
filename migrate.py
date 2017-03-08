@@ -36,9 +36,12 @@ def get_show_information(venue_id, show_id, header):
     if res.status_code == 200:
         show = json.loads(res.text)['data']
         # build out events and tickets objects
-        event = show['event']   
-        event['venue_id'] = venue_id
-        event['id'] = show_id
+        event = {}
+        event['id'] = str(show_id)
+        event['venue_id'] = str(venue_id)
+        event['name'] = str(show['event']['name'])
+        event['cancelled_at'] = str(show['event']["cancelled_at"])
+        event['next_show'] =  str(show["start_date_time"])
         event["sold_out"] = show["sold_out"]
         return event
     else:
@@ -62,7 +65,7 @@ def create_objects_from_orders(orders, event_id):
 
     for order in orders:
         # verify that linking customer ID is present
-        if order['customer']['id']:
+        if order['customer']['email']:
             temp_cust = {
                 'cust_id': str(order['customer']['id']),
                 'name': str(order['customer']['name']),
@@ -74,7 +77,9 @@ def create_objects_from_orders(orders, event_id):
                 'id': str(order['id']),
                 'order_number': str(order['order_number']),
                 'cust_id': str(order['customer']['id']),
+                'email': str(order['customer']['email']),
                 'purchase_date': str(order['purchase_at']),
+                'payment_method': str(order["payments"][0]['payment_method']),
                 'booking_type': str(order['booking_type']), 
                 'order_total': 0,
             }
@@ -90,7 +95,7 @@ def create_objects_from_orders(orders, event_id):
                     'order_number': str(order['order_number']),
                     'line_subtotal': sum(prices),
                     'ticket_price': prices[0],
-                    'qty': len(prices),
+                    'quantity': len(prices),
                     'ticket_name': str(tix_type),
                     'event_id': str(event_id)
                 }
@@ -107,7 +112,7 @@ def main():
     auth_header = {e:configs[e] for e in configs if "X-" in e}
 
     data = {
-        "venues": [1], #5, 6, 7, 21, 23, 53, 63, 131, 133],
+        "venues": [5, 133], # [1, 5, 6, 7, 21, 23, 53, 63, 131, 133],
         "events": [],
         "orderlines": [],
         "orders": [],
