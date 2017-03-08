@@ -143,7 +143,7 @@ def main():
             t = paramiko.Transport((configs['host'], configs['port'])) 
             t.connect(username=configs['username'],password=configs['password'])
             with paramiko.SFTPClient.from_transport(t) as sftp:
-                sftp.put('%s/SE_%s.csv' % (config['source'], dt),'/Import/SE_%s.csv' % dt)
+                sftp.put('%s/SE_%s.csv' % (configs['source'], dt),'/Import/SE_%s.csv' % dt)
 
 
 if __name__ == '__main__':
