@@ -1,4 +1,8 @@
 {
     "X-Auth-Token": "XXXXXXXXXXXXXXXXXXXXXXXXX",
-    "X-User-Token": "XXXXXXXXXXXXXXXXXXXXXXXXX"
+    "X-User-Token": "XXXXXXXXXXXXXXXXXXXXXXXXX",
+    "SF-url": "ftps:sf.com/imports",
+    // "SF-port": "22",
+    "SF-user": "XXXXXXXXXXX",
+    "SF-pass": "XXXXXXXXXXX",
 }

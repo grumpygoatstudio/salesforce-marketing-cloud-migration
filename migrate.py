@@ -2,6 +2,7 @@ import requests
 import json 
 from datetime import datetime
 from csv import DictWriter
+import pysftp
 
 
 def load_config():
@@ -98,17 +99,17 @@ def create_objects_from_orders(orders, event_id, venue_id):
 
 
 def main():
-    data = { 
-        "venues": [5], #[1, 5, 6, 7, 21, 23, 53, 63, 131, 133]
+    configs = load_config()
+    auth_header = {e:configs[e] for e in configs if "X-" in e}
+    data = {
+        "venues": [5, 1, 5, 6, 7, 21, 23, 53, 63, 131, 133],
         "events": [],
         "orderlines": [],
         "orders": [],
         "customers": []
     }
-    
+
     # collect and process all data from API source
-    auth_header = load_config()    
-    salesforce_data = {}
     for venue_id in data['venues']:
         for show_id in get_venue_shows(venue_id, auth_header):
             show_info = get_show_information(venue_id, show_id, auth_header)
@@ -129,6 +130,15 @@ def main():
             writer.writeheader()
             writer.writerows(data[dt])
             the_file.close()
+
+    # push CSV files up to SalesForce up to Import endpoint folder
+    srv = pysftp.Connection(host=configs['SE-url'], 
+                            username=configs['SE-user'],
+                            password=configs['SE-pass'],
+                            log="./temp/pysftp.log")
+    with srv.cd('Import'):
+        srv.put('SE_*.csv')
+        srv.close()
 
 
 if __name__ == '__main__':
