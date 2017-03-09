@@ -11,15 +11,6 @@ def load_config():
         return json.load(f)
 
 
-def get_venue(venue_id, headers):
-    url = "https://api-2.seatengine.com/api/venues/" % venue_id
-    res = requests.get(url, headers=header)
-    if res.status_code == 200:
-        data = json.loads(res.text)['data']
-    else:
-        return False
-
-
 def get_venue_shows(venue_id, header):
     url = "https://api-2.seatengine.com/api/venues/%s/shows" % venue_id
     res = requests.get(url, headers=header)
@@ -73,13 +64,18 @@ def create_objects_from_orders(orders, event_id):
                 'new_customer': str(order['customer']['new_customer'])
             }
 
+            try:
+                payment_method = str(order["payments"][0]['payment_method'])
+            except:
+                payment_method = ""
+
             temp_order = {
                 'id': str(order['id']),
                 'order_number': str(order['order_number']),
                 'cust_id': str(order['customer']['id']),
                 'email': str(order['customer']['email']),
                 'purchase_date': str(order['purchase_at']),
-                'payment_method': str(order["payments"][0]['payment_method']),
+                'payment_method': payment_method,
                 'booking_type': str(order['booking_type']), 
                 'order_total': 0,
             }
@@ -112,7 +108,7 @@ def main():
     auth_header = {e:configs[e] for e in configs if "X-" in e}
 
     data = {
-        "venues": [5, 133], # [1, 5, 6, 7, 21, 23, 53, 63, 131, 133],
+        "venues": [1, 5, 6, 7, 21, 23, 53, 63, 131, 133],
         "events": [],
         "orderlines": [],
         "orders": [],
