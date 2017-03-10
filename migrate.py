@@ -58,10 +58,10 @@ def create_objects_from_orders(orders, event_id):
         # verify that linking customer ID is present
         if order['customer']['email']:
             temp_cust = {
-                'cust_id': str(order['customer']['id']),
+                'subscriber key': str(order['customer']['id']),
                 'name': str(order['customer']['name']),
-                'email': str(order['customer']['email']),
-                'new_customer': str(order['customer']['new_customer'])
+                'email address': str(order['customer']['email']),
+                'new customer': str(order['customer']['new_customer'])
             }
 
             try:
