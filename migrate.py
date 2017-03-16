@@ -89,7 +89,7 @@ def create_objects_from_orders(orders, event_id):
                 temp_order['order_total'] += sum(prices)
                 # add tickets purchased to ORDERLINE
                 temp_orderline = {
-                    'id': str(order['order_number']) + "-%0.6d" % random.randint(0,999999)
+                    'id': str(order['order_number']) + "-%0.6d" % random.randint(0,999999),
                     'order_number': str(order['order_number']),
                     'line_subtotal': sum(prices),
                     'ticket_price': prices[0],
