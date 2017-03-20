@@ -164,6 +164,9 @@ def main():
             with paramiko.SFTPClient.from_transport(t) as sftp:
                 sftp.put('%s/SE_%s.csv' % (configs['source'], dt),'/Import/SE_%s.csv' % dt)
 
+    # write new datetime for last pulled time
+    configs['last_pull'] = datetime.today()
+    write_config(configs)
 
 if __name__ == '__main__':
     main()
