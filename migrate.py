@@ -1,3 +1,4 @@
+import os
 import requests
 import json
 from datetime import datetime
@@ -9,7 +10,7 @@ import random
 
 
 def write_config(config):
-    with open('config.json', 'r') as f:
+    with open('config.json', 'w') as f:
         json.dump(config, f)
 
 
@@ -23,7 +24,11 @@ def get_venue_shows(venue_id, pull_limit, header):
     res = requests.get(url, headers=header)
     if res.status_code == 200:
         data = json.loads(res.text)['data']
-        return [show['event']['id'] for show in data if parse(show['start_date_time']) > pull_limit]
+        shows = []
+        for show in data:
+            if parse(show['event']['next_show'], ignoretz=True) > pull_limit and show['event']['next_show'] != None:
+                shows.append(show['event']['id'])
+        return shows
     else:
         return []
 
@@ -39,8 +44,8 @@ def get_show_information(venue_id, show_id, header):
         event['venue_id'] = str(venue_id)
         event['name'] = str(show['event']['name'])
         event['cancelled_at'] = str(show['event']["cancelled_at"])
-        event['next_show'] =  str(show["start_date_time"])
-        event["sold_out"] = show["sold_out"]
+        event['next_show'] =  str(show['event']["next_show"])
+        event["sold_out"] = show['event']["sold_out"]
         return event
     else:
         return False
@@ -63,7 +68,7 @@ def create_objects_from_orders(orders, event_id, pull_limit):
 
     for order in orders:
         # verify that linking customer ID is present && order hasn't already been processed before
-        if order['customer']['email'] and parse(order['purchase_at']) > pull_limit:
+        if order['customer']['email'] and parse(order['purchase_at'], ignoretz=True) > pull_limit:
             temp_cust = {
                 'subscriber key': str(order['customer']['id']),
                 'name': str(order['customer']['name']),
@@ -118,8 +123,8 @@ def main():
     if (configs['last_pull'] == "" or not configs['last_pull']):
         pull_limit = datetime.today()
     else:
-        pull_limit = parse(configs['last_pull'])
-
+        pull_limit = parse(configs['last_pull'], ignoretz=True)
+    print pull_limit
     data = {
         "venues": [1, 5, 6, 7, 21, 23, 53, 63, 131, 133],
         "events": [],
@@ -152,10 +157,11 @@ def main():
                 pass
             # build csv files from the API source data collected
             the_file = open("SE_%s.csv" % dt, "w")
-            writer = DictWriter(the_file, data[dt][0].keys())
-            writer.writeheader()
-            unique = list(np.unique(np.array(data[dt])))
-            writer.writerows(unique)
+            if len(data[dt]) > 0:
+                writer = DictWriter(the_file, data[dt][0].keys())
+                writer.writeheader()
+                unique = list(np.unique(np.array(data[dt])))
+                writer.writerows(unique)
             the_file.close()
 
             # SFTP push CSV file up to SalesForce Import endpoint folder
@@ -165,7 +171,7 @@ def main():
                 sftp.put('%s/SE_%s.csv' % (configs['source'], dt),'/Import/SE_%s.csv' % dt)
 
     # write new datetime for last pulled time
-    configs['last_pull'] = datetime.today()
+    configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
     write_config(configs)
 
 if __name__ == '__main__':
