@@ -5,5 +5,6 @@
     "port": 22,
     "username": "XXXXXXXXXXX",
     "password": "XXXXXXXXXXX",
-    "source": "XXXXXXXXXXXXXXXXXXXXXXXXX"
+    "source": "XXXXXXXXXXXXXXXXXXXXXXXXX",
+    "last_pull": "2017-03-16T12:45:00Z"
 }
