@@ -124,7 +124,6 @@ def main():
         pull_limit = datetime.today()
     else:
         pull_limit = parse(configs['last_pull'], ignoretz=True)
-    print pull_limit
     data = {
         "venues": [1, 5, 6, 7, 21, 23, 53, 63, 131, 133],
         "events": [],

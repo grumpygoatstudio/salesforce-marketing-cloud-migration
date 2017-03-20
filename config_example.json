@@ -1,7 +1,7 @@
 {
     "X-Auth-Token": "XXXXXXXXXXXXXXXXXXXXXXXXX",
     "X-User-Token": "XXXXXXXXXXXXXXXXXXXXXXXXX",
-    "host": "ftps:sf.com/imports",
+    "host": "ftps:sf.com",
     "port": 22,
     "username": "XXXXXXXXXXX",
     "password": "XXXXXXXXXXX",
