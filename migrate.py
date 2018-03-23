@@ -1,12 +1,16 @@
 import os
+import sys
 import requests
 import json
 from datetime import datetime
 from dateutil.parser import parse
 from csv import DictWriter
-import paramiko
+# import paramiko
 import numpy as np
 import random
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 
 def write_config(config):
@@ -27,7 +31,8 @@ def get_venue_shows(venue_id, pull_limit, header):
         shows = []
         for show in data:
             if parse(show['event']['next_show'], ignoretz=True) > pull_limit and show['event']['next_show'] != None:
-                shows.append(show['event']['id'])
+                #shows.append(show['event']['id'])
+                shows.append(show['id'])
         return shows
     else:
         return []
@@ -78,7 +83,7 @@ def create_objects_from_orders(orders, event_id, pull_limit):
 
             try:
                 payment_method = str(order["payments"][0]['payment_method'])
-            except:
+            except Exception:
                 payment_method = ""
 
             temp_order = {
@@ -92,15 +97,13 @@ def create_objects_from_orders(orders, event_id, pull_limit):
                 'order_total': 0,
             }
 
-            temp_orderlines = []
-
             for tix_type in order['tickets']:
                 prices = [tix['price'] for tix in order['tickets'][tix_type]]
                 # add ticket costs to ORDER total
                 temp_order['order_total'] += sum(prices)
                 # add tickets purchased to ORDERLINE
                 temp_orderline = {
-                    'id': str(order['order_number']) + "-%0.6d" % random.randint(0,999999),
+                    'id': str(order['order_number']) + "-%0.6d" % random.randint(0, 999999),
                     'order_number': str(order['order_number']),
                     'line_subtotal': sum(prices),
                     'ticket_price': prices[0],
@@ -118,14 +121,14 @@ def create_objects_from_orders(orders, event_id, pull_limit):
 
 def main():
     configs = load_config()
-    auth_header = {e:configs[e] for e in configs if "X-" in e}
+    auth_header = {e: configs[e] for e in configs if "X-" in e}
 
     if (configs['last_pull'] == "" or not configs['last_pull']):
         pull_limit = datetime.today()
     else:
         pull_limit = parse(configs['last_pull'], ignoretz=True)
     data = {
-        "venues": [1, 5, 6, 7, 21, 23, 53, 63, 131, 133],
+        "venues": [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297],
         "events": [],
         "orderlines": [],
         "orders": [],
@@ -134,7 +137,7 @@ def main():
 
     # collect and process all data from API source
     for venue_id in data['venues']:
-        print "Processing venue: " + str(venue_id)
+        print("Processing venue: " + str(venue_id))
         for show_id in get_venue_shows(venue_id, pull_limit, auth_header):
             show_info = get_show_information(venue_id, show_id, auth_header)
             if show_info:
@@ -145,7 +148,6 @@ def main():
                 data['orders'] += order_info_objs[0]
                 data['orderlines'] += order_info_objs[1]
                 data['contacts'] += order_info_objs[2]
-
 
     for dt in data:
         if dt != 'venues':
@@ -164,14 +166,15 @@ def main():
             the_file.close()
 
             # SFTP push CSV file up to SalesForce Import endpoint folder
-            t = paramiko.Transport((configs['host'], configs['port']))
-            t.connect(username=configs['username'],password=configs['password'])
-            with paramiko.SFTPClient.from_transport(t) as sftp:
-                sftp.put('%s/SE_%s.csv' % (configs['source'], dt),'/Import/SE_%s.csv' % dt)
+            # t = paramiko.Transport((configs['host'], configs['port']))
+            # t.connect(username=configs['username'], password=configs['password'])
+            # with paramiko.SFTPClient.from_transport(t) as sftp:
+            #     sftp.put('%s/SE_%s.csv' % (configs['source'], dt), '/Import/SE_%s.csv' % dt)
 
     # write new datetime for last pulled time
     configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
     write_config(configs)
+
 
 if __name__ == '__main__':
     main()
