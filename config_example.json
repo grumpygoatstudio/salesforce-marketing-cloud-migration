@@ -6,5 +6,9 @@
     "username": "XXXXXXXXXXX",
     "password": "XXXXXXXXXXX",
     "source": "XXXXXXXXXXXXXXXXXXXXXXXXX",
-    "last_pull": "2017-03-16T12:45:00Z"
+    "last_pull": "2017-03-16T12:45:00Z",
+    "db_host": "",
+    "db_user": "",
+    "db_password": "",
+    "db-name": ""
 }

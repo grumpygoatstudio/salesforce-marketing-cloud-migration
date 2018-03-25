@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from dateutil.parser import parse
 from csv import DictWriter
-# import paramiko
+import MySQLdb
 import numpy as np
 import random
 
@@ -31,7 +31,6 @@ def get_venue_shows(venue_id, pull_limit, header):
         shows = []
         for show in data:
             if parse(show['event']['next_show'], ignoretz=True) > pull_limit and show['event']['next_show'] != None:
-                #shows.append(show['event']['id'])
                 shows.append(show['id'])
         return shows
     else:
@@ -75,10 +74,10 @@ def create_objects_from_orders(orders, event_id, pull_limit):
         # verify that linking customer ID is present && order hasn't already been processed before
         if order['customer']['email'] and parse(order['purchase_at'], ignoretz=True) > pull_limit:
             temp_cust = {
-                'subscriber key': str(order['customer']['id']),
-                'name': str(order['customer']['name']),
-                'email address': str(order['customer']['email']),
-                'new customer': str(order['customer']['new_customer'])
+                'subscriber_key': str(order['customer']['id']),
+                'name': str(order['customer']['name']).strip().replace("\"", "").replace(", ", " "),
+                'email_address': str(order['customer']['email']),
+                'new-customer': str(order['customer']['new_customer'])
             }
 
             try:
@@ -119,6 +118,26 @@ def create_objects_from_orders(orders, event_id, pull_limit):
     return (orders_info, orderlines_info, customers_info)
 
 
+def upload_csv_data(datatype, configs):
+    mydb = MySQLdb.connect(
+        host=configs['db_host'],
+        user=configs['db_user'],
+        passwd=configs['db_password'],
+        db=configs['db_name'],
+    )
+    # connect and build SQL import string
+    cursor = mydb.cursor()
+    cursor.execute("""LOAD DATA INFILE '%s.csv'
+    INTO TABLE %s
+    FIELDS TERMINATED BY ','
+    ENCLOSED BY '"'
+    LINES TERMINATED BY '\n'
+    IGNORE 1 ROWS""" % (datatype, datatype))
+    # commit and close the connection
+    mydb.commit()
+    cursor.close()
+
+
 def main():
     configs = load_config()
     auth_header = {e: configs[e] for e in configs if "X-" in e}
@@ -153,11 +172,11 @@ def main():
         if dt != 'venues':
             # remove old CSV file from filesystem if it exists
             try:
-                os.remove("SE_%s.csv" % dt)
+                os.remove("%s.csv" % dt)
             except OSError:
                 pass
             # build csv files from the API source data collected
-            the_file = open("SE_%s.csv" % dt, "w")
+            the_file = open("%s.csv" % dt, "w")
             if len(data[dt]) > 0:
                 writer = DictWriter(the_file, data[dt][0].keys())
                 writer.writeheader()
@@ -165,11 +184,8 @@ def main():
                 writer.writerows(unique)
             the_file.close()
 
-            # SFTP push CSV file up to SalesForce Import endpoint folder
-            # t = paramiko.Transport((configs['host'], configs['port']))
-            # t.connect(username=configs['username'], password=configs['password'])
-            # with paramiko.SFTPClient.from_transport(t) as sftp:
-            #     sftp.put('%s/SE_%s.csv' % (configs['source'], dt), '/Import/SE_%s.csv' % dt)
+            # write CSV file to the database table
+            upload_csv_data(dt, configs)
 
     # write new datetime for last pulled time
     configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
