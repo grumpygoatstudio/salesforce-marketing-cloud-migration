@@ -9,17 +9,18 @@ import MySQLdb
 import numpy as np
 import random
 
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
 def write_config(config):
-    with open('config.json', 'w') as f:
+    with open(os.path.join(dir_path, 'config.json'), 'w') as f:
         json.dump(config, f)
 
 
-def load_config():
-    with open('config.json', 'r') as f:
+def load_config(dir_path):
+    with open(os.path.join(dir_path, 'config.json'), 'r') as f:
         return json.load(f)
 
 
@@ -46,7 +47,7 @@ def get_show_information(venue_id, show_id, header):
         event = {}
         event['id'] = str(show_id)
         event['venue_id'] = str(venue_id)
-        event['name'] = str(show['event']['name'])
+        event['name'] = str(show['event']['name']).strip().replace(", ", " ").replace(",", " "),
         event['cancelled_at'] = str(show['event']["cancelled_at"])
         event['next_show'] =  str(show['event']["next_show"])
         event["sold_out"] = show['event']["sold_out"]
@@ -107,7 +108,7 @@ def create_objects_from_orders(orders, event_id, pull_limit):
                     'line_subtotal': sum(prices),
                     'ticket_price': prices[0],
                     'quantity': len(prices),
-                    'ticket_name': str(tix_type),
+                    'ticket_name': str(tix_type).strip().replace(", ", " ").replace(",", " "),
                     'event_id': str(event_id)
                 }
                 orderlines_info += [temp_orderline]
@@ -118,28 +119,9 @@ def create_objects_from_orders(orders, event_id, pull_limit):
     return (orders_info, orderlines_info, customers_info)
 
 
-def upload_csv_data(datatype, configs):
-    mydb = MySQLdb.connect(
-        host=configs['db_host'],
-        user=configs['db_user'],
-        passwd=configs['db_password'],
-        db=configs['db_name'],
-    )
-    # connect and build SQL import string
-    cursor = mydb.cursor()
-    cursor.execute("""LOAD DATA INFILE '%s.csv'
-    INTO TABLE %s
-    FIELDS TERMINATED BY ','
-    ENCLOSED BY '"'
-    LINES TERMINATED BY '\n'
-    IGNORE 1 ROWS""" % (datatype, datatype))
-    # commit and close the connection
-    mydb.commit()
-    cursor.close()
-
-
 def main():
-    configs = load_config()
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
 
     if (configs['last_pull'] == "" or not configs['last_pull']):
@@ -170,13 +152,14 @@ def main():
 
     for dt in data:
         if dt != 'venues':
-            # remove old CSV file from filesystem if it exists
             try:
-                os.remove("%s.csv" % dt)
+                file_path = os.path.join(dir_path, dt + '.csv')
+                # remove old CSV file from filesystem if it exists
+                os.remove(file_path)
             except OSError:
                 pass
             # build csv files from the API source data collected
-            the_file = open("%s.csv" % dt, "w")
+            the_file = open(file_path, "w")
             if len(data[dt]) > 0:
                 writer = DictWriter(the_file, data[dt][0].keys())
                 writer.writeheader()
@@ -184,8 +167,12 @@ def main():
                 writer.writerows(unique)
             the_file.close()
 
-            # write CSV file to the database table
-            upload_csv_data(dt, configs)
+    for dt in data:
+        if dt != 'venues':
+            file_path = os.path.join(dir_path, dt + '.csv')
+            # upload new CSV file to the MySQL DB
+            sql_cmd = """mysql seatengine -h %s -P %s -u %s --password=%s -e \"LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ',' IGNORE 1 LINES; SHOW WARNINGS\"""" % (configs['db_host'], configs['db_port'], configs['db_user'], configs['db_password'], file_path, dt)
+            os.system(sql_cmd)
 
     # write new datetime for last pulled time
     configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
