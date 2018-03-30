@@ -153,7 +153,7 @@ def main():
     for dt in data:
         if dt != 'venues':
             try:
-                file_path = os.path.join(dir_path, dt + '.csv')
+                file_path = os.path.join(dir_path, 'api-data', dt + '.csv')
                 # remove old CSV file from filesystem if it exists
                 os.remove(file_path)
             except OSError:
@@ -169,7 +169,7 @@ def main():
 
     for dt in data:
         if dt != 'venues':
-            file_path = os.path.join(dir_path, dt + '.csv')
+            file_path = os.path.join(dir_path, 'api-data', dt + '.csv')
             # upload new CSV file to the MySQL DB
             sql_cmd = """mysql seatengine -h %s -P %s -u %s --password=%s -e \"LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ',' IGNORE 1 LINES; SHOW WARNINGS\"""" % (configs['db_host'], configs['db_port'], configs['db_user'], configs['db_password'], file_path, dt)
             os.system(sql_cmd)
