@@ -10,5 +10,6 @@
     "db_host": "",
     "db_user": "",
     "db_password": "",
-    "db-name": ""
+    "db_name": "",
+    "db_port": ""
 }
