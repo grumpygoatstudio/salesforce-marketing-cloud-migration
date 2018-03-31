@@ -5,7 +5,6 @@ import json
 from datetime import datetime
 from dateutil.parser import parse
 from csv import DictWriter
-import MySQLdb
 import numpy as np
 import random
 
@@ -14,14 +13,14 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
-def write_config(config):
-    with open(os.path.join(dir_path, 'config.json'), 'w') as f:
-        json.dump(config, f)
-
-
 def load_config(dir_path):
     with open(os.path.join(dir_path, 'config.json'), 'r') as f:
         return json.load(f)
+
+
+def write_config(config, dir_path):
+    with open(os.path.join(dir_path, 'config.json'), 'w') as f:
+        json.dump(config, f)
 
 
 def get_venue_shows(venue_id, pull_limit, header):
@@ -47,7 +46,7 @@ def get_show_information(venue_id, show_id, header):
         event = {}
         event['id'] = str(show_id)
         event['venue_id'] = str(venue_id)
-        event['name'] = str(show['event']['name']).strip().replace(", ", " ").replace(",", " "),
+        event['name'] = str(show['event']['name']).strip().replace(",", " "),
         event['cancelled_at'] = str(show['event']["cancelled_at"])
         event['next_show'] =  str(show['event']["next_show"])
         event["sold_out"] = show['event']["sold_out"]
@@ -108,7 +107,7 @@ def create_objects_from_orders(orders, event_id, pull_limit):
                     'line_subtotal': sum(prices),
                     'ticket_price': prices[0],
                     'quantity': len(prices),
-                    'ticket_name': str(tix_type).strip().replace(", ", " ").replace(",", " "),
+                    'ticket_name': str(tix_type).strip().replace(",", " "),
                     'event_id': str(event_id)
                 }
                 orderlines_info += [temp_orderline]
@@ -171,7 +170,7 @@ def main():
         if dt != 'venues':
             file_path = os.path.join(dir_path, 'api-data', dt + '.csv')
             # upload new CSV file to the MySQL DB
-            sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ',' IGNORE 1 LINES; SHOW WARNINGS\"""" % (
+            sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' IGNORE 1 LINES; SHOW WARNINGS\"""" % (
                 configs['db_name'],
                 configs['db_host'],
                 configs['db_port'],
@@ -184,7 +183,7 @@ def main():
 
     # write new datetime for last pulled time
     configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-    write_config(configs)
+    write_config(configs, dir_path)
 
 
 if __name__ == '__main__':
