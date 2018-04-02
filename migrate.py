@@ -170,7 +170,7 @@ def main():
         if dt != 'venues':
             file_path = os.path.join(dir_path, 'api-data', dt + '.csv')
             # upload new CSV file to the MySQL DB
-            sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' IGNORE 1 LINES; SHOW WARNINGS\"""" % (
+            sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\\"' IGNORE 1 LINES; SHOW WARNINGS\"""" % (
                 configs['db_name'],
                 configs['db_host'],
                 configs['db_port'],
