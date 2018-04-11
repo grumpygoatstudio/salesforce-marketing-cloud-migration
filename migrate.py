@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from dateutil.parser import parse
 from csv import DictWriter
-# import numpy as np
+import numpy as np
 import random
 
 
@@ -30,7 +30,7 @@ def get_venue_shows(venue_id, pull_limit, header):
         data = json.loads(res.text)['data']
         shows = []
         for show in data:
-            if parse(show['event']['next_show'], ignoretz=True) > pull_limit and show['event']['next_show'] != None:
+            if parse(show['start_date_time'], ignoretz=True) > pull_limit and show['start_date_time'] != None:
                 shows.append(show['id'])
         return shows
     else:
@@ -48,8 +48,8 @@ def get_show_information(venue_id, show_id, header):
         event['venue_id'] = str(venue_id)
         event['name'] = str(show['event']['name']).strip().replace(",", " "),
         event['cancelled_at'] = str(show['event']["cancelled_at"])
-        event['next_show'] =  str(show['event']["next_show"])
-        event["sold_out"] = show['event']["sold_out"]
+        event['start_date_time'] =  str(show['start_date_time'])
+        event["sold_out"] = show["sold_out"]
         return event
     else:
         return False
@@ -71,8 +71,8 @@ def create_objects_from_orders(orders, event_id, pull_limit):
     orderlines_info = []
 
     for order in orders:
-        # verify that linking customer ID is present && order hasn't already been processed before
-        if order['customer']['email'] and parse(order['purchase_at'], ignoretz=True) > pull_limit:
+        # verify that order hasn't already been processed before
+        if parse(order['purchase_at'], ignoretz=True) > pull_limit:
             temp_cust = {
                 'subscriber_key': str(order['customer']['id']),
                 'name': str(order['customer']['name']).strip().replace("\"", "").replace(", ", " "),
@@ -162,8 +162,8 @@ def main():
             if len(data[dt]) > 0:
                 writer = DictWriter(the_file, data[dt][0].keys())
                 writer.writeheader()
-                # unique = list(np.unique(np.array()))
-                writer.writerows(data[dt])
+                unique = list(np.unique(np.array(data[dt])))
+                writer.writerows(unique)
             the_file.close()
 
     for dt in data:
