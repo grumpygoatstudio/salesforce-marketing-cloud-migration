@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from dateutil.parser import parse
 from csv import DictWriter
-import numpy as np
+# import numpy as np
 import random
 
 
@@ -162,8 +162,8 @@ def main():
             if len(data[dt]) > 0:
                 writer = DictWriter(the_file, data[dt][0].keys())
                 writer.writeheader()
-                unique = list(np.unique(np.array(data[dt])))
-                writer.writerows(unique)
+                # unique = list(np.unique(np.array()))
+                writer.writerows(data[dt])
             the_file.close()
 
     for dt in data:
