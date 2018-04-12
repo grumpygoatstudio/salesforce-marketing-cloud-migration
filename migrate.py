@@ -30,7 +30,7 @@ def get_venue_shows(venue_id, pull_limit, header):
         data = json.loads(res.text)['data']
         shows = []
         for show in data:
-            if parse(show['start_date_time'], ignoretz=True) > pull_limit and show['start_date_time'] != None:
+            if parse(show['start_date_time'], ignoretz=True) > pull_limit:
                 shows.append(show['id'])
         return shows
     else:
@@ -75,7 +75,7 @@ def create_objects_from_orders(orders, event_id, pull_limit):
         if parse(order['purchase_at'], ignoretz=True) > pull_limit:
             temp_cust = {
                 'subscriber_key': str(order['customer']['id']),
-                'name': str(order['customer']['name']).strip().replace("\"", "").replace(", ", " "),
+                'name': str(order['customer']['name']).strip().replace("\"", "").replace(",", " "),
                 'email_address': str(order['customer']['email']),
                 'new-customer': str(order['customer']['new_customer'])
             }
@@ -162,8 +162,7 @@ def main():
             if len(data[dt]) > 0:
                 writer = DictWriter(the_file, data[dt][0].keys())
                 writer.writeheader()
-                unique = list(np.unique(np.array(data[dt])))
-                writer.writerows(unique)
+                writer.writerows(data[dt])
             the_file.close()
 
     for dt in data:
