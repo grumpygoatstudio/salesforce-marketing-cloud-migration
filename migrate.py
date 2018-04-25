@@ -29,7 +29,7 @@ def get_venue_shows(venue_id, pull_limit, header):
         events = json.loads(res.text)['data']
         shows = []
         for event in events:
-            for show in data['shows']:
+            for show in event['shows']:
                 if parse(show['start_date_time'], ignoretz=True) > pull_limit:
                     shows.append(show['id'])
         return shows
