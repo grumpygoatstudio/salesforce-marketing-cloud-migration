@@ -5,7 +5,6 @@ import json
 from datetime import datetime
 from dateutil.parser import parse
 from csv import DictWriter
-import numpy as np
 import random
 
 
@@ -24,14 +23,15 @@ def write_config(config, dir_path):
 
 
 def get_venue_shows(venue_id, pull_limit, header):
-    url = "https://api-2.seatengine.com/api/venues/%s/shows" % venue_id
+    url = "https://api-2.seatengine.com/api/venues/%s/events" % venue_id
     res = requests.get(url, headers=header)
     if res.status_code == 200:
-        data = json.loads(res.text)['data']
+        events = json.loads(res.text)['data']
         shows = []
-        for show in data:
-            if parse(show['start_date_time'], ignoretz=True) > pull_limit:
-                shows.append(show['id'])
+        for event in events:
+            for show in data['shows']:
+                if parse(show['start_date_time'], ignoretz=True) > pull_limit:
+                    shows.append(show['id'])
         return shows
     else:
         return []
