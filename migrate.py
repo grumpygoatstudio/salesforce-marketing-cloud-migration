@@ -82,7 +82,6 @@ def create_objects_from_orders(orders, show_id, pull_limit):
             temp_cust['subscriber_key'] = str(order['customer']['id'])
             temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ")
             temp_cust['email_address'] = str(order['customer']['email'])
-            temp_cust['new-customer'] = str(order['customer']['new_customer'])
 
             try:
                 payment_method = str(order["payments"][0]['payment_method'])
