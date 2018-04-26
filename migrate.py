@@ -70,7 +70,7 @@ def get_show_orders(venue_id, show_id, header):
         return False
 
 
-def create_objects_from_orders(orders, event_id, pull_limit):
+def create_objects_from_orders(orders, show_id, pull_limit):
     customers_info = []
     orders_info = []
     orderlines_info = []
@@ -91,6 +91,7 @@ def create_objects_from_orders(orders, event_id, pull_limit):
 
             temp_order = collections.OrderedDict()
             temp_order['id'] = str(order['id'])
+            temp_order['show_id'] = str(show_id)
             temp_order['order_number'] = str(order['order_number'])
             temp_order['cust_id'] = str(order['customer']['id'])
             temp_order['email'] = str(order['customer']['email'])
@@ -148,9 +149,8 @@ def main():
         }
         print("Processing venue: " + str(venue_id))
         events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
-        events = events_and_shows[0]
+        data['events'] += events_and_shows[0]
         shows = events_and_shows[1]
-
         for show_id in shows:
             show_info = get_show_information(venue_id, show_id, auth_header)
             if show_info:
