@@ -101,7 +101,7 @@ def create_objects_from_orders(orders, show_id, pull_limit):
             temp_order['booking_type'] = str(order['booking_type'])
             temp_order['order_total'] = 0
             temp_order['new_customer'] = str(order['customer']['new_customer'])
-            temp_order['addons'] = "\t".join([str(a) for a in order['addons']])
+            temp_order['addons'] = "\t".join([str(a['name']) for a in order['addons']]) if order['addons'] != [] else ""
 
             for tix_type in order['tickets']:
                 prices = [tix['price'] for tix in order['tickets'][tix_type]]
