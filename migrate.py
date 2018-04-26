@@ -6,7 +6,7 @@ from datetime import datetime
 from dateutil.parser import parse
 from csv import DictWriter
 import random
-
+import collections
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -30,13 +30,12 @@ def get_venue_events_and_shows(venue_id, pull_limit, header):
         events = []
         shows = []
         for event in data:
-            # build event objects
-            events.append({
-                'id': event['id'],
-                'venue_id': str(venue_id),
-                'name': event['name'].strip().replace("\"", "").replace(",", " "),
-                'logo_url': event['image_url'],
-            })
+            temp_event = collections.OrderedDict()
+            temp_event['id'] = event['id']
+            temp_event['venue_id'] = str(venue_id)
+            temp_event['name'] = event['name'].strip().replace("\"", "").replace(",", " ")
+            temp_event['logo_url'] = event['image_url']
+            events.append(temp_event)
             for show in event['shows']:
                 if parse(show['start_date_time'], ignoretz=True) > pull_limit:
                     shows.append(show['id'])
@@ -50,13 +49,13 @@ def get_show_information(venue_id, show_id, header):
     res = requests.get(url, headers=header)
     if res.status_code == 200:
         show = json.loads(res.text)['data']
-        return {
-            'id': str(show_id),
-            'event_id': show['event_id'],
-            'start_date_time': str(show['start_date_time']),
-            'sold_out': show["sold_out"],
-            'cancelled_at': str(show['event']["cancelled_at"])
-        }
+        temp_show = collections.OrderedDict()
+        temp_show['id'] = str(show_id)
+        temp_show['event_id'] = show['event_id']
+        temp_show['start_date_time'] = str(show['start_date_time'])
+        temp_show['sold_out'] = show["sold_out"]
+        temp_show['cancelled_at'] = str(show['event']["cancelled_at"])
+        return temp_show
     else:
         return False
 
@@ -79,31 +78,29 @@ def create_objects_from_orders(orders, event_id, pull_limit):
     for order in orders:
         # verify that order hasn't already been processed before
         if parse(order['purchase_at'], ignoretz=True) > pull_limit:
-            temp_cust = {
-                'subscriber_key': str(order['customer']['id']),
-                'name': str(order['customer']['name']).strip().replace("\"", "").replace(",", " "),
-                'email_address': str(order['customer']['email']),
-                'new-customer': str(order['customer']['new_customer'])
-            }
+            temp_cust = collections.OrderedDict()
+            temp_cust['subscriber_key'] = str(order['customer']['id'])
+            temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ")
+            temp_cust['email_address'] = str(order['customer']['email'])
+            temp_cust['new-customer'] = str(order['customer']['new_customer'])
 
             try:
                 payment_method = str(order["payments"][0]['payment_method'])
             except Exception:
                 payment_method = ""
 
-            temp_order = {
-                'id': str(order['id']),
-                'order_number': str(order['order_number']),
-                'cust_id': str(order['customer']['id']),
-                'email': str(order['customer']['email']),
-                'phone': str(order['customer']['phone']),
-                'purchase_date': str(order['purchase_at']),
-                'payment_method': payment_method,
-                'booking_type': str(order['booking_type']),
-                'order_total': 0,
-                'new_customer': str(order['customer']['new_customer']),
-                'addons': ", ".join([str(a) for a in order['addons']])
-            }
+            temp_order = collections.OrderedDict()
+            temp_order['id'] = str(order['id'])
+            temp_order['order_number'] = str(order['order_number'])
+            temp_order['cust_id'] = str(order['customer']['id'])
+            temp_order['email'] = str(order['customer']['email'])
+            temp_order['phone'] = str(order['customer']['phone'])
+            temp_order['purchase_date'] = str(order['purchase_at'])
+            temp_order['payment_method'] = payment_method
+            temp_order['booking_type'] = str(order['booking_type'])
+            temp_order['order_total'] = 0
+            temp_order['new_customer'] = str(order['customer']['new_customer'])
+            temp_order['addons'] = ", ".join([str(a) for a in order['addons']])
 
             for tix_type in order['tickets']:
                 prices = [tix['price'] for tix in order['tickets'][tix_type]]
@@ -111,15 +108,14 @@ def create_objects_from_orders(orders, event_id, pull_limit):
                 temp_order['order_total'] += sum(prices)
                 # add tickets purchased to ORDERLINE
                 for tix in order['tickets'][tix_type]:
-                    temp_orderline = {
-                        'id': str(order['order_number']) + "-%0.6d" % random.randint(0, 999999),
-                        'order_number': str(order['order_number']),
-                        'ticket_name': str(tix_type).strip().replace(",", " "),
-                        'ticket_price': tix['price'],
-                        'printed': tix['printed'],
-                        'promo_code_id': tix['promo_code_id'],
-                        'checked_in': tix['checked_in'],
-                    }
+                    temp_orderline = collections.OrderedDict()
+                    temp_orderline['id'] = str(order['order_number']) + "-%0.6d" % random.randint(0, 999999)
+                    temp_orderline['order_number'] = str(order['order_number'])
+                    temp_orderline['ticket_name'] = str(tix_type).strip().replace(",", " ")
+                    temp_orderline['ticket_price'] = tix['price']
+                    temp_orderline['printed'] = tix['printed']
+                    temp_orderline['promo_code_id'] = tix['promo_code_id']
+                    temp_orderline['checked_in'] = tix['checked_in']
                     orderlines_info += [temp_orderline]
 
             orders_info += [temp_order]
