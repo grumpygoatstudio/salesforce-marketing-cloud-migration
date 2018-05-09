@@ -4,6 +4,7 @@ import requests
 import json
 import random
 import collections
+import csv
 
 from datetime import datetime
 from dateutil.parser import parse
@@ -11,7 +12,7 @@ from csv import DictWriter
 from optparse import OptionParser
 
 parser = OptionParser()
-parser.add_option("-b", "--backload", dest="backload", type="bool",
+parser.add_option("-b", "--backload", dest="backload", type="string",
                   help="Backload shows and events", metavar="backload")
 
 reload(sys)
@@ -154,7 +155,7 @@ def backload():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
-    venues = [1]#, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
+    venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
     data_types = ["events", "shows", "orderlines", "orders", "contacts"]
 
     for venue_id in venues:
