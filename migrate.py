@@ -2,11 +2,17 @@ import os
 import sys
 import requests
 import json
+import random
+import collections
+
 from datetime import datetime
 from dateutil.parser import parse
 from csv import DictWriter
-import random
-import collections
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option("-b", "--backload", dest="backload", type="bool",
+                  help="Backload shows and events", metavar="backload")
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -43,6 +49,26 @@ def get_venue_events_and_shows(venue_id, pull_limit, header):
     else:
         return []
 
+def get_venue_events_and_shows_from_list(venue_id, file_path, header):
+    with open(file_path, "r") as file_data:
+        f = csv.reader(file_data, delimiter=',')
+        events = []
+        shows = []
+        for event in f:
+            if event[0] != "event id":
+                for show_id in event[1:]:
+                    shows.append(show_id)
+                url = "https://api-2.seatengine.com/api/venues/%s/events/%s" % (venue_id, event[0])
+                res = requests.get(url, headers=header)
+                if res.status_code == 200:
+                    event_data = json.loads(res.text)['data']
+                    temp_event = collections.OrderedDict()
+                    temp_event['id'] = event_data['id']
+                    temp_event['venue_id'] = str(venue_id)
+                    temp_event['name'] = event_data['name'].strip().replace("\"", "").replace(",", " ")
+                    temp_event['logo_url'] = event_data['image_url']
+                    events.append(temp_event)
+        return (events, shows)
 
 def get_show_information(venue_id, show_id, header):
     url = "https://api-2.seatengine.com/api/venues/%s/shows/%s" % (venue_id, show_id)
@@ -124,6 +150,69 @@ def create_objects_from_orders(orders, show_id, pull_limit):
     return (orders_info, orderlines_info, customers_info)
 
 
+def backload():
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    configs = load_config(dir_path)
+    auth_header = {e: configs[e] for e in configs if "X-" in e}
+    venues = [1]#, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
+    data_types = ["events", "shows", "orderlines", "orders", "contacts"]
+
+    for venue_id in venues:
+        data = {
+            "events": [],
+            "shows": [],
+            "orderlines": [],
+            "orders": [],
+            "contacts": []
+        }
+        print("Processing venue: " + str(venue_id))
+        file_path = os.path.join(dir_path, 'historic_lists', str(venue_id) + '.csv')
+        events_and_shows = get_venue_events_and_shows_from_list(venue_id, file_path, auth_header)
+        data['events'] += events_and_shows[0]
+        shows = events_and_shows[1]
+        for show_id in shows:
+            show_info = get_show_information(venue_id, show_id, auth_header)
+            if show_info:
+                data['shows'] += [show_info]
+            show_orders = get_show_orders(venue_id, show_id, auth_header)
+            if show_orders:
+                order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit)
+                data['orders'] += order_info_objs[0]
+                data['orderlines'] += order_info_objs[1]
+                data['contacts'] += order_info_objs[2]
+
+        for dt in data_types:
+            try:
+                file_path = os.path.join(dir_path, 'bdir', dt + '-' + str(venue_id) + '.csv')
+                os.remove(file_path)
+            except OSError:
+                pass
+
+            # BUILD CSV FILES FROM THE API SOURCE DATA COLLECTED
+            the_file = open(file_path, "w")
+            if len(data[dt]) > 0:
+                writer = DictWriter(the_file, data[dt][0].keys())
+                writer.writeheader()
+                writer.writerows(data[dt])
+            the_file.close()
+
+    # UPLOAD ALL SQL FILES TO AWS RDS SERVER
+    for venue_id in venues:
+        for dt in data_types:
+            file_path = os.path.join(dir_path, 'bdir', dt + '-' + str(venue_id) + '.csv')
+            # upload new CSV file to the MySQL DB
+            sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\\"' IGNORE 1 LINES; SHOW WARNINGS\"""" % (
+                configs['db_name'],
+                configs['db_host'],
+                configs['db_port'],
+                configs['db_user'],
+                configs['db_password'],
+                file_path,
+                dt
+            )
+            os.system(sql_cmd)
+
+
 def main():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
@@ -198,4 +287,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    (options, args) = parser.parse_args()
+    if options.backload:
+        backload()
+    else:
+        main()
