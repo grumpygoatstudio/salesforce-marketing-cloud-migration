@@ -157,6 +157,7 @@ def backload():
     auth_header = {e: configs[e] for e in configs if "X-" in e}
     venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
     data_types = ["events", "shows", "orderlines", "orders", "contacts"]
+    pull_limit = parse("1900-01-01T00:00:01", ignoretz=True)
 
     for venue_id in venues:
         data = {
