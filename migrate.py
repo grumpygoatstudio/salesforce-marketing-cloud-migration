@@ -14,6 +14,8 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-b", "--backload", dest="backload", type="string",
                   help="Backload shows and events", metavar="backload")
+parser.add_option("-s", "--sql", dest="sql", type="string",
+                  help="Upload all CSV files to SQL server only", metavar="sql")
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -155,7 +157,7 @@ def backload():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
-    venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
+    venues = [1,5,21,53,133,297] #[1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
     data_types = ["events", "shows", "orderlines", "orders", "contacts"]
     pull_limit = parse("1900-01-01T00:00:01", ignoretz=True)
 
@@ -199,20 +201,11 @@ def backload():
             the_file.close()
 
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
-    for venue_id in venues:
-        for dt in data_types:
-            file_path = os.path.join(dir_path, 'bdir', dt + '-' + str(venue_id) + '.csv')
-            # upload new CSV file to the MySQL DB
-            sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\\"' IGNORE 1 LINES; SHOW WARNINGS\"""" % (
-                configs['db_name'],
-                configs['db_host'],
-                configs['db_port'],
-                configs['db_user'],
-                configs['db_password'],
-                file_path,
-                dt
-            )
-            os.system(sql_cmd)
+    sql_upload(True)
+
+    # WRITE NEW DATETIME FOR LAST PULLED TIME
+    configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
+    write_config(configs, dir_path)
 
 
 def main():
@@ -268,9 +261,27 @@ def main():
             the_file.close()
 
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
+    sql_upload()
+
+    # WRITE NEW DATETIME FOR LAST PULLED TIME
+    configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
+    write_config(configs, dir_path)
+
+
+def sql_upload(backload=False):
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    configs = load_config(dir_path)
+    auth_header = {e: configs[e] for e in configs if "X-" in e}
+    venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
+    data_types = ["events", "shows", "orderlines", "orders", "contacts"]
+
+    # UPLOAD ALL SQL FILES TO AWS RDS SERVER
     for venue_id in venues:
         for dt in data_types:
-            file_path = os.path.join(dir_path, 'api-data', dt + '-' + str(venue_id) + '.csv')
+            if backload:
+                file_path = os.path.join(dir_path, 'bdir', dt + '-' + str(venue_id) + '.csv')
+            else:
+                file_path = os.path.join(dir_path, 'api-data', dt + '-' + str(venue_id) + '.csv')
             # upload new CSV file to the MySQL DB
             sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\\"' IGNORE 1 LINES; SHOW WARNINGS\"""" % (
                 configs['db_name'],
@@ -283,14 +294,15 @@ def main():
             )
             os.system(sql_cmd)
 
-    # WRITE NEW DATETIME FOR LAST PULLED TIME
-    configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-    write_config(configs, dir_path)
-
 
 if __name__ == '__main__':
     (options, args) = parser.parse_args()
-    if options.backload:
+    if options.sql:
+        if options.backload:
+            sql_upload(True)
+        else:
+            sql_upload()
+    elif options.backload:
         backload()
     else:
         main()
