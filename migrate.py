@@ -157,7 +157,7 @@ def backload():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
-    venues = [1,5,21,53,133,297] #[1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
+    venues = [297,133,1,5,53] #[1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
     data_types = ["events", "shows", "orderlines", "orders", "contacts"]
     pull_limit = parse("1900-01-01T00:00:01", ignoretz=True)
 
@@ -171,10 +171,12 @@ def backload():
         }
         print("Processing venue: " + str(venue_id))
         file_path = os.path.join(dir_path, 'historic_lists', str(venue_id) + '.csv')
+        print("\tFetching event & show ids: " + str(venue_id))
         events_and_shows = get_venue_events_and_shows_from_list(venue_id, file_path, auth_header)
         data['events'] += events_and_shows[0]
         shows = events_and_shows[1]
         for show_id in shows:
+            print("\tFetching show info: " + str(show_id))
             show_info = get_show_information(venue_id, show_id, auth_header)
             if show_info:
                 data['shows'] += [show_info]
@@ -201,11 +203,11 @@ def backload():
             the_file.close()
 
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
-    sql_upload(True)
+    # sql_upload(True)
 
     # WRITE NEW DATETIME FOR LAST PULLED TIME
-    configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-    write_config(configs, dir_path)
+    # configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
+    # write_config(configs, dir_path)
 
 
 def main():
