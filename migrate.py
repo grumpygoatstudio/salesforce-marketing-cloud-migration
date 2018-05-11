@@ -177,15 +177,19 @@ def backload():
         shows = events_and_shows[1]
         for show_id in shows:
             print("\tFetching show info: " + str(show_id))
-            show_info = get_show_information(venue_id, show_id, auth_header)
-            if show_info:
-                data['shows'] += [show_info]
-            show_orders = get_show_orders(venue_id, show_id, auth_header)
-            if show_orders:
-                order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit)
-                data['orders'] += order_info_objs[0]
-                data['orderlines'] += order_info_objs[1]
-                data['contacts'] += order_info_objs[2]
+            try:
+                show_info = get_show_information(venue_id, show_id, auth_header)
+                if show_info:
+                    data['shows'] += [show_info]
+                show_orders = get_show_orders(venue_id, show_id, auth_header)
+                if show_orders:
+                    order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit)
+                    data['orders'] += order_info_objs[0]
+                    data['orderlines'] += order_info_objs[1]
+                    data['contacts'] += order_info_objs[2]
+            except:
+                print("\t\tERROR WITH PROCESSING SHOW! SKIPPING!")
+                pass
 
         for dt in data_types:
             try:
