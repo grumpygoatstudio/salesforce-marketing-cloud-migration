@@ -157,7 +157,7 @@ def backload():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
-    venues = [53,5,1] #[1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
+    venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
     data_types = ["events", "shows", "orderlines", "orders", "contacts"]
     pull_limit = parse("1900-01-01T00:00:01", ignoretz=True)
 
