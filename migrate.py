@@ -169,14 +169,11 @@ def backload():
             "orders": [],
             "contacts": []
         }
-        print("Processing venue: " + str(venue_id))
         file_path = os.path.join(dir_path, 'historic_lists', str(venue_id) + '.csv')
-        print("\tFetching event & show ids: " + str(venue_id))
         events_and_shows = get_venue_events_and_shows_from_list(venue_id, file_path, auth_header)
         data['events'] += events_and_shows[0]
         shows = events_and_shows[1]
         for show_id in shows:
-            print("\tFetching show info: " + str(show_id))
             try:
                 show_info = get_show_information(venue_id, show_id, auth_header)
                 if show_info:
@@ -188,7 +185,6 @@ def backload():
                     data['orderlines'] += order_info_objs[1]
                     data['contacts'] += order_info_objs[2]
             except:
-                print("\t\tERROR WITH PROCESSING SHOW! SKIPPING!")
                 pass
 
         for dt in data_types:
@@ -207,11 +203,8 @@ def backload():
             the_file.close()
 
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
-    # sql_upload(True)
-
-    # WRITE NEW DATETIME FOR LAST PULLED TIME
-    # configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-    # write_config(configs, dir_path)
+    sql_upload(True, True)
+    print("Old Data Pull Completed - " + datetime.today().strftime("%Y-%m-%dT%H:%M:%S"))
 
 
 def main():
@@ -236,7 +229,6 @@ def main():
             "orders": [],
             "contacts": []
         }
-        print("Processing venue: " + str(venue_id))
         events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
         data['events'] += events_and_shows[0]
         shows = events_and_shows[1]
@@ -272,6 +264,7 @@ def main():
     # WRITE NEW DATETIME FOR LAST PULLED TIME
     configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
     write_config(configs, dir_path)
+    print("Data Pull Completed - " + configs['last_pull'])
 
 
 def sql_upload(backload=False):
