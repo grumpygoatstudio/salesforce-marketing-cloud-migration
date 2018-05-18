@@ -21,10 +21,12 @@ BEGIN
 			ol.ticket_price AS orderproduct_price,
 			o.show_id AS orderproduct_category,
 			o.comped AS comped,
-            o.not_comped AS not_comped
+            o.not_comped AS not_comped,
+            o.booking_type AS booking_type,
+            o.addons AS addons,
+            o.new_customer AS new_customer
 		FROM seatengine.orders_processed o
-		JOIN seatengine.orderlines ol ON (o.order_number = ol.order_number)
-		GROUP BY o.order_number, ol.id;
+		JOIN seatengine.orderlines_processed ol ON (o.order_number = ol.order_number);
   SET rc = 0;
 END;
 $$

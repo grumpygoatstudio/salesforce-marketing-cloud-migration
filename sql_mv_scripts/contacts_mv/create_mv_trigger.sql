@@ -111,11 +111,10 @@ BEGIN
 			JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
 			JOIN seatengine.shows_processed s ON (o.show_id = s.id)
 			JOIN (
-					SELECT o.order_number, count(ol.id) ticket_count
-					FROM seatengine.orders_processed o
-					JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
-					GROUP BY o.order_number
-			) ticket_counts ON (ticket_counts.order_number = o.order_number)
+					SELECT omv.orderNumber, count(omv.unique_id) ticket_count
+					FROM seatengine.orders_mv omv
+					GROUP BY omv.orderNumber
+			) ticket_counts ON (ticket_counts.orderNumber = o.order_number)
 			GROUP BY c.subscriber_key
 		) as avg_tickets_per_order ON (avg_tickets_per_order.subscriber_key = c.subscriber_key)
 
@@ -128,12 +127,11 @@ BEGIN
 			FROM seatengine.contacts c
 			JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
 			JOIN (
-					SELECT o.order_number, count(ol.id) ticket_count
-					FROM seatengine.orders_processed o
-					JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
-					WHERE o.not_comped = 1
-					GROUP BY o.order_number
-			) ticket_counts ON (ticket_counts.order_number = o.order_number)
+					SELECT omv.orderNumber, count(omv.unique_id) ticket_count
+					FROM seatengine.orders_mv omv
+					WHERE omv.not_comped = 1
+					GROUP BY omv.orderNumber
+			) ticket_counts ON (ticket_counts.orderNumber = o.order_number)
 			GROUP BY c.subscriber_key
 		) as per_paid_order ON (per_paid_order.subscriber_key = c.subscriber_key)
 
@@ -149,12 +147,11 @@ BEGIN
 			JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
 			JOIN seatengine.shows_processed s ON (o.show_id = s.id)
 			JOIN (
-					SELECT o.order_number, count(ol.id) ticket_count
-					FROM seatengine.orders_processed o
-					JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
-					WHERE o.comped = 1
-					GROUP BY o.order_number
-			) ticket_counts ON (ticket_counts.order_number = o.order_number)
+					SELECT omv.orderNumber, count(omv.unique_id) ticket_count
+					FROM seatengine.orders_mv omv
+					WHERE omv.comped = 1
+					GROUP BY omv.orderNumber
+			) ticket_counts ON (ticket_counts.orderNumber = o.order_number)
 			GROUP BY c.subscriber_key
 		) as per_comp_order ON (per_comp_order.subscriber_key = c.subscriber_key)
 
