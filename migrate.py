@@ -302,19 +302,15 @@ def sql_upload(backload=False):
 def sql_post_processing():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
-    data_types = ["orderlines_processed","orders_processed","shows_processed","events_processed"]
-
-    for dt in data_types:
-        # POST PROCESS ALL TABLES FOR FASTER QUERYING
-        sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"CALL refresh_%s_now(@rc);\"""" % (
-            configs['db_name'],
-            configs['db_host'],
-            configs['db_port'],
-            configs['db_user'],
-            configs['db_password'],
-            dt
-        )
-        os.system(sql_cmd)
+    # POST PROCESS ALL TABLES FOR FASTER QUERYING
+    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"CALL refresh_processed_tables_now(@rc);\"""" % (
+        configs['db_name'],
+        configs['db_host'],
+        configs['db_port'],
+        configs['db_user'],
+        configs['db_password']
+    )
+    os.system(sql_cmd)
 
 
 if __name__ == '__main__':
