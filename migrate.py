@@ -206,6 +206,9 @@ def backload():
     sql_upload(True, True)
     print("Old Data Pull Completed - " + datetime.today().strftime("%Y-%m-%dT%H:%M:%S"))
 
+    # TRIGGER POST-PROCESSING FOR SQL TABLES
+    sql_post_processing()
+
 
 def main():
     dir_path = os.path.dirname(os.path.abspath(__file__))
@@ -266,11 +269,13 @@ def main():
     write_config(configs, dir_path)
     print("Data Pull Completed - " + configs['last_pull'])
 
+    # TRIGGER POST-PROCESSING FOR SQL TABLES
+    sql_post_processing()
+
 
 def sql_upload(backload=False):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
-    auth_header = {e: configs[e] for e in configs if "X-" in e}
     venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
     data_types = ["events", "shows", "orderlines", "orders", "contacts"]
 
@@ -294,6 +299,24 @@ def sql_upload(backload=False):
             os.system(sql_cmd)
 
 
+def sql_post_processing():
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    configs = load_config(dir_path)
+    data_types = ["events_processed", "shows_processed", "orderlines_processed", "orders_processed"]
+
+    for dt in data_types:
+        # POST PROCESS ALL TABLES FOR FASTER QUERYING
+        sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"CALL refresh_%s_now(@rc);\"""" % (
+            configs['db_name'],
+            configs['db_host'],
+            configs['db_port'],
+            configs['db_user'],
+            configs['db_password'],
+            dt
+        )
+        os.system(sql_cmd)
+
+
 if __name__ == '__main__':
     (options, args) = parser.parse_args()
     if options.sql:
@@ -301,6 +324,7 @@ if __name__ == '__main__':
             sql_upload(True)
         else:
             sql_upload()
+        sql_post_processing()
     elif options.backload:
         backload()
     else:

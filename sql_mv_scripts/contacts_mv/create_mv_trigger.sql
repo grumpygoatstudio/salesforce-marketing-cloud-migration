@@ -14,7 +14,7 @@ BEGIN
 			c.email_address AS email_address,
 			o.phone AS phone,
 			sum(o.order_total) total_revenue, -- Total Revenue from Customer
-			max(DATE_FORMAT(o.purchase_date, '%Y-%m-%d')) last_ordered_date, -- Last Ordered Date
+			max(o.purchase_date_formatted) last_ordered_date, -- Last Ordered Date
 			first_attended.first_show_attended,  -- First Show Attended Date
 			first_attended.first_event_title, -- First Event Title
             first_attended.first_event_venue, -- First Event Venue
@@ -51,51 +51,51 @@ BEGIN
 			special_shows.count_shows_special, -- Special Event Total Order Count
 			special_shows.count_shows_persents -- Presents shows Total Order Count
 		FROM seatengine.contacts c
-		LEFT OUTER JOIN seatengine.orders o ON (o.cust_id = c.subscriber_key)
-        LEFT OUTER JOIN seatengine.shows s ON (o.show_id = s.id)
-        LEFT OUTER JOIN seatengine.events e ON (s.event_id = e.id)
-        LEFT OUTER JOIN seatengine.venues v ON (e.venue_id = v.id)
+		LEFT JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
+        LEFT JOIN seatengine.shows_processed s ON (o.show_id = s.id)
+        LEFT JOIN seatengine.events_processed e ON (s.event_id = e.id)
+        LEFT JOIN seatengine.venues_processed v ON (e.venue_id = v.id)
 
 		## FIRST SHOW / EVENT INFO PER CUSTOMER
 		LEFT OUTER JOIN (
 			SELECT c.subscriber_key,
-				MIN(DATE_FORMAT(s.start_date_time, '%Y-%m-%d')) AS first_show_attended, -- First Show Attended Date
+				MIN(start_date_formatted) AS first_show_attended, -- First Show Attended Date
 				e.name AS first_event_title, -- First Event Title
                 v.id AS first_event_venue -- First Event Venue
 			FROM seatengine.contacts c
-				JOIN seatengine.orders o ON (o.cust_id = c.subscriber_key)
-				JOIN seatengine.shows s ON (s.id = o.show_id)
-				JOIN seatengine.events e ON (e.id = s.event_id)
-                JOIN seatengine.venues v ON (v.id = e.venue_id)
-			WHERE DATE_FORMAT(s.start_date_time, '%Y-%m-%d') <= CURDATE()
+				JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
+				JOIN seatengine.shows_processed s ON (s.id = o.show_id)
+				JOIN seatengine.events_processed e ON (e.id = s.event_id)
+                JOIN seatengine.venues_processed v ON (v.id = e.venue_id)
+			WHERE start_date_formatted <= CURDATE()
 			GROUP BY c.subscriber_key
 		) as first_attended ON (first_attended.subscriber_key = c.subscriber_key)
 
 		## LAST SHOW / EVENT INFO PER CUSTOMER
 		LEFT OUTER JOIN (
 			SELECT c.subscriber_key,
-				MAX(DATE_FORMAT(s.start_date_time, '%Y-%m-%d')) AS last_show_attended, -- Last Show Attended Date
+				MAX(start_date_formatted) AS last_show_attended, -- Last Show Attended Date
 				e.name AS last_event_title, -- Last Event Title
                 v.id AS last_event_venue -- Last Event Venue
 			FROM seatengine.contacts c
-				JOIN seatengine.orders o ON (o.cust_id = c.subscriber_key)
-				JOIN seatengine.shows s ON (s.id = o.show_id)
-				JOIN seatengine.events e ON (e.id = s.event_id)
-                JOIN seatengine.venues v ON (v.id = e.venue_id)
-			WHERE DATE_FORMAT(s.start_date_time, '%Y-%m-%d') <= CURDATE()
+				JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
+				JOIN seatengine.shows_processed s ON (s.id = o.show_id)
+				JOIN seatengine.events_processed e ON (e.id = s.event_id)
+                JOIN seatengine.venues_processed v ON (v.id = e.venue_id)
+			WHERE start_date_formatted <= CURDATE()
 			GROUP BY c.subscriber_key
 		) as last_attended ON (last_attended.subscriber_key = c.subscriber_key)
 
 		## NEXT SHOW / EVENT INFO PER CUSTOMER
 		LEFT OUTER JOIN (
 			SELECT c.subscriber_key,
-				MIN(DATE_FORMAT(s.start_date_time, '%Y-%m-%d')) AS next_show_attending, -- Next Show Attending Date
+				MIN(start_date_formatted) AS next_show_attending, -- Next Show Attending Date
 				e.name AS next_event_title -- Next Event Title
 			FROM seatengine.contacts c
-				JOIN seatengine.orders o ON (o.cust_id = c.subscriber_key)
-				JOIN seatengine.shows s ON (s.id = o.show_id)
-				JOIN seatengine.events e ON (e.id = s.event_id)
-			WHERE DATE_FORMAT(s.start_date_time, '%Y-%m-%d') > CURDATE()
+				JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
+				JOIN seatengine.shows_processed s ON (s.id = o.show_id)
+				JOIN seatengine.events_processed e ON (e.id = s.event_id)
+			WHERE start_date_formatted > CURDATE()
 			GROUP BY c.subscriber_key
 		) as next_attending ON (next_attending.subscriber_key = c.subscriber_key)
 
@@ -104,16 +104,16 @@ BEGIN
 		LEFT OUTER JOIN (
 			SELECT c.subscriber_key,
 				-- AVG Number of days between purchase and show
-				AVG(DATE_FORMAT(s.start_date_time, '%Y-%m-%d') - DATE_FORMAT(purchase_date, '%Y-%m-%d')) avg_purchase_to_show_days,
+				AVG(start_date_formatted - purchase_date_formatted) avg_purchase_to_show_days,
 				-- Average Number of Lifetime Tickets Per Order
 				SUM(ticket_counts.ticket_count) /  COUNT(o.order_number) as avg_tickets_per_order
 			FROM seatengine.contacts c
-			JOIN seatengine.orders o ON (o.cust_id = c.subscriber_key)
-			JOIN seatengine.shows s ON (o.show_id = s.id)
+			JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
+			JOIN seatengine.shows_processed s ON (o.show_id = s.id)
 			JOIN (
 					SELECT o.order_number, count(ol.id) ticket_count
-					FROM seatengine.orders o
-					JOIN seatengine.orderlines ol ON (ol.order_number = o.order_number)
+					FROM seatengine.orders_processed o
+					JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
 					GROUP BY o.order_number
 			) ticket_counts ON (ticket_counts.order_number = o.order_number)
 			GROUP BY c.subscriber_key
@@ -126,12 +126,12 @@ BEGIN
 				SUM(ticket_counts.ticket_count) total_lifetime_paid_tickets, -- Total Number of Lifetime Paid Tickets
 				SUM(ticket_counts.ticket_count) /  COUNT(o.order_number) avg_tickets_per_paid_order
 			FROM seatengine.contacts c
-			JOIN seatengine.orders o ON (o.cust_id = c.subscriber_key)
+			JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
 			JOIN (
 					SELECT o.order_number, count(ol.id) ticket_count
-					FROM seatengine.orders o
-					JOIN seatengine.orderlines ol ON (ol.order_number = o.order_number)
-					WHERE o.payment_method NOT LIKE '%comp%'
+					FROM seatengine.orders_processed o
+					JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
+					WHERE o.not_comped = 1
 					GROUP BY o.order_number
 			) ticket_counts ON (ticket_counts.order_number = o.order_number)
 			GROUP BY c.subscriber_key
@@ -141,18 +141,18 @@ BEGIN
 		## COMPUTE LAST COMP'D SHOW DATE PER CUSTOMER
 		LEFT OUTER JOIN (
 			SELECT c.subscriber_key,
-				MAX(DATE_FORMAT(s.start_date_time, '%Y-%m-%d')) AS last_comp_show_date, -- Last Comp Show Date
+				MAX(start_date_formatted) AS last_comp_show_date, -- Last Comp Show Date
 				COUNT(o.order_number) total_lifetime_comp_orders, -- Total Lifetime Comp'd Orders
 				SUM(ticket_counts.ticket_count) total_lifetime_comp_tickets, -- Total Lifetime Comp'd Tickets
 				SUM(ticket_counts.ticket_count) /  COUNT(o.order_number) avg_tickets_per_comp_order
 			FROM seatengine.contacts c
-			JOIN seatengine.orders o ON (o.cust_id = c.subscriber_key)
-			JOIN seatengine.shows s ON (o.show_id = s.id)
+			JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
+			JOIN seatengine.shows_processed s ON (o.show_id = s.id)
 			JOIN (
 					SELECT o.order_number, count(ol.id) ticket_count
-					FROM seatengine.orders o
-					JOIN seatengine.orderlines ol ON (ol.order_number = o.order_number)
-					WHERE o.payment_method LIKE '%comp%'
+					FROM seatengine.orders_processed o
+					JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
+					WHERE o.comped = 1
 					GROUP BY o.order_number
 			) ticket_counts ON (ticket_counts.order_number = o.order_number)
 			GROUP BY c.subscriber_key
@@ -170,10 +170,10 @@ BEGIN
 				COUNT(CASE WHEN show_day = 6 THEN 1 END) AS shows_attended_U -- Comp'd or Paid Events Attended on Sunday
 			FROM (
 					SELECT o.cust_id AS cust_id,
-						WEEKDAY(DATE_FORMAT(s.start_date_time, '%Y-%m-%d')) AS show_day,
+						s.start_date_formatted AS show_day,
 						COUNT(*) AS shows_attended
-					FROM seatengine.orders o
-					JOIN seatengine.shows s ON (o.show_id = s.id)
+					FROM seatengine.orders_processed o
+					JOIN seatengine.shows_processed s ON (o.show_id = s.id)
 					GROUP BY o.cust_id, show_day
 				) AS wk
 			GROUP BY subscriber_key
@@ -183,34 +183,34 @@ BEGIN
 		LEFT OUTER JOIN (
 				SELECT
 				o.cust_id AS subscriber_key,
-				SUM(CASE WHEN o.payment_method NOT LIKE '%comp%'
-								AND DATE_FORMAT(purchase_date, '%Y-%m-%d') BETWEEN CURDATE() - INTERVAL 360 DAY AND CURDATE()
+				SUM(CASE WHEN o.not_comped = 1
+								AND purchase_date_formatted BETWEEN CURDATE() - INTERVAL 360 DAY AND CURDATE()
 								THEN o.order_total END) AS paid_orders_revenue_360,
-				SUM(CASE WHEN o.payment_method NOT LIKE '%comp%'
-								AND DATE_FORMAT(purchase_date, '%Y-%m-%d') BETWEEN CURDATE() - INTERVAL 180 DAY AND CURDATE()
+				SUM(CASE WHEN o.not_comped = 1
+								AND purchase_date_formatted BETWEEN CURDATE() - INTERVAL 180 DAY AND CURDATE()
 								THEN o.order_total END) AS paid_orders_revenue_180,
-				SUM(CASE WHEN o.payment_method NOT LIKE '%comp%'
-								AND DATE_FORMAT(purchase_date, '%Y-%m-%d') BETWEEN CURDATE() - INTERVAL 90 DAY AND CURDATE()
+				SUM(CASE WHEN o.not_comped = 1
+								AND purchase_date_formatted BETWEEN CURDATE() - INTERVAL 90 DAY AND CURDATE()
 								THEN o.order_total END) AS paid_orders_revenue_90,
-				COUNT(CASE WHEN o.payment_method NOT LIKE '%comp%'
-								AND DATE_FORMAT(purchase_date, '%Y-%m-%d') BETWEEN CURDATE() - INTERVAL 360 DAY AND CURDATE()
+				COUNT(CASE WHEN o.not_comped = 1
+								AND purchase_date_formatted BETWEEN CURDATE() - INTERVAL 360 DAY AND CURDATE()
 								THEN 1 END) AS paid_orders_count_360,
-				COUNT(CASE WHEN o.payment_method NOT LIKE '%comp%'
-							AND DATE_FORMAT(purchase_date, '%Y-%m-%d') BETWEEN CURDATE() - INTERVAL 180 DAY AND CURDATE()
+				COUNT(CASE WHEN o.not_comped = 1
+							AND purchase_date_formatted BETWEEN CURDATE() - INTERVAL 180 DAY AND CURDATE()
 							THEN 1 END) AS paid_orders_count_180,
-				COUNT(CASE WHEN o.payment_method NOT LIKE '%comp%'
-								AND DATE_FORMAT(purchase_date, '%Y-%m-%d') BETWEEN CURDATE() - INTERVAL 90 DAY AND CURDATE()
+				COUNT(CASE WHEN o.not_comped = 1
+								AND purchase_date_formatted BETWEEN CURDATE() - INTERVAL 90 DAY AND CURDATE()
 								THEN 1 END) AS paid_orders_count_90,
-				COUNT(CASE WHEN o.payment_method LIKE '%comp%'
-								AND DATE_FORMAT(purchase_date, '%Y-%m-%d') BETWEEN CURDATE() - INTERVAL 360 DAY AND CURDATE()
+				COUNT(CASE WHEN o.comped = 1
+								AND purchase_date_formatted BETWEEN CURDATE() - INTERVAL 360 DAY AND CURDATE()
 								THEN 1 END) AS comp_orders_count_360,
-				COUNT(CASE WHEN o.payment_method LIKE '%comp%'
-								AND DATE_FORMAT(purchase_date, '%Y-%m-%d') BETWEEN CURDATE() - INTERVAL 180 DAY AND CURDATE()
+				COUNT(CASE WHEN o.comped = 1
+								AND purchase_date_formatted BETWEEN CURDATE() - INTERVAL 180 DAY AND CURDATE()
 								THEN 1 END) AS comp_orders_count_180,
-				COUNT(CASE WHEN o.payment_method LIKE '%comp%'
-								AND DATE_FORMAT(purchase_date, '%Y-%m-%d') BETWEEN CURDATE() - INTERVAL 90 DAY AND CURDATE()
+				COUNT(CASE WHEN o.comped = 1
+								AND purchase_date_formatted BETWEEN CURDATE() - INTERVAL 90 DAY AND CURDATE()
 								THEN 1 END) AS comp_orders_count_90
-			FROM seatengine.orders o
+			FROM seatengine.orders_processed o
 			GROUP BY subscriber_key
 		) as last_360 ON (last_360.subscriber_key = c.subscriber_key)
 
@@ -218,11 +218,11 @@ BEGIN
 		LEFT OUTER JOIN (
 			SELECT
 				o.cust_id AS subscriber_key,
-				COUNT(CASE WHEN e.name LIKE '%Special Event%' THEN 1 END) AS count_shows_special, -- Special Event Total Order Count
-				COUNT(CASE WHEN e.name LIKE '%Presents%' THEN 1 END) AS count_shows_persents -- Presents shows Total Order Count
-			FROM seatengine.orders o
-			JOIN seatengine.shows s ON (s.id = o.show_id)
-			JOIN seatengine.events e ON (e.id = s.event_id)
+				SUM(e.special_event) AS count_shows_special, -- Special Event Total Order Count
+				SUM(e.presents_event) AS count_shows_persents -- Presents Event Total Order Count
+			FROM seatengine.orders_processed o
+			JOIN seatengine.shows_processed s ON (s.id = o.show_id)
+			JOIN seatengine.events_processed e ON (e.id = s.event_id)
 			GROUP BY subscriber_key
 		) as special_shows ON (special_shows.subscriber_key = c.subscriber_key)
 
