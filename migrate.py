@@ -302,7 +302,7 @@ def sql_upload(backload=False):
 def sql_post_processing():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
-    data_types = ["events_processed", "shows_processed", "orderlines_processed", "orders_processed"]
+    data_types = ["orderlines_processed","orders_processed","shows_processed","events_processed"]
 
     for dt in data_types:
         # POST PROCESS ALL TABLES FOR FASTER QUERYING
