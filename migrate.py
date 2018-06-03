@@ -16,6 +16,8 @@ parser.add_option("-b", "--backload", dest="backload", type="string",
                   help="Backload shows and events", metavar="backload")
 parser.add_option("-s", "--sql", dest="sql", type="string",
                   help="Upload all CSV files to SQL server only", metavar="sql")
+parser.add_option("-n", "--name", dest="names", type="string",
+                  help="Fix missing names in database", metavar="names")
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -313,15 +315,56 @@ def sql_post_processing():
     os.system(sql_cmd)
 
 
+def missing_names():
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    configs = load_config(dir_path)
+    auth_header = {e: configs[e] for e in configs if "X-" in e}
+
+    missing_names_file = os.path.join(dir_path, 'cust_missing_names_v2.csv')
+    with open(missing_names_file, 'r') as data:
+        reader = csv.reader(data, delimiter='\t')
+        missing_items = {'1':[],'5':[],'21':[],'53':[],'133':[],'297':[]}
+        next(reader,None)
+        for l in reader:
+            missing_items[l[4]].append((l[3],l[0],))
+    for k,v in missing_items.items():
+        unique_shows = list(set([i[0] for i in v]))
+        missing_items[k] = dict.fromkeys(unique_shows, [])
+        for show in unique_shows:
+            missing_items[k][show] = [i[1] for i in v if i[0] == show]
+
+    sql_stmnt = '''UPDATE seatengine.contacts SET name = \'%s\' WHERE subscriber_key = \'%s\';\n'''
+    with open('update_customers.sql', 'w') as out_file:
+        for venue in missing_items:
+            for show, cust_list in missing_items[venue].items():
+                orders = get_show_orders(venue, show, auth_header)
+                for o in orders:
+                    if o['customer']['id'] in cust_list:
+                        cust_name = str(o['customer']['name']).strip().replace("\"", "").replace(",", " ")
+                        out_file.write(sql_stmnt%(cust_name, o['customer']['id']))
+
+    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s < update_customers.sql""" % (
+        configs['db_name'],
+        configs['db_host'],
+        configs['db_port'],
+        configs['db_user'],
+        configs['db_password']
+    )
+    os.system(sql_cmd)
+
+
 if __name__ == '__main__':
     (options, args) = parser.parse_args()
-    if options.sql:
-        if options.backload:
-            sql_upload(True)
-        else:
-            sql_upload()
-        sql_post_processing()
-    elif options.backload:
-        backload()
+    if options.names:
+        missing_names()
     else:
-        main()
+        if options.sql:
+            if options.backload:
+                sql_upload(True)
+            else:
+                sql_upload()
+            sql_post_processing()
+        elif options.backload:
+            backload()
+        else:
+            main()
