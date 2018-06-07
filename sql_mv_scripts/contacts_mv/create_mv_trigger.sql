@@ -63,7 +63,8 @@ BEGIN
 		LEFT JOIN per_comp_order ON (c.subscriber_key = per_comp_order.subscriber_key)
 		LEFT JOIN weekday_attendence ON (c.subscriber_key = weekday_attendence.subscriber_key)
 		LEFT JOIN last_360 ON (c.subscriber_key = last_360.subscriber_key)
-		LEFT JOIN special_shows ON (c.subscriber_key = special_shows.subscriber_key);
+		LEFT JOIN total_spend ON (c.subscriber_key = total_spend.subscriber_key)
+        LEFT JOIN special_shows ON (c.subscriber_key = special_shows.subscriber_key);
         
         # turn ON all FK constraints for tables 
         SET FOREIGN_KEY_CHECKS = 1; 

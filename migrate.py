@@ -134,10 +134,6 @@ def create_objects_from_orders(orders, show_id, pull_limit):
             temp_order['addons'] = "\t".join([str(a['name']) for a in order['addons']]) if order['addons'] != [] else ""
 
             for tix_type in order['tickets']:
-                prices = [tix['price'] for tix in order['tickets'][tix_type]]
-                # add ticket costs to ORDER total
-                temp_order['order_total'] += sum(prices)
-                # add tickets purchased to ORDERLINE
                 for tix in order['tickets'][tix_type]:
                     temp_orderline = collections.OrderedDict()
                     temp_orderline['id'] = str(order['order_number']) + "-%0.6d" % random.randint(0, 999999)
@@ -147,8 +143,13 @@ def create_objects_from_orders(orders, show_id, pull_limit):
                     temp_orderline['printed'] = tix['printed']
                     temp_orderline['promo_code_id'] = tix['promo_code_id']
                     temp_orderline['checked_in'] = tix['checked_in']
+                    # add tickets purchased to ORDERLINE
                     orderlines_info += [temp_orderline]
-
+                    # add ticket cost to ORDER total
+                    try:
+                        temp_order['order_total'] += int(tix['price'])
+                    except Exception:
+                        pass
             orders_info += [temp_order]
             customers_info += [temp_cust]
 
@@ -333,14 +334,14 @@ def missing_names():
         for show in unique_shows:
             missing_items[k][show] = [i[1] for i in v if i[0] == show]
 
-    sql_stmnt = '''UPDATE seatengine.contacts SET name = \'%s\' WHERE subscriber_key = \'%s\';\n'''
+    sql_stmnt = '''UPDATE contacts SET name="%s" WHERE subscriber_key="%s";\n'''
     with open('update_customers.sql', 'w') as out_file:
         for venue in missing_items:
             for show, cust_list in missing_items[venue].items():
                 orders = get_show_orders(venue, show, auth_header)
                 for o in orders:
                     if o['customer']['id'] in cust_list:
-                        cust_name = str(o['customer']['name']).strip().replace("\"", "").replace(",", " ")
+                        cust_name = str(o['customer']['name']).strip().replace("\"", "").replace(",", " ").replace("'", "\'")
                         out_file.write(sql_stmnt%(cust_name, o['customer']['id']))
 
     sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s < update_customers.sql""" % (

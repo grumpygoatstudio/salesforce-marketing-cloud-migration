@@ -6,8 +6,12 @@ CREATE PROCEDURE refresh_orders_mv_now (
     OUT rc INT
 )
 BEGIN
+		# turn OFF all FK constraints for tables 
+        SET FOREIGN_KEY_CHECKS = 0; 
+		
 		TRUNCATE TABLE orders_mv;
-		INSERT INTO orders_mv
+		
+        INSERT INTO orders_mv
 		SELECT
 			ol.id AS unique_id,
 			o.id AS externalid,
@@ -27,6 +31,10 @@ BEGIN
             o.new_customer AS new_customer
 		FROM seatengine.orders_processed o
 		JOIN seatengine.orderlines_processed ol ON (o.order_number = ol.order_number);
+        
+        # turn ON all FK constraints for tables 
+        SET FOREIGN_KEY_CHECKS = 1; 
+        
   SET rc = 0;
 END;
 $$

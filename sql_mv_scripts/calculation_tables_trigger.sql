@@ -17,6 +17,7 @@ BEGIN
         TRUNCATE TABLE per_paid_order;
         TRUNCATE TABLE per_comp_order;
         TRUNCATE TABLE special_shows;
+        TRUNCATE TABLE total_spend;
         TRUNCATE TABLE weekday_attendence;
         
 		# Table for pulling all the first/last/next dates from
@@ -188,13 +189,22 @@ BEGIN
 			SELECT
 				o.cust_id AS subscriber_key,
                 o.phone AS phone,
-                SUM(o.order_total) AS total_revenue, -- Total Revenue from customerid
 				MAX(o.purchase_date_formatted) AS last_ordered_date, -- Last Ordered Date
-				SUM(e.special_event) AS count_shows_special, -- Special Event Total Order Count
-				SUM(e.presents_event) AS count_shows_persents -- Presents Event Total Order Count
+				COUNT(e.special_event) AS count_shows_special, -- Special Event Total Order Count
+				COUNT(e.presents_event) AS count_shows_persents -- Presents Event Total Order Count
 			FROM seatengine.orders_processed o
 			JOIN seatengine.shows_processed s ON (s.id = o.show_id)
 			JOIN seatengine.events_processed e ON (e.id = s.event_id)
+			GROUP BY subscriber_key
+		;
+        
+        ## TOTAL ORDER SPENDING PER CUSTOMER
+        INSERT INTO total_spend
+			SELECT
+				o.cust_id AS subscriber_key,
+                SUM(ol.ticket_price) AS total_revenue -- Total Revenue from customerid
+			FROM seatengine.orders_processed o
+			JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
 			GROUP BY subscriber_key
 		;
         
