@@ -1,6 +1,8 @@
 {
     "X-Auth-Token": "XXXXXXXXXXXXXXXXXXXXXXXXX",
     "X-User-Token": "XXXXXXXXXXXXXXXXXXXXXXXXX",
+    "Api-Token": "XXXXXXXXXXXXXXXXXXXXXXXXX",
+    "Api-Url": "https://<account>.api-us1.com/api/3/",
     "host": "ftps:sf.com",
     "port": 22,
     "username": "XXXXXXXXXXX",
