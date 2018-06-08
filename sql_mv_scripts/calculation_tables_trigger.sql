@@ -46,33 +46,44 @@ BEGIN
 				next_event_title -- Next Event Title	
 			FROM seatengine.contacts c
 			## FIRST SHOW / EVENT INFO PER CUSTOMER
-			LEFT JOIN
+			JOIN
 				(SELECT a1.subscriber_key AS subscriber_key,
-					MIN(start_date_formatted) AS first_show_attended, -- First Show Attended Date
+					start_date_formatted AS first_show_attended, -- First Show Attended Date
 					event_title AS first_event_title, -- First Event Title
 					event_venue AS first_event_venue -- First Event Venue
 				FROM attended_event_dates a1
-				WHERE start_date_formatted <= NOW() 
+				INNER JOIN
+					(SELECT subscriber_key, MIN(start_date_formatted) AS MinDateTime
+					FROM attended_event_dates
+                    WHERE start_date_formatted <= NOW()
+					GROUP BY subscriber_key) AS groupedtt ON (a1.subscriber_key = groupedtt.subscriber_key AND a1.start_date_formatted = groupedtt.MinDateTime)
 				) AS a1 ON (c.subscriber_key = a1.subscriber_key)
 			## LAST SHOW / EVENT INFO PER CUSTOMER
-			LEFT JOIN 
-				(SELECT subscriber_key,
-					MAX(start_date_formatted) AS last_show_attended, -- Last Show Attended Date
-					event_title AS last_event_title, -- Last Event Title
-					event_venue AS last_event_venue -- Last Event Venue
+			JOIN
+				(SELECT a2.subscriber_key AS subscriber_key,
+					start_date_formatted AS last_show_attended, -- First Show Attended Date
+					event_title AS last_event_title, -- First Event Title
+					event_venue AS last_event_venue -- First Event Venue
 				FROM attended_event_dates a2
-				WHERE start_date_formatted <= NOW()
-				GROUP BY subscriber_key
+				INNER JOIN
+					(SELECT subscriber_key, MAX(start_date_formatted) AS MaxDateTime
+					FROM attended_event_dates
+                    WHERE start_date_formatted <= NOW()
+					GROUP BY subscriber_key) AS groupedtt ON (a2.subscriber_key = groupedtt.subscriber_key AND a2 .start_date_formatted = groupedtt.MaxDateTime)
 				) AS a2 ON (c.subscriber_key = a2.subscriber_key)
 			## NEXT SHOW / EVENT INFO PER CUSTOMER
 			LEFT JOIN
-				(SELECT subscriber_key,
-					MIN(start_date_formatted) AS next_show_attending, -- Next Show Attending Date
+				(SELECT a3.subscriber_key,
+					start_date_formatted AS next_show_attending, -- Next Show Attending Date
 					event_title AS next_event_title -- Next Event Title
 				FROM attended_event_dates a3
-				WHERE start_date_formatted > NOW() 
-				GROUP BY subscriber_key
+				INNER JOIN
+					(SELECT subscriber_key, MIN(start_date_formatted) AS MinDateTime
+					FROM attended_event_dates
+                    WHERE start_date_formatted > NOW()
+					GROUP BY subscriber_key) AS groupedtt ON (a3.subscriber_key = groupedtt.subscriber_key AND a3.start_date_formatted = groupedtt.MinDateTime)
 				) AS a3 ON (c.subscriber_key = a3.subscriber_key)
+            GROUP BY c.subscriber_key
 		;
         
         
