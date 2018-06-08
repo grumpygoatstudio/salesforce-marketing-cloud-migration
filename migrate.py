@@ -105,6 +105,7 @@ def create_objects_from_orders(orders, show_id, pull_limit):
     customers_info = []
     orders_info = []
     orderlines_info = []
+    sys_entry_time = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
 
     for order in orders:
         # verify that order hasn't already been processed before
@@ -113,7 +114,7 @@ def create_objects_from_orders(orders, show_id, pull_limit):
             temp_cust['subscriber_key'] = str(order['customer']['id'])
             temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ")
             temp_cust['email_address'] = str(order['customer']['email'])
-
+            temp_cust['sys_entry_date'] = sys_entry_time
             try:
                 payment_method = str(order["payments"][0]['payment_method'])
             except Exception:
@@ -131,6 +132,7 @@ def create_objects_from_orders(orders, show_id, pull_limit):
             temp_order['booking_type'] = str(order['booking_type'])
             temp_order['order_total'] = 0
             temp_order['new_customer'] = str(order['customer']['new_customer'])
+            temp_order['sys_entry_date'] = sys_entry_time
             temp_order['addons'] = "\t".join([str(a['name']) for a in order['addons']]) if order['addons'] != [] else ""
 
             for tix_type in order['tickets']:

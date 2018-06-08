@@ -28,9 +28,14 @@ BEGIN
             o.not_comped AS not_comped,
             o.booking_type AS booking_type,
             o.addons AS addons,
-            o.new_customer AS new_customer
+            o.new_customer AS new_customer,
+            v.id AS venue_id,
+            o.sys_entry_date AS sys_entry_date
 		FROM seatengine.orders_processed o
-		JOIN seatengine.orderlines_processed ol ON (o.order_number = ol.order_number);
+		JOIN seatengine.orderlines_processed ol ON (o.order_number = ol.order_number)
+		JOIN seatengine.shows_processed s ON (s.id = o.show_id)
+		JOIN seatengine.events_processed e ON (e.id = s.event_id)
+		JOIN seatengine.venues_processed v ON (v.id = e.venue_id);
         
         # turn ON all FK constraints for tables 
         SET FOREIGN_KEY_CHECKS = 1; 

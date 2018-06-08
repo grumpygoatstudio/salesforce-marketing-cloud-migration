@@ -55,7 +55,8 @@ BEGIN
 			paid_orders_count_90, -- Total Paid Orders Over Last 365 days
 			comp_orders_count_90, -- Total Comp'd Orders Over Last 365 days
 			count_shows_special, -- Special Event Total Order Count
-			count_shows_persents -- Presents shows Total Order Count
+			count_shows_persents, -- Presents shows Total Order Count
+            c.sys_entry_date AS sys_entry_date
 		FROM seatengine.contacts c
 		LEFT JOIN fln_event_data ON (c.subscriber_key = fln_event_data.subscriber_key) 
 		LEFT JOIN avg_tickets_per_order ON (c.subscriber_key = avg_tickets_per_order.subscriber_key)

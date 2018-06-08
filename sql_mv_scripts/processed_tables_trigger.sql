@@ -41,6 +41,7 @@ BEGIN
             o.booking_type AS booking_type,
             o.order_total AS order_total,
             o.new_customer AS new_customer,
+            o.sys_entry_date AS sys_entry_date,
             o.addons AS addons,
             DATE_FORMAT(purchase_date, '%Y-%m-%d') AS purchase_date_formatted,
 			CASE WHEN o.payment_method LIKE '%comp%' THEN 1 ELSE 0 END AS comped,
