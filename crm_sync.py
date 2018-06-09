@@ -49,7 +49,7 @@ def build_order_json(connection, data):
         "orderDate": str(data[0][4]),
         # shippingMethod is a placeholder for order payment method
         "shippingMethod": data[0][7],
-        "totalPrice": str(sum([ol[9] for ol in data])),
+        "totalPrice": str(sum([int(ol[9]) for ol in data])),
         "currency": "USD",
         "connectionid": connection,
         "customerid": str(data[0][6])
