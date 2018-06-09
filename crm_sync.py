@@ -162,9 +162,9 @@ def active_campaign_sync():
                 ols = orders[o]
                 # build order and customer JSON and POST the JSON objects to AC server
                 customer_json = build_customer_json(connection, ols)
-                crm_id = post_to_crm(customers_url, auth_header, customer_json, venue_id)
+                crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id)
                 order_json = build_order_json(connection, crm_id, ols)
-                post_to_crm(orders_url, auth_header, order_json, venue_id)
+                post_order_to_crm(orders_url, auth_header, order_json, venue_id)
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
