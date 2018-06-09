@@ -24,8 +24,8 @@ def build_customer_json(connection, data):
     return {
       "ecomCustomer": {
         "connectionid": connection,
-        "externalid": data['customerid'],
-        "email": data['email']
+        "externalid": data[0]['customerid'],
+        "email": data[0]['email']
       }
     }
 
@@ -33,26 +33,26 @@ def build_customer_json(connection, data):
 def build_order_json(connection, data):
     return {
       "ecomOrder": {
-        "externalid": data['externalid'],
+        "externalid": data[0]['externalid'],
         "source": "1",
-        "email": data['email'],
-        "orderNumber": data['orderNumber'],
+        "email": data[0]['email'],
+        "orderNumber": data[0]['orderNumber'],
         "orderProducts": [
           {
-            "name": data['orderproduct_name'],
-            "price": str(data['orderproduct_price']),
+            "name": ol['orderproduct_name'],
+            "price": str(ol['orderproduct_price']),
             "quantity": "1",
             # category is a placeholder for order show_id
-            "category": data['orderproduct_category']
+            "category": ol['orderproduct_category']
           } for ol in data
         ],
-        "orderDate": data['orderDate'],
+        "orderDate": data[0]['orderDate'],
         # shippingMethod is a placeholder for order payment method
-        "shippingMethod": data['shippingMethod'],
-        "totalPrice": sum([ol['ticket_price'] for ol in data]),
+        "shippingMethod": data[0]['shippingMethod'],
+        "totalPrice": sum([ol['orderproduct_price'] for ol in data]),
         "currency": "USD",
         "connectionid": connection,
-        "customerid": data['customerid']
+        "customerid": data[0]['customerid']
       }
     }
 
