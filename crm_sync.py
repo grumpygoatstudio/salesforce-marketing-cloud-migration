@@ -23,7 +23,7 @@ def write_config(config, dir_path):
 def build_customer_json(connection, data):
     return json.dumps({
       "ecomCustomer": {
-        "connectionid": str(connection),
+        "connectionid": connection,
         "externalid": str(data[0][6]),
         "email": data[0][2]
       }
@@ -63,7 +63,8 @@ def post_to_crm(url, auth_header, data):
         if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
             pass
         else:
-            print(r.text)
+            print(r.status_code)
+            pritn(r.json())
             sys.exit(0)
     else:
         return r
