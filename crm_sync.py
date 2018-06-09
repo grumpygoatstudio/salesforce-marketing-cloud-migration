@@ -89,14 +89,15 @@ def active_campaign_sync():
         os.system(sql_cmd)
 
         #load data from pulled MySQL dump CSV
-        with open(file_path, "r") as file_data:
-            reader = csv.reader(file_data, delimiter=',')
+        with open(file_path, "rU") as file_data:
+            reader = csv.reader(file_data, delimiter='\t')
             next(reader, None)
             # group the orderlines into orders
             orders = collections.defaultdict(list)
             for ol in reader:
-                orders[ol.orderNumber].append(ol)
-            for o, ols in orders:
+                orders[ol[3]].append(ol)
+            for o in orders:
+                ols = orders[o]
                 # build order and customer JSON
                 customer_json = build_customer_json(connection, ols)
                 order_json = build_order_json(connection, ols)
