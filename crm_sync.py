@@ -23,7 +23,7 @@ def write_config(config, dir_path):
 def build_customer_json(connection, data):
     return {
       "ecomCustomer": {
-        "connectionid": connection,
+        "connectionid": str(connection),
         "externalid": str(data[0][6]),
         "email": data[0][2]
       }
@@ -55,6 +55,18 @@ def build_order_json(connection, data):
         "customerid": str(data[0][6])
       }
     }
+
+
+def post_to_crm(url, auth_header, data):
+    r = requests.post(url, headers=auth_header, data=data)
+    if r.status_code != 200:
+        if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
+            pass
+        else:
+            print(r.text)
+            sys.exit(0)
+    else:
+        return r
 
 
 def active_campaign_sync():
@@ -102,8 +114,8 @@ def active_campaign_sync():
                 customer_json = build_customer_json(connection, ols)
                 order_json = build_order_json(connection, ols)
                 # POST the JSON objects to AC server
-                requests.post(customers_url, headers=auth_header, data=customer_json)
-                requests.post(orders_url, headers=auth_header, data=order_json)
+                post_to_crm(customers_url, auth_header, customer_json)
+                post_to_crm(orders_url, auth_header, order_json)
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
