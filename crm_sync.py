@@ -107,7 +107,7 @@ def post_customer_to_crm(url, auth_header, data, venue_id, configs):
             sys.exit(1)
     else:
         try:
-            crm_id = r.json()["ecomCustomer"]["connectionid"]
+            crm_id = r.json()["ecomCustomer"]["id"]
             save_crm_id(se_id, venue_id, int(crm_id), configs)
         except Exception:
             print(r.status_code)
