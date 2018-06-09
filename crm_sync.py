@@ -76,14 +76,14 @@ def active_campaign_sync():
         except OSError:
             pass
         # download CSV file from MySQL DB
-        sql_orders = """SELECT * FROM orders_mv WHERE venue_id = %s AND (sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > %s);""" % (venue_id, last_crm_sync)
-        sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"%s\" > %s""" % (
+        sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s AND (sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > %s);\" > %s""" % (
             configs['db_name'],
             configs['db_host'],
             configs['db_port'],
             configs['db_user'],
             configs['db_password'],
-            sql_orders,
+            str(venue_id),
+            last_crm_sync,
             file_path
         )
         os.system(sql_cmd)
