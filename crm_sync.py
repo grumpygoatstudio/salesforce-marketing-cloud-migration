@@ -74,7 +74,7 @@ def lookup_crm_id(se_id, venue_id, configs):
 
 
 def save_crm_id(se_id, venue_id, crm_id, configs):
-    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"INSERT INTO crm_linker SET se_id=\'%s\', venue_id=%s, crm_id=%s;""" % (
+    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"INSERT INTO crm_linker SET se_id=\'%s\', venue_id=%s, crm_id=%s;\"""" % (
         configs['db_name'],
         configs['db_host'],
         configs['db_port'],
