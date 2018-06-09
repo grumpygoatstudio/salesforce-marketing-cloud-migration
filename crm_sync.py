@@ -25,7 +25,7 @@ def build_customer_json(connection, data):
       "ecomCustomer": {
         "connectionid": connection,
         "externalid": str(data[0][6]),
-        "email": data[0]['email']
+        "email": data[0][2]
       }
     }
 
