@@ -57,7 +57,7 @@ def build_order_json(connection, data):
     }
 
 
-def active_campaign_push_orders():
+def active_campaign_sync():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "Api-Token" in e}
@@ -107,3 +107,7 @@ def active_campaign_push_orders():
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
     write_config(configs, dir_path)
     print("CRM Sync Completed - " + configs['last_crm_sync'])
+
+
+if __name__ == '__main__':
+    active_campaign_sync()
