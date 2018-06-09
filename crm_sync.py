@@ -4,6 +4,8 @@ import requests
 import json
 import collections
 import csv
+import mysql.connector
+
 from datetime import datetime
 
 reload(sys)
@@ -30,11 +32,10 @@ def build_customer_json(connection, data):
     })
 
 
-def build_order_json(connection, data):
+def build_order_json(connection, crm_id, data):
     return json.dumps({
       "ecomOrder": {
         "externalid": str(data[0][1]),
-        "source": "1",
         "email": data[0][2],
         "orderNumber": str(data[0][3]),
         "orderProducts": [
@@ -52,22 +53,70 @@ def build_order_json(connection, data):
         "totalPrice": str(sum([int(ol[9]) for ol in data])),
         "currency": "USD",
         "connectionid": connection,
-        "customerid": str(data[0][6])
+        "customerid": crm_id
       }
     })
 
 
-def post_to_crm(url, auth_header, data):
+def lookup_crm_id(se_id, venue_id):
+    cnx = mysql.connector.connect(user=configs['db_user'],
+                                  password=configs['db_password'],
+                                  port=configs['db_port'],
+                                  host=configs['db_host'],
+                                  database=configs['db_name'])
+    cursor = cnx.cursor()
+    query = ("""SELECT crm_id FROM crm_linker WHERE se_id = \'%s\' AND venue_id = %s""")
+    cursor.execute(query, (se_id, venue_id))
+    crm_id = cursor[0][0]
+    cursor.close()
+    cnx.close()
+    return crm_id
+
+
+def save_crm_id(se_id, venue_id, crm_id):
+    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"INSERT INTO crm_linker SET se_id=\'%s\', venue_id=%s, crm_id=%s;""" % (
+        configs['db_name'],
+        configs['db_host'],
+        configs['db_port'],
+        configs['db_user'],
+        configs['db_password'],
+        se_id,
+        venue_id,
+        crm_id
+    )
+    os.system(sql_cmd)
+
+
+def post_order_to_crm(url, auth_header, data, venue_id):
     r = requests.post(url, headers=auth_header, data=data)
-    if r.status_code != 200:
+    if r.status_code != 201:
         if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
             pass
         else:
             print(r.status_code)
-            pritn(r.json())
-            sys.exit(0)
+            print(r.json())
+            sys.exit(1)
+
+
+def post_customer_to_crm(url, auth_header, data, venue_id):
+    crm_id = None
+    r = requests.post(url, headers=auth_header, data=data)
+    if r.status_code != 201:
+        if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
+            crm_id = lookup_crm_id(data[0][7], int(data[0][17]))
+        else:
+            print(r.status_code)
+            print(r.json())
+            sys.exit(1)
     else:
-        return r
+        try:
+            crm_id = r.json()["ecomCustomer"]["connectionid"]
+            save_crm_id(data[0][7], int(data[0][17]), int(crm_id))
+        except Exception:
+            print(r.status_code)
+            print(r.json())
+            sys.exit(1)
+    return crm_id
 
 
 def active_campaign_sync():
@@ -111,12 +160,11 @@ def active_campaign_sync():
                 orders[ol[3]].append(ol)
             for o in orders:
                 ols = orders[o]
-                # build order and customer JSON
+                # build order and customer JSON and POST the JSON objects to AC server
                 customer_json = build_customer_json(connection, ols)
-                order_json = build_order_json(connection, ols)
-                # POST the JSON objects to AC server
-                post_to_crm(customers_url, auth_header, customer_json)
-                post_to_crm(orders_url, auth_header, order_json)
+                crm_id = post_to_crm(customers_url, auth_header, customer_json, venue_id)
+                order_json = build_order_json(connection, crm_id, ols)
+                post_to_crm(orders_url, auth_header, order_json, venue_id)
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
