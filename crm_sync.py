@@ -106,3 +106,9 @@ def active_campaign_push_orders():
                 # POST the JSON objects to AC server
                 requests.post(customers_url, headers=auth_header, body=customer_json)
                 requests.post(orders_url, headers=auth_header, body=order_json)
+
+    # WRITE NEW DATETIME FOR LAST CRM SYNC
+    configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
+    write_config(configs, dir_path)
+
+    print("Data Pull Completed - " + configs['last_pull'])
