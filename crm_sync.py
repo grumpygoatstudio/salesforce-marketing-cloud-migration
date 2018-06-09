@@ -24,7 +24,7 @@ def build_customer_json(connection, data):
     return {
       "ecomCustomer": {
         "connectionid": connection,
-        "externalid": data[0]['customerid'],
+        "externalid": str(data[0][6]),
         "email": data[0]['email']
       }
     }
@@ -33,26 +33,26 @@ def build_customer_json(connection, data):
 def build_order_json(connection, data):
     return {
       "ecomOrder": {
-        "externalid": data[0]['externalid'],
+        "externalid": str(data[0][1]),
         "source": "1",
-        "email": data[0]['email'],
-        "orderNumber": data[0]['orderNumber'],
+        "email": data[0][2],
+        "orderNumber": str(data[0][3]),
         "orderProducts": [
           {
-            "name": ol['orderproduct_name'],
-            "price": str(ol['orderproduct_price']),
+            "name": ol[8],
+            "price": str(ol[9]),
             "quantity": "1",
             # category is a placeholder for order show_id
-            "category": ol['orderproduct_category']
+            "category": str(ol[10])
           } for ol in data
         ],
-        "orderDate": data[0]['orderDate'],
+        "orderDate": str(data[0][4]),
         # shippingMethod is a placeholder for order payment method
-        "shippingMethod": data[0]['shippingMethod'],
-        "totalPrice": sum([ol['orderproduct_price'] for ol in data]),
+        "shippingMethod": data[0][7],
+        "totalPrice": str(sum([ol[9] for ol in data])),
         "currency": "USD",
         "connectionid": connection,
-        "customerid": data[0]['customerid']
+        "customerid": str(data[0][6])
       }
     }
 
