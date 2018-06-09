@@ -58,7 +58,7 @@ def build_order_json(connection, crm_id, data):
     })
 
 
-def lookup_crm_id(se_id, venue_id):
+def lookup_crm_id(se_id, venue_id, configs):
     db = MySQLdb.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
@@ -73,7 +73,7 @@ def lookup_crm_id(se_id, venue_id):
     return crm_id
 
 
-def save_crm_id(se_id, venue_id, crm_id):
+def save_crm_id(se_id, venue_id, crm_id, configs):
     sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"INSERT INTO crm_linker SET se_id=\'%s\', venue_id=%s, crm_id=%s;""" % (
         configs['db_name'],
         configs['db_host'],
@@ -98,12 +98,13 @@ def post_order_to_crm(url, auth_header, data, venue_id):
             sys.exit(1)
 
 
-def post_customer_to_crm(url, auth_header, data, venue_id):
+def post_customer_to_crm(url, auth_header, data, venue_id, configs):
+    se_id = data['ecomCustomer']["externalid"]
     crm_id = None
     r = requests.post(url, headers=auth_header, data=json.dumps(data))
     if r.status_code != 201:
         if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-            crm_id = lookup_crm_id(data['ecomCustomer']["externalid"], venue_id)
+            crm_id = lookup_crm_id(se_id, venue_id, configs)
         else:
             print(r.status_code)
             print(r.json())
@@ -111,7 +112,7 @@ def post_customer_to_crm(url, auth_header, data, venue_id):
     else:
         try:
             crm_id = r.json()["ecomCustomer"]["connectionid"]
-            save_crm_id(data[7], venue_id, int(crm_id))
+            save_crm_id(se_id, venue_id, int(crm_id), configs)
         except Exception:
             print(r.status_code)
             print(r.json())
@@ -162,7 +163,7 @@ def active_campaign_sync():
                 ols = orders[o]
                 # build order and customer JSON and POST the JSON objects to AC server
                 customer_json = build_customer_json(connection, ols)
-                crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id)
+                crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
                 order_json = build_order_json(connection, crm_id, ols)
                 post_order_to_crm(orders_url, auth_header, order_json, venue_id)
 
