@@ -4,11 +4,7 @@ import requests
 import json
 import collections
 import csv
-
 from datetime import datetime
-from dateutil.parser import parse
-from csv import DictWriter
-
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -69,8 +65,8 @@ def active_campaign_push_orders():
     last_crm_sync = configs["last_crm_sync"]
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    #venues = [(1,''),(5,''),(6,''),(7,''),(21,''),(23,''),(53,''),(63,''),(131,''),(133,''),(297,'')]
-    venues = [(297,'2')]
+    #venues = [(1,''), (5,''), (6,''), (7,''), (21,''), (23,''), (53,''), (63,''), (131,''), (133,''), (297,'')]
+    venues = [(297, '2')]
 
     for venue_id, connection in venues:
         # remove old file if exists
@@ -92,7 +88,7 @@ def active_campaign_push_orders():
         )
         os.system(sql_cmd)
 
-        load data from pulled MySQL dump CSV
+        #load data from pulled MySQL dump CSV
         with open(file_path, "r") as file_data:
             reader = csv.reader(file_data, delimiter=',')
             # group the orderlines into orders
@@ -110,5 +106,4 @@ def active_campaign_push_orders():
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
     write_config(configs, dir_path)
-
-    print("Data Pull Completed - " + configs['last_pull'])
+    print("CRM Sync Completed - " + configs['last_crm_sync'])
