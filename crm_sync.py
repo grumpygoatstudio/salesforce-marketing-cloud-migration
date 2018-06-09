@@ -101,18 +101,12 @@ def post_customer_to_crm(url, auth_header, data, venue_id, configs):
     if r.status_code != 201:
         if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
             crm_id = lookup_crm_id(se_id, venue_id, configs)
-        else:
-            print(r.status_code)
-            print(r.json())
-            sys.exit(1)
     else:
         try:
             crm_id = r.json()["ecomCustomer"]["id"]
             save_crm_id(se_id, venue_id, int(crm_id), configs)
         except Exception:
-            print(r.status_code)
-            print(r.json())
-            sys.exit(1)
+            pass
     return crm_id
 
 
@@ -160,8 +154,9 @@ def active_campaign_sync():
                 # build order and customer JSON and POST the JSON objects to AC server
                 customer_json = build_customer_json(connection, ols)
                 crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
-                order_json = build_order_json(connection, crm_id, ols)
-                post_order_to_crm(orders_url, auth_header, order_json, venue_id)
+                if crm_id:
+                    order_json = build_order_json(connection, crm_id, ols)
+                    post_order_to_crm(orders_url, auth_header, order_json, venue_id)
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
