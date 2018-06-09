@@ -4,7 +4,7 @@ import requests
 import json
 import collections
 import csv
-import MySQLdb
+import _mysql
 
 from datetime import datetime
 
@@ -59,32 +59,29 @@ def build_order_json(connection, crm_id, data):
 
 
 def lookup_crm_id(se_id, venue_id, configs):
-    db = MySQLdb.connect(user=configs['db_user'],
+    db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    cursor = db.cursor()
-    query = """SELECT crm_id FROM crm_linker WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
-    cursor.execute(query)
-    crm_id = cursor.fetchone()[0]
-    cursor.close()
+    # cursor = db.cursor()
+    sql = """SELECT crm_id FROM crm_linker WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
+    db.query(sql)
+    r = db.store_result()
+    crm_id = crm_id = int(r.fetch_row()[0][0])
     db.close()
     return crm_id
 
 
 def save_crm_id(se_id, venue_id, crm_id, configs):
-    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"INSERT INTO crm_linker SET se_id=\'%s\', venue_id=%s, crm_id=%s;\"""" % (
-        configs['db_name'],
-        configs['db_host'],
-        configs['db_port'],
-        configs['db_user'],
-        configs['db_password'],
-        se_id,
-        venue_id,
-        crm_id
-    )
-    os.system(sql_cmd)
+    db = _mysql.connect(user=configs['db_user'],
+                        passwd=configs['db_password'],
+                        port=configs['db_port'],
+                        host=configs['db_host'],
+                        db=configs['db_name'])
+    sql = """INSERT INTO crm_linker SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
+    db.query(sql)
+    db.close()
 
 
 def post_order_to_crm(url, auth_header, data, venue_id):
