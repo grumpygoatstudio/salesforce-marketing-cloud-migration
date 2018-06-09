@@ -64,13 +64,10 @@ def lookup_crm_id(se_id, venue_id, configs):
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    # cursor = db.cursor()
     sql = """SELECT crm_id FROM crm_linker WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
     db.query(sql)
     r = db.store_result()
-    crm_id = r.fetch_row()[0]
-    print(crm_id)
-    sys.exit(1)
+    crm_id = int(r.fetch_row()[0][0])
     db.close()
     return crm_id
 
