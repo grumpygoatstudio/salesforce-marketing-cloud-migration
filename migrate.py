@@ -316,6 +316,7 @@ def sql_post_processing():
         configs['db_password']
     )
     os.system(sql_cmd)
+    print("SQL Post-Processing Completed - " + configs['last_pull'])
 
 
 def missing_names():
