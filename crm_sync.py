@@ -4,7 +4,7 @@ import requests
 import json
 import collections
 import csv
-import mysql.connector
+import MySQLdb
 
 from datetime import datetime
 
@@ -59,17 +59,17 @@ def build_order_json(connection, crm_id, data):
 
 
 def lookup_crm_id(se_id, venue_id):
-    cnx = mysql.connector.connect(user=configs['db_user'],
-                                  password=configs['db_password'],
-                                  port=configs['db_port'],
-                                  host=configs['db_host'],
-                                  database=configs['db_name'])
-    cursor = cnx.cursor()
-    query = ("""SELECT crm_id FROM crm_linker WHERE se_id = \'%s\' AND venue_id = %s""")
-    cursor.execute(query, (se_id, venue_id))
-    crm_id = cursor[0][0]
+    db = MySQLdb.connect(user=configs['db_user'],
+                        passwd=configs['db_password'],
+                        port=configs['db_port'],
+                        host=configs['db_host'],
+                        db=configs['db_name'])
+    cursor = db.cursor()
+    query = """SELECT crm_id FROM crm_linker WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
+    cursor.execute(query)
+    crm_id = cursor.fetchone()[0]
     cursor.close()
-    cnx.close()
+    db.close()
     return crm_id
 
 
