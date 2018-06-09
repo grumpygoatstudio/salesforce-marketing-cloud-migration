@@ -91,6 +91,7 @@ def active_campaign_sync():
         #load data from pulled MySQL dump CSV
         with open(file_path, "r") as file_data:
             reader = csv.reader(file_data, delimiter=',')
+            next(reader, None)
             # group the orderlines into orders
             orders = collections.defaultdict(list)
             for ol in reader:
