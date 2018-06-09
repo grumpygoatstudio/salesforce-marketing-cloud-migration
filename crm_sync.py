@@ -21,17 +21,17 @@ def write_config(config, dir_path):
 
 
 def build_customer_json(connection, data):
-    return {
+    return json.dumps({
       "ecomCustomer": {
         "connectionid": str(connection),
         "externalid": str(data[0][6]),
         "email": data[0][2]
       }
-    }
+    })
 
 
 def build_order_json(connection, data):
-    return {
+    return json.dumps({
       "ecomOrder": {
         "externalid": str(data[0][1]),
         "source": "1",
@@ -54,7 +54,7 @@ def build_order_json(connection, data):
         "connectionid": connection,
         "customerid": str(data[0][6])
       }
-    }
+    })
 
 
 def post_to_crm(url, auth_header, data):
