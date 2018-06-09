@@ -23,13 +23,13 @@ def write_config(config, dir_path):
 
 
 def build_customer_json(connection, data):
-    return json.dumps({
+    return {
       "ecomCustomer": {
         "connectionid": connection,
         "externalid": str(data[0][6]),
         "email": data[0][2]
       }
-    })
+    }
 
 
 def build_order_json(connection, crm_id, data):
@@ -100,10 +100,10 @@ def post_order_to_crm(url, auth_header, data, venue_id):
 
 def post_customer_to_crm(url, auth_header, data, venue_id):
     crm_id = None
-    r = requests.post(url, headers=auth_header, data=data)
+    r = requests.post(url, headers=auth_header, data=json.dumps(data))
     if r.status_code != 201:
         if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-            crm_id = lookup_crm_id(data[0][7], int(data[0][17]))
+            crm_id = lookup_crm_id(data['ecomCustomer']["externalid"], venue_id)
         else:
             print(r.status_code)
             print(r.json())
@@ -111,7 +111,7 @@ def post_customer_to_crm(url, auth_header, data, venue_id):
     else:
         try:
             crm_id = r.json()["ecomCustomer"]["connectionid"]
-            save_crm_id(data[0][7], int(data[0][17]), int(crm_id))
+            save_crm_id(data[7], venue_id, int(crm_id))
         except Exception:
             print(r.status_code)
             print(r.json())
