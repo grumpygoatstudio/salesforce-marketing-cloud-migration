@@ -167,7 +167,7 @@ def active_campaign_sync():
                         order_json = build_order_json(connection, crm_id, ols)
                         post_order_to_crm(orders_url, auth_header, order_json, venue_id)
                 else:
-                    print("BUILD CUSTOMER JSON FAILED!", str(data))
+                    print("BUILD CUSTOMER JSON FAILED!", str(ols))
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
