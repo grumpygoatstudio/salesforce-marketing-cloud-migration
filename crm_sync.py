@@ -23,13 +23,17 @@ def write_config(config, dir_path):
 
 
 def build_customer_json(connection, data):
-    return {
-      "ecomCustomer": {
-        "connectionid": connection,
-        "externalid": str(data[0][6]),
-        "email": data[0][2]
-      }
-    }
+    try:
+        cust_data = {
+          "ecomCustomer": {
+            "connectionid": connection,
+            "externalid": str(data[0][6]),
+            "email": data[0][2]
+          }
+        }
+    except Exception:
+        cust_data = None
+    return cust_data
 
 
 def build_order_json(connection, crm_id, data):
@@ -153,11 +157,13 @@ def active_campaign_sync():
                 ols = orders[o]
                 # build order and customer JSON and POST the JSON objects to AC server
                 customer_json = build_customer_json(connection, ols)
-                crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
-                if crm_id:
-                    order_json = build_order_json(connection, crm_id, ols)
-                    post_order_to_crm(orders_url, auth_header, order_json, venue_id)
-
+                if customer_json:
+                    crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
+                    if crm_id:
+                        order_json = build_order_json(connection, crm_id, ols)
+                        post_order_to_crm(orders_url, auth_header, order_json, venue_id)
+                else:
+                    print("BUILD CUSTOMER JSON FAILED!", str(data))
         db = _mysql.connect(user=configs['db_user'],
                             passwd=configs['db_password'],
                             port=configs['db_port'],
