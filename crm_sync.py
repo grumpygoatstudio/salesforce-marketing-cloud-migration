@@ -168,14 +168,6 @@ def active_campaign_sync():
                         post_order_to_crm(orders_url, auth_header, order_json, venue_id)
                 else:
                     print("BUILD CUSTOMER JSON FAILED!", str(data))
-        db = _mysql.connect(user=configs['db_user'],
-                            passwd=configs['db_password'],
-                            port=configs['db_port'],
-                            host=configs['db_host'],
-                            db=configs['db_name'])
-        sql = """UPDATE crm_linker SET sys_entry_date = \'%s\' WHERE venue_id = %s AND (sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != '' AND customerid != 'None';""" % (datetime.today().strftime("%Y-%m-%d %H:%M:%S"), venue_id, configs["last_crm_sync"].replace("T"," "))
-        db.query(sql)
-        db.close()
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
