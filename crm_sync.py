@@ -71,7 +71,11 @@ def lookup_crm_id(se_id, venue_id, configs):
     sql = """SELECT crm_id FROM crm_linker WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
     db.query(sql)
     r = db.store_result()
-    crm_id = int(r.fetch_row()[0][0])
+    try:
+        crm_id = int(r.fetch_row()[0][0])
+    except Exception:
+        crm_id = None
+        print("CRM_ID LOOKUP FAILED!!", se_id, venue_id)
     db.close()
     return crm_id
 
@@ -133,7 +137,7 @@ def active_campaign_sync():
         except OSError:
             pass
         # download CSV file from MySQL DB
-        sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s AND (sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\');\" > %s""" % (
+        sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s AND (sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != ''AND customerid != 'None';\" > %s""" % (
             configs['db_name'],
             configs['db_host'],
             configs['db_port'],
