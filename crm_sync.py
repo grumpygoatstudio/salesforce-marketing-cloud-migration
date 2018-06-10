@@ -68,7 +68,7 @@ def lookup_crm_id(se_id, venue_id, configs):
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    sql = """SELECT crm_id FROM crm_linker WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
+    sql = """SELECT crm_id FROM crm_linker_orders WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
     db.query(sql)
     r = db.store_result()
     try:
@@ -86,7 +86,7 @@ def save_crm_id(se_id, venue_id, crm_id, configs):
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    sql = """INSERT INTO crm_linker SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
+    sql = """INSERT INTO crm_linker_orders SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
     db.query(sql)
     db.close()
 
