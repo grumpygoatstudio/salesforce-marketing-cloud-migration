@@ -97,11 +97,12 @@ def active_campaign_sync():
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    db.query("""SELECT * FROM contacts_mv WHERE sys_entry_date = '0000-00-00 00:00:00' AND email_address != '' AND subscriber_key != '';""")
-    contacts = db.store_result()
-    contact_info = ()
-    while contact_info:
-        contact_info = r.fetch_row(how=2)
+    db.query("""SELECT * FROM contacts_mv WHERE sys_entry_date = '0000-00-00 00:00:00' AND email_address != '' AND subscriber_key != ''""")
+    r = db.store_result()
+    more_rows = True
+    while more_rows:
+        contact_info = r.fetch_row()[0]
+        print(contact_info)
         if contact_info:
             # build contact JSON
             contact_data = build_contact_data(contact_info, configs["Api-Token"])
@@ -111,6 +112,8 @@ def active_campaign_sync():
                 print("CONTACT LOOKUP FAILED!", str(contact_data))
             else:
                 print("BUILD CONTACT DATA FAILED!", str(contact_info))
+        else:
+            more_rows = False
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_contacts_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
