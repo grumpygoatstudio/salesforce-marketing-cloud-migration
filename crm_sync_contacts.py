@@ -31,7 +31,7 @@ def build_contact_data(data, api_key):
     return d
 
 
-def lookup_crm_id_by_api(data, auth_headers, api_key):
+def lookup_crm_id_by_api(data, auth_headers):
     data["api_action"] = "contact_view_email"
     r = requests.post(url, headers=auth_header, data=data)
     if r.status_code == 200:
@@ -101,7 +101,7 @@ def active_campaign_sync():
         pass
 
     # download CSV file from MySQL DB
-    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM contacts_mv WHERE sys_entry_date = '0000-00-00 00:00:00' AND email != '' AND subscriber_key != '';\" > %s""" % (
+    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM contacts_mv WHERE sys_entry_date = '0000-00-00 00:00:00' AND email_address != '' AND subscriber_key != '';\" > %s""" % (
         configs['db_name'],
         configs['db_host'],
         configs['db_port'],
@@ -117,7 +117,7 @@ def active_campaign_sync():
         next(reader, None)
         for contact_info in reader:
             # build contact JSON
-            contact_data = build_contact_data(contact_info)
+            contact_data = build_contact_data(contact_info, configs["Api-Token"])
             if contact_data:
                 # PUT/POST the JSON objects to AC server
                 crm_id = update_contact_in_crm(contacts_url, auth_header, contact_data, configs)
