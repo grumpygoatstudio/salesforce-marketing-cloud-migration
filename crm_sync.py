@@ -37,7 +37,7 @@ def build_customer_json(connection, data):
 
 
 def build_order_json(connection, crm_id, data):
-    return json.dumps({
+    return {
       "ecomOrder": {
         "externalid": str(data[0][1]),
         "email": data[0][2],
@@ -45,7 +45,7 @@ def build_order_json(connection, crm_id, data):
         "orderProducts": [
           {
             # name is a placeholder for the "<show number> - <event name>"
-            "name": str(ol[10]) + " - " + unicode(ol[-3], errors='backslashreplace'),
+            "name": str(ol[10]) + " - " + str(unicode(ol[-3], errors='ignore')),
             "price": str(ol[9]),
             "quantity": "1",
             # category is a placeholder for ticket type
@@ -60,16 +60,19 @@ def build_order_json(connection, crm_id, data):
         "connectionid": connection,
         "customerid": crm_id
       }
-    })
+    }
 
 
-def lookup_crm_id(se_id, venue_id, configs):
+def lookup_crm_id(se_id, venue_id, configs, t):
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    sql = """SELECT crm_id FROM crm_linker_orders WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
+    if t == 'o':
+        sql = """SELECT crm_id FROM crm_linker_orders WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
+    else:
+        sql = """SELECT crm_id FROM crm_linker_custs WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
     db.query(sql)
     r = db.store_result()
     try:
@@ -81,22 +84,27 @@ def lookup_crm_id(se_id, venue_id, configs):
     return crm_id
 
 
-def save_crm_id(se_id, venue_id, crm_id, configs):
+def save_crm_id(se_id, venue_id, crm_id, configs, t):
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    sql = """INSERT INTO crm_linker_orders SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
+    if t == 'o':
+        sql = """INSERT INTO crm_linker_orders SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
+    else:
+        sql = """INSERT INTO crm_linker_custs SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
     db.query(sql)
     db.close()
 
 
-def post_order_to_crm(url, auth_header, data, venue_id):
-    r = requests.post(url, headers=auth_header, data=data)
+def post_order_to_crm(url, auth_header, data, venue_id, configs):
+    se_id = data['ecomOrder']["externalid"]
+    r = requests.post(url, headers=auth_header, data=json.dumps(data))
     if r.status_code != 201:
         if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-            requests.put(url, headers=auth_header, data=data)
+            crm_id = lookup_crm_id(se_id, venue_id, configs, 'o')
+            requests.put(url+"/"+crm_id, headers=auth_header, data=json.dumps(data))
         else:
             print(r.status_code)
             print(r.json())
@@ -109,7 +117,7 @@ def post_customer_to_crm(url, auth_header, data, venue_id, configs):
     r = requests.post(url, headers=auth_header, data=json.dumps(data))
     if r.status_code != 201:
         if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-            crm_id = lookup_crm_id(se_id, venue_id, configs)
+            crm_id = lookup_crm_id(se_id, venue_id, configs, 'c')
     else:
         try:
             crm_id = r.json()["ecomCustomer"]["id"]
@@ -180,7 +188,7 @@ def active_campaign_sync(new_venue=None):
                     print(crm_id)
                     if crm_id:
                         order_json = build_order_json(connection, str(crm_id), ols)
-                        post_order_to_crm(orders_url, auth_header, order_json, venue_id)
+                        post_order_to_crm(orders_url, auth_header, order_json, venue_id, configs)
                 else:
                     print("BUILD CUSTOMER JSON FAILED!", str(ols))
 
