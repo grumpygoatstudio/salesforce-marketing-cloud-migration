@@ -104,7 +104,7 @@ def post_order_to_crm(url, auth_header, data, venue_id, configs):
     if r.status_code != 201:
         if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
             crm_id = lookup_crm_id(se_id, venue_id, configs, 'o')
-            requests.put(url+"/"+crm_id, headers=auth_header, data=json.dumps(data))
+            requests.put(url+"/"+str(crm_id), headers=auth_header, data=json.dumps(data))
         else:
             try:
                 crm_id = r.json()["ecomOrder"]["id"]
