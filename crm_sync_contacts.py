@@ -23,6 +23,7 @@ def write_config(config, dir_path):
 
 
 def build_contact_data(data, api_key):
+    print(data)
     d = collections.OrderedDict()
     d["api_key"] = api_key
     d["api_action"] = "contact_edit"
@@ -36,7 +37,6 @@ def lookup_crm_id_by_api(url, data, auth_header):
     data["api_action"] = "contact_view_email"
     r = requests.post(url, headers=auth_header, data=data)
     if r.status_code == 200 and r.json()["result_code"] != 0:
-        print(r.json())
         return r.json()["id"]
     else:
         return None
@@ -80,9 +80,7 @@ def update_contact_in_crm(url, auth_header, data, configs):
     save_crm_id(data["email"], crm_id, configs)
     print(data["email"], crm_id)
     data['id'] = crm_id
-    r = requests.post(url, headers=auth_header, data=data)
-    print(r.status_code)
-    print(r.text)
+    #r = requests.post(url, headers=auth_header, data=data)
     return crm_id
 
 
@@ -93,28 +91,18 @@ def active_campaign_sync():
     last_crm_contacts_sync = configs["last_crm_contacts_sync"]
     contacts_url = "https://heliumcomedy.api-us1.com/admin/api.php"
 
-    try:
-        file_path = os.path.join(dir_path, 'crm-data', 'contacts-data-dump.csv')
-        os.remove(file_path)
-    except OSError:
-        pass
-
-    # download CSV file from MySQL DB
-    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM contacts_mv WHERE sys_entry_date = '0000-00-00 00:00:00' AND email_address != '' AND subscriber_key != '';\" > %s""" % (
-        configs['db_name'],
-        configs['db_host'],
-        configs['db_port'],
-        configs['db_user'],
-        configs['db_password'],
-        file_path
-    )
-    os.system(sql_cmd)
-
-    #load data from pulled MySQL dump CSV
-    with open(file_path, "rU") as file_data:
-        reader = csv.reader(file_data, delimiter='\t')
-        next(reader, None)
-        for contact_info in reader:
+    #load data from MySQL
+    db = _mysql.connect(user=configs['db_user'],
+                        passwd=configs['db_password'],
+                        port=configs['db_port'],
+                        host=configs['db_host'],
+                        db=configs['db_name'])
+    db.query("""SELECT * FROM contacts_mv WHERE sys_entry_date = '0000-00-00 00:00:00' AND email_address != '' AND subscriber_key != '';""")
+    contacts = db.store_result()
+    contact_info = ()
+    while contact_info:
+        contact_info = r.fetch_row(how=2)
+        if contact_info:
             # build contact JSON
             contact_data = build_contact_data(contact_info, configs["Api-Token"])
             if contact_data:
