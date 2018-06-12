@@ -139,8 +139,8 @@ def active_campaign_sync(new_venue=None):
             pass
         # download CSV file from MySQL DB
         if venue_id == new_venue:
-            sql = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s sys_entry_date = '0000-00-00 00:00:00' AND email != ''AND customerid != 'None';\" > %s"""
-                sql_cmd = sql % (
+            sql = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date = '0000-00-00 00:00:00' AND email != '' AND customerid != 'None';\" > %s"""
+            sql_cmd = sql % (
                 configs['db_name'],
                 configs['db_host'],
                 configs['db_port'],
