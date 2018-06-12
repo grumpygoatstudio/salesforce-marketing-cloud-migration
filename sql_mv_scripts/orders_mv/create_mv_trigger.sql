@@ -27,11 +27,11 @@ BEGIN
 			o.comped AS comped,
             o.not_comped AS not_comped,
             o.booking_type AS booking_type,
-            o.addons AS addons,
             o.new_customer AS new_customer,
             v.id AS venue_id,
             e.name AS event_name,
-            o.sys_entry_date AS sys_entry_date
+            o.sys_entry_date AS sys_entry_date,
+			o.addons AS addons
 		FROM seatengine.orders_processed o
 		JOIN seatengine.orderlines_processed ol ON (o.order_number = ol.order_number)
 		JOIN seatengine.shows_processed s ON (s.id = o.show_id)

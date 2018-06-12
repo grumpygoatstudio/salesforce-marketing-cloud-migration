@@ -44,8 +44,8 @@ def build_order_json(connection, crm_id, data):
         "orderNumber": str(data[0][3]),
         "orderProducts": [
           {
-            # name is a placeholder for the show number and event name
-            "name": str(ol[10]) + " - " + ol[17],
+            # name is a placeholder for the "<show number> - <event name>"
+            "name": str(ol[10]) + " - " + unicode(ol[-3], errors='backslashreplace'),
             "price": str(ol[9]),
             "quantity": "1",
             # category is a placeholder for ticket type
@@ -177,8 +177,9 @@ def active_campaign_sync(new_venue=None):
                 customer_json = build_customer_json(connection, ols)
                 if customer_json:
                     crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
+                    print(crm_id)
                     if crm_id:
-                        order_json = build_order_json(connection, crm_id, ols)
+                        order_json = build_order_json(connection, str(crm_id), ols)
                         post_order_to_crm(orders_url, auth_header, order_json, venue_id)
                 else:
                     print("BUILD CUSTOMER JSON FAILED!", str(ols))
