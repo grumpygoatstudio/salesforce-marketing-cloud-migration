@@ -24,10 +24,10 @@ def write_config(config, dir_path):
 def build_contact_json(connection, data):
     try:
         cust_data = {
-          "ecomcontact": {
+          "contact": {
             "connectionid": connection,
-            "externalid": str(data[0][6]),
-            "email": data[0][2]
+            "externalid": str(data[6]),
+            "email": data[2]
           }
         }
     except Exception:
@@ -83,10 +83,9 @@ def update_contact_in_crm(url, auth_header, data, configs):
 def active_campaign_sync():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
-    auth_header = {e: configs[e] for e in configs if "Api-Token" in e}
-    auth_header["Content-Type"] = "application/json"
+    auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
     last_crm_contacts_sync = configs["last_crm_contacts_sync"]
-    contacts_url = configs['Api-Url'] + 'ecomUsers'
+    contacts_url = "https://heliumcomedy.api-us1.com/admin/api.php?api_action=contact_edit&api_tokent=" + configs["Api-Token"]
 
     try:
         file_path = os.path.join(dir_path, 'crm-data', 'contacts-data-dump.csv')
@@ -95,7 +94,7 @@ def active_campaign_sync():
         pass
 
     # download CSV file from MySQL DB
-    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM contacts_mv WHERE AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != '' AND subscriber_key != '';\" > %s""" % (
+    sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM contacts_mv WHERE sys_entry_date = '0000-00-00 00:00:00' AND email != '' AND subscriber_key != '';\" > %s""" % (
         configs['db_name'],
         configs['db_host'],
         configs['db_port'],

@@ -30,6 +30,7 @@ BEGIN
             o.addons AS addons,
             o.new_customer AS new_customer,
             v.id AS venue_id,
+            e.name AS event_name,
             o.sys_entry_date AS sys_entry_date
 		FROM seatengine.orders_processed o
 		JOIN seatengine.orderlines_processed ol ON (o.order_number = ol.order_number)

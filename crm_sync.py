@@ -44,11 +44,12 @@ def build_order_json(connection, crm_id, data):
         "orderNumber": str(data[0][3]),
         "orderProducts": [
           {
-            "name": ol[8],
+            # name is a placeholder for the show number and event name
+            "name": str(ol[10]) + " - " + ol[17],
             "price": str(ol[9]),
             "quantity": "1",
-            # category is a placeholder for order show_id
-            "category": str(ol[10])
+            # category is a placeholder for ticket type
+            "category": ol[8]
           } for ol in data
         ],
         "orderDate": str(data[0][4]),
@@ -95,7 +96,7 @@ def post_order_to_crm(url, auth_header, data, venue_id):
     r = requests.post(url, headers=auth_header, data=data)
     if r.status_code != 201:
         if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-            pass
+            requests.put(url, headers=auth_header, data=data)
         else:
             print(r.status_code)
             print(r.json())
@@ -118,7 +119,7 @@ def post_customer_to_crm(url, auth_header, data, venue_id, configs):
     return crm_id
 
 
-def active_campaign_sync():
+def active_campaign_sync(new_venue=None):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "Api-Token" in e}
@@ -137,7 +138,11 @@ def active_campaign_sync():
         except OSError:
             pass
         # download CSV file from MySQL DB
-        sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s AND (sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != ''AND customerid != 'None';\" > %s""" % (
+        if venue_id == new_venue:
+            sql = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s sys_entry_date = '0000-00-00 00:00:00' AND email != ''AND customerid != 'None';\" > %s"""
+        else:
+            sql = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''AND customerid != 'None';\" > %s"""
+        sql_cmd = sql % (
             configs['db_name'],
             configs['db_host'],
             configs['db_port'],
