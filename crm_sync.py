@@ -140,18 +140,27 @@ def active_campaign_sync(new_venue=None):
         # download CSV file from MySQL DB
         if venue_id == new_venue:
             sql = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s sys_entry_date = '0000-00-00 00:00:00' AND email != ''AND customerid != 'None';\" > %s"""
+                sql_cmd = sql % (
+                configs['db_name'],
+                configs['db_host'],
+                configs['db_port'],
+                configs['db_user'],
+                configs['db_password'],
+                str(venue_id),
+                file_path
+            )
         else:
             sql = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''AND customerid != 'None';\" > %s"""
-        sql_cmd = sql % (
-            configs['db_name'],
-            configs['db_host'],
-            configs['db_port'],
-            configs['db_user'],
-            configs['db_password'],
-            str(venue_id),
-            last_crm_sync.replace('T', ' '),
-            file_path
-        )
+            sql_cmd = sql % (
+                configs['db_name'],
+                configs['db_host'],
+                configs['db_port'],
+                configs['db_user'],
+                configs['db_password'],
+                str(venue_id),
+                last_crm_sync.replace('T', ' '),
+                file_path
+            )
         os.system(sql_cmd)
 
         #load data from pulled MySQL dump CSV
