@@ -3,6 +3,7 @@ import sys
 import requests
 import json
 import csv
+import collections
 import _mysql
 
 from datetime import datetime
@@ -31,15 +32,13 @@ def build_contact_data(data, api_key):
     return d
 
 
-def lookup_crm_id_by_api(data, auth_headers):
+def lookup_crm_id_by_api(url, data, auth_header):
     data["api_action"] = "contact_view_email"
     r = requests.post(url, headers=auth_header, data=data)
-    if r.status_code == 200:
+    if r.status_code == 200 and r.json()["result_code"] != 0:
+        print(r.json())
         return r.json()["id"]
     else:
-        print(r.status_code)
-        print(r.text)
-        sys.exit(0)
         return None
 
 
@@ -75,7 +74,7 @@ def save_crm_id(email, crm_id, configs):
 def update_contact_in_crm(url, auth_header, data, configs):
     # crm_id = lookup_crm_id_by_sql(data["email"], configs)
     # if not crm_id:
-    crm_id = lookup_crm_id_by_api()
+    crm_id = lookup_crm_id_by_api(url, data, auth_header)
     if not crm_id:
         return None
     save_crm_id(data["email"], crm_id, configs)
