@@ -62,16 +62,14 @@ def build_order_json(connection, crm_id, data):
     }
 
 
-def lookup_crm_id(se_id, venue_id, configs, t):
+def lookup_crm_id(se_id, venue_id, configs):
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    if t == 'ecomOrder':
-        sql = """SELECT crm_id FROM crm_linker_orders WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
-    else:
-        sql = """SELECT crm_id FROM crm_linker_custs WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
+
+    sql = """SELECT crm_id FROM crm_linker_custs WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
     db.query(sql)
     r = db.store_result()
     try:
@@ -82,16 +80,13 @@ def lookup_crm_id(se_id, venue_id, configs, t):
     return crm_id
 
 
-def save_crm_id(se_id, venue_id, crm_id, configs, t):
+def save_crm_id(se_id, venue_id, crm_id, configs):
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    if t == 'ecomOrder':
-        sql = """INSERT INTO crm_linker_orders SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
-    else:
-        sql = """INSERT INTO crm_linker_custs SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
+    sql = """INSERT INTO crm_linker_custs SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
     db.query(sql)
     db.close()
 
@@ -102,7 +97,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
     if r.status_code != 201:
         if obj_type == 'ecomCustomer':
             if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-                crm_id = lookup_crm_id(se_id, venue_id, configs, obj_type)
+                crm_id = lookup_crm_id(se_id, venue_id, configs)
         else:
             crm_id = None
     else:
@@ -110,7 +105,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
             try:
                 print("New Customer Created", se_id, venue_id, int(crm_id))
                 crm_id = r.json()[obj_type]["id"]
-                save_crm_id(se_id, venue_id, int(crm_id), configs, obj_type)
+                save_crm_id(se_id, venue_id, int(crm_id), configs)
             except Exception:
                 pass
         else:
