@@ -147,7 +147,7 @@ def active_campaign_sync(new_venue=297):
                             host=configs['db_host'],
                             db=configs['db_name'])
         if venue_id == new_venue:
-            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' AND sys_entry_date > \'%s\') AND email != '' AND customerid != 'None'""" % (
+            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != '' AND customerid != 'None'""" % (
                 str(venue_id), last_crm_sync.replace('T', ' ')
             )
         else:
@@ -160,10 +160,10 @@ def active_campaign_sync(new_venue=297):
         orders = collections.defaultdict(list)
         more_rows = True
         while more_rows:
-            ol = r.fetch_row(how=2)[0]
-            if ol:
+            try:
+                ol = r.fetch_row(how=2)[0]
                 orders[ol["email"]].append(ol)
-            else:
+            except IndexError:
                 more_rows = False
         for o in orders:
             ols = orders[o]
