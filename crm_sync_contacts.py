@@ -38,18 +38,18 @@ def build_contact_data(data, api_key):
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_SATURDAYS%,0]"] = str(data['contacts_mv.shows_attended_S'])
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_SUNDAYS%,0]"] = str(data['contacts_mv.shows_attended_U'])
 
-    d["field[%FIRST_SHOW_ATTENDED_DATE%,0]"] = str(data['contacts_mv.first_show_attended'])
+    d["field[%FIRST_SHOW_ATTENDED_DATE%,0]"] = str(data['contacts_mv.first_show_attended']).replace('T', ' ')
     d["field[%FIRST_SHOW_ATTENDED_NAME%,0]"] = str(data['contacts_mv.first_event_title'])
     # d['FIRST_EVENT_VENUE'] = str(data['contacts_mv.first_event_venue'])
     # d['LAST_EVENT_VENUE'] = str(data['contacts_mv.last_event_venue'])
-    d["field[%LAST_SHOW_ATTENDED_DATE%,0]"] = str(data['contacts_mv.last_show_attended'])
+    d["field[%LAST_SHOW_ATTENDED_DATE%,0]"] = str(data['contacts_mv.last_show_attended']).replace('T', ' ')
     d["field[%LAST_SHOW_ATTENDED_NAME%,0]"] = str(data['contacts_mv.last_event_title'])
 
-    d["field[%NEXT_SHOW_ATTENDING_DATE%,0]"] = str(data['contacts_mv.next_show_attending'])
+    d["field[%NEXT_SHOW_ATTENDING_DATE%,0]"] = str(data['contacts_mv.next_show_attending']).replace('T', ' ')
     d["field[%NEXT_SHOW_ATTENDING_NAME%,0]"] = str(data['contacts_mv.next_event_title'])
 
-    d["field[%LAST_ORDER_DATE%,0]"]= str(data['contacts_mv.last_ordered_date'])
-    d["field[%LAST_COMP_SHOW_DATE%,0]"] = str(data['contacts_mv.last_comp_show_date'])
+    d["field[%LAST_ORDER_DATE%,0]"]= str(data['contacts_mv.last_ordered_date']).replace('T', ' ')
+    d["field[%LAST_COMP_SHOW_DATE%,0]"] = str(data['contacts_mv.last_comp_show_date']).replace('T', ' ')
     d["field[%TOTAL_NUMBER_OF_COMP_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_comp_tickets'])
     d["field[%TOTAL_NUMBER_OF_PAID_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_paid_tickets'])
     d["field[%TOTAL_NUMBER_OF_COMP_ORDERS%,0]"] = str(data['contacts_mv.total_lifetime_comp_orders'])

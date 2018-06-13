@@ -3,7 +3,6 @@ import sys
 import requests
 import json
 import collections
-import csv
 import _mysql
 
 from datetime import datetime
@@ -28,7 +27,7 @@ def build_customer_json(connection, data):
           "ecomCustomer": {
             "connectionid": connection,
             "externalid": str(data[0][6]),
-            "email": data[0][2]
+            "email": data[0]["email"]
           }
         }
     except Exception:
@@ -39,23 +38,23 @@ def build_customer_json(connection, data):
 def build_order_json(connection, crm_id, data):
     return {
       "ecomOrder": {
-        "externalid": str(data[0][1]),
-        "email": data[0][2],
-        "orderNumber": str(data[0][3]),
+        "externalid": str(data[0]["externalid"]),
+        "email": data[0]["email"],
+        "orderNumber": str(data[0]["orderNumber"]),
         "orderProducts": [
           {
             # name is a placeholder for the "<show number> - <event name>"
-            "name": str(ol[10]) + " - " + str(unicode(ol[-3], errors='ignore')),
-            "price": str(ol[9]),
+            "name": str(ol["orderproduct_category"]) + " - " + str(unicode(ol["event_name"], errors='ignore')),
+            "price": str(ol["orderproduct_price"]),
             "quantity": "1",
             # category is a placeholder for ticket type
-            "category": ol[8]
+            "category": ol["orderproduct_name"]
           } for ol in data
         ],
-        "orderDate": str(data[0][4]),
+        "orderDate": str(data[0]["orderDate"]),
         # shippingMethod is a placeholder for order payment method
-        "shippingMethod": data[0][7],
-        "totalPrice": str(sum([int(ol[9]) for ol in data])),
+        "shippingMethod": data[0]["shippingMethod"],
+        "totalPrice": str(data[0]["totalPrice"]),
         "currency": "USD",
         "connectionid": connection,
         "customerid": crm_id
@@ -129,7 +128,7 @@ def post_customer_to_crm(url, auth_header, data, venue_id, configs):
     return crm_id
 
 
-def active_campaign_sync(new_venue=None):
+def active_campaign_sync(new_venue=297):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "Api-Token" in e}
@@ -141,58 +140,43 @@ def active_campaign_sync(new_venue=None):
     venues = [(297, '2')]
 
     for venue_id, connection in venues:
-        # remove old file if exists
-        try:
-            file_path = os.path.join(dir_path, 'crm-data', str(venue_id) + '.csv')
-            os.remove(file_path)
-        except OSError:
-            pass
         # download CSV file from MySQL DB
+        db = _mysql.connect(user=configs['db_user'],
+                            passwd=configs['db_password'],
+                            port=configs['db_port'],
+                            host=configs['db_host'],
+                            db=configs['db_name'])
         if venue_id == new_venue:
-            sql = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date = '0000-00-00 00:00:00' AND email != '' AND customerid != 'None';\" > %s"""
-            sql_cmd = sql % (
-                configs['db_name'],
-                configs['db_host'],
-                configs['db_port'],
-                configs['db_user'],
-                configs['db_password'],
-                str(venue_id),
-                file_path
+            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' AND sys_entry_date > \'%s\') AND email != '' AND customerid != 'None'""" % (
+                str(venue_id), last_crm_sync.replace('T', ' ')
             )
         else:
-            sql = """mysql %s -h %s -P %s -u %s --password=%s -e \"SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''AND customerid != 'None';\" > %s"""
-            sql_cmd = sql % (
-                configs['db_name'],
-                configs['db_host'],
-                configs['db_port'],
-                configs['db_user'],
-                configs['db_password'],
-                str(venue_id),
-                last_crm_sync.replace('T', ' '),
-                file_path
+            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''AND customerid != 'None'""" % (
+                str(venue_id), last_crm_sync.replace('T', ' ')
             )
-        os.system(sql_cmd)
-
-        #load data from pulled MySQL dump CSV
-        with open(file_path, "rU") as file_data:
-            reader = csv.reader(file_data, delimiter='\t')
-            next(reader, None)
-            # group the orderlines into orders
-            orders = collections.defaultdict(list)
-            for ol in reader:
-                orders[ol[3]].append(ol)
-            for o in orders:
-                ols = orders[o]
-                # build order and customer JSON and POST the JSON objects to AC server
-                customer_json = build_customer_json(connection, ols)
-                if customer_json:
-                    crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
-                    print(crm_id)
-                    if crm_id:
-                        order_json = build_order_json(connection, str(crm_id), ols)
-                        post_order_to_crm(orders_url, auth_header, order_json, venue_id, configs)
-                else:
-                    print("BUILD CUSTOMER JSON FAILED!", str(ols))
+        db.query(sql)
+        r = db.store_result()
+        # group the orderlines into orders
+        orders = collections.defaultdict(list)
+        more_rows = True
+        while more_rows:
+            ol = r.fetch_row(how=2)[0]
+            if ol:
+                orders[ol["email"]].append(ol)
+            else:
+                more_rows = False
+        for o in orders:
+            ols = orders[o]
+            # build order and customer JSON and POST the JSON objects to AC server
+            customer_json = build_customer_json(connection, ols)
+            if customer_json:
+                crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
+                print(crm_id)
+                if crm_id:
+                    order_json = build_order_json(connection, str(crm_id), ols)
+                    post_order_to_crm(orders_url, auth_header, order_json, venue_id, configs)
+            else:
+                print("BUILD CUSTOMER JSON FAILED!", str(ols))
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")

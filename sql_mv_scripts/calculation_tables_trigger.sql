@@ -216,6 +216,7 @@ BEGIN
                 SUM(ol.ticket_price) AS total_revenue -- Total Revenue from customerid
 			FROM seatengine.orders_processed o
 			JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
+			WHERE o.not_comped = 1
 			GROUP BY subscriber_key
 		;
         
