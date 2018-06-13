@@ -108,11 +108,13 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
     else:
         if obj_type == 'ecomCustomer':
             try:
+                print("New Customer Created", se_id, venue_id, int(crm_id))
                 crm_id = r.json()[obj_type]["id"]
                 save_crm_id(se_id, venue_id, int(crm_id), configs, obj_type)
             except Exception:
                 pass
         else:
+            print("New Order Created", se_id, venue_id)
             crm_id = None
     return crm_id
 
