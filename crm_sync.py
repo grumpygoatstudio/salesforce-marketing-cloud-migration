@@ -68,7 +68,7 @@ def lookup_crm_id(se_id, venue_id, configs, t):
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    if t == 'o':
+    if t == 'ecomOrder':
         sql = """SELECT crm_id FROM crm_linker_orders WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
     else:
         sql = """SELECT crm_id FROM crm_linker_custs WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
@@ -78,7 +78,6 @@ def lookup_crm_id(se_id, venue_id, configs, t):
         crm_id = int(r.fetch_row()[0][0])
     except Exception:
         crm_id = None
-        print("CRM_ID LOOKUP FAILED!!", se_id, venue_id)
     db.close()
     return crm_id
 
@@ -89,7 +88,7 @@ def save_crm_id(se_id, venue_id, crm_id, configs, t):
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    if t == 'o':
+    if t == 'ecomOrder':
         sql = """INSERT INTO crm_linker_orders SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
     else:
         sql = """INSERT INTO crm_linker_custs SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
@@ -97,32 +96,18 @@ def save_crm_id(se_id, venue_id, crm_id, configs, t):
     db.close()
 
 
-def post_order_to_crm(url, auth_header, data, venue_id, configs):
-    se_id = data['ecomOrder']["externalid"]
+def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecomCustomer'):
+    se_id = data[obj_type]["externalid"]
     r = requests.post(url, headers=auth_header, data=json.dumps(data))
     if r.status_code != 201:
         if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-            crm_id = lookup_crm_id(se_id, venue_id, configs, 'o')
-            requests.put(url+"/"+str(crm_id), headers=auth_header, data=json.dumps(data))
-        else:
-            try:
-                crm_id = r.json()["ecomOrder"]["id"]
-                save_crm_id(se_id, venue_id, int(crm_id), configs, 'o')
-            except Exception:
-                pass
-
-
-def post_customer_to_crm(url, auth_header, data, venue_id, configs):
-    se_id = data['ecomCustomer']["externalid"]
-    crm_id = None
-    r = requests.post(url, headers=auth_header, data=json.dumps(data))
-    if r.status_code != 201:
-        if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-            crm_id = lookup_crm_id(se_id, venue_id, configs, 'c')
+            crm_id = lookup_crm_id(se_id, venue_id, configs, obj_type)
+            if obj_type = "ecomOrder":
+                requests.put(url+"/"+str(crm_id), headers=auth_header, data=json.dumps(data))
     else:
         try:
-            crm_id = r.json()["ecomCustomer"]["id"]
-            save_crm_id(se_id, venue_id, int(crm_id), configs, 'c')
+            crm_id = r.json()[obj_type]["id"]
+            save_crm_id(se_id, venue_id, int(crm_id), configs, obj_type)
         except Exception:
             pass
     return crm_id
@@ -171,10 +156,10 @@ def active_campaign_sync(new_venue=297):
             # build order and customer JSON and POST the JSON objects to AC server
             customer_json = build_customer_json(connection, ols)
             if customer_json:
-                crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
+                crm_id = post_object_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
                 if crm_id:
                     order_json = build_order_json(connection, str(crm_id), ols)
-                    post_order_to_crm(orders_url, auth_header, order_json, venue_id, configs)
+                    post_object_to_crm(orders_url, auth_header, order_json, venue_id, configs, 'ecomOrder')
             else:
                 print("BUILD CUSTOMER JSON FAILED!", str(ols))
 
