@@ -84,11 +84,8 @@ def lookup_crm_id_by_api(url, data, auth_header):
 
 
 def update_contact_in_crm(url, auth_header, data, configs):
-    # crm_id = lookup_crm_id_by_sql(data["email"], configs)
-    # if not crm_id:
     crm_id = lookup_crm_id_by_api(url, data, auth_header)
     if crm_id:
-        # save_crm_id(data["email"], crm_id, configs)
         data['id'] = crm_id
         r = requests.post(url, headers=auth_header, data=data)
         if r.status_code == 200 and r.json()["result_code"] != 0:
@@ -105,25 +102,20 @@ def active_campaign_sync():
     last_crm_contacts_sync = configs["last_crm_contacts_sync"]
     contacts_url = "https://heliumcomedy.api-us1.com/admin/api.php"
 
-    #load data from MySQL
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    db.query("""SELECT * FROM contacts_mv WHERE sys_entry_date = '0000-00-00 00:00:00' AND email_address != '' AND subscriber_key != ''""")
+    db.query("""SELECT * FROM contacts_mv WHERE email_address != ''""")
     r = db.store_result()
     more_rows = True
     while more_rows:
         contact_info = r.fetch_row(how=2)[0]
         if contact_info:
-            # build contact JSON
             contact_data = build_contact_data(contact_info, configs["Api-Token"])
             if contact_data:
-                # PUT/POST the JSON objects to AC server
-                crm_id = update_contact_in_crm(contacts_url, auth_header, contact_data, configs)
-                if crm_id:
-                    print("CONTACT UPDATED! :) ", str(contact_data))
+                update_contact_in_crm(contacts_url, auth_header, contact_data, configs)
             else:
                 print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
         else:
