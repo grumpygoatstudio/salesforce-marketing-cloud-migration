@@ -120,12 +120,11 @@ def active_campaign_sync():
     db.close()
 
     for contact in contacts:
-            contact_data = build_contact_data(contact, configs["Api-Token"])
-            if contact_data:
-                update_contact_in_crm(contacts_url, auth_header, contact_data, configs)
-            else:
-                print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
-        except IndexError:
+        contact_data = build_contact_data(contact, configs["Api-Token"])
+        if contact_data:
+            update_contact_in_crm(contacts_url, auth_header, contact_data, configs)
+        else:
+            print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
 
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
