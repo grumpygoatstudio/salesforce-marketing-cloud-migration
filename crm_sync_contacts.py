@@ -111,14 +111,14 @@ def active_campaign_sync():
     r = db.store_result()
     more_rows = True
     while more_rows:
-        contact_info = r.fetch_row(how=2)[0]
-        if contact_info:
+        try:
+            contact_info = r.fetch_row(how=2)[0]
             contact_data = build_contact_data(contact_info, configs["Api-Token"])
             if contact_data:
                 update_contact_in_crm(contacts_url, auth_header, contact_data, configs)
             else:
                 print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
-        else:
+        except IndexError:
             more_rows = False
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
