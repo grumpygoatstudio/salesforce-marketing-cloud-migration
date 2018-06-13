@@ -27,7 +27,7 @@ def build_customer_json(connection, data):
           "ecomCustomer": {
             "connectionid": connection,
             "externalid": str(data[0][6]),
-            "email": data[0]["email"]
+            "email": data[0]["orders_mv.email"]
           }
         }
     except Exception:
@@ -38,23 +38,23 @@ def build_customer_json(connection, data):
 def build_order_json(connection, crm_id, data):
     return {
       "ecomOrder": {
-        "externalid": str(data[0]["externalid"]),
+        "externalid": str(data[0]["orders_mv.externalid"]),
         "email": data[0]["email"],
-        "orderNumber": str(data[0]["orderNumber"]),
+        "orderNumber": str(data[0]["orders_mv.orderNumber"]),
         "orderProducts": [
           {
             # name is a placeholder for the "<show number> - <event name>"
-            "name": str(ol["orderproduct_category"]) + " - " + str(unicode(ol["event_name"], errors='ignore')),
-            "price": str(ol["orderproduct_price"]),
+            "name": str(ol["orders_mv.orderproduct_category"]) + " - " + str(unicode(ol["orders_mv.event_name"], errors='ignore')),
+            "price": str(ol["orders_mv.orderproduct_price"]),
             "quantity": "1",
             # category is a placeholder for ticket type
-            "category": ol["orderproduct_name"]
+            "category": ol["orders_mv.orderproduct_name"]
           } for ol in data
         ],
-        "orderDate": str(data[0]["orderDate"]),
+        "orderDate": str(data[0]["orders_mv.orderDate"]),
         # shippingMethod is a placeholder for order payment method
-        "shippingMethod": data[0]["shippingMethod"],
-        "totalPrice": str(data[0]["totalPrice"]),
+        "shippingMethod": data[0]["orders_mv.shippingMethod"],
+        "totalPrice": str(data[0]["orders_mv.totalPrice"]),
         "currency": "USD",
         "connectionid": connection,
         "customerid": crm_id
@@ -162,7 +162,7 @@ def active_campaign_sync(new_venue=297):
         while more_rows:
             try:
                 ol = r.fetch_row(how=2)[0]
-                orders[ol["email"]].append(ol)
+                orders[ol["orders_mv.email"]].append(ol)
             except IndexError:
                 more_rows = False
         for o in orders:
