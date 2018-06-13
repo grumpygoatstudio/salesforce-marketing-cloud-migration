@@ -100,16 +100,20 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
     se_id = data[obj_type]["externalid"]
     r = requests.post(url, headers=auth_header, data=json.dumps(data))
     if r.status_code != 201:
-        if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-            crm_id = lookup_crm_id(se_id, venue_id, configs, obj_type)
-            if obj_type = "ecomOrder":
-                requests.put(url+"/"+str(crm_id), headers=auth_header, data=json.dumps(data))
+        if obj_type == 'ecomCustomer':
+            if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
+                crm_id = lookup_crm_id(se_id, venue_id, configs, obj_type)
+        else:
+            crm_id = None
     else:
-        try:
-            crm_id = r.json()[obj_type]["id"]
-            save_crm_id(se_id, venue_id, int(crm_id), configs, obj_type)
-        except Exception:
-            pass
+        if obj_type == 'ecomCustomer':
+            try:
+                crm_id = r.json()[obj_type]["id"]
+                save_crm_id(se_id, venue_id, int(crm_id), configs, obj_type)
+            except Exception:
+                pass
+        else:
+            crm_id = None
     return crm_id
 
 
