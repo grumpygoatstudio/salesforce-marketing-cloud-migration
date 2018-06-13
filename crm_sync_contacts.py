@@ -110,7 +110,7 @@ def active_campaign_sync():
     db.query("""SELECT * FROM contacts_mv WHERE email_address in (SELECT DISTINCT(email) FROM orders_mv WHERE email != '' AND venue_id = 297)""")
     r = db.store_result()
     contacts = []
-    more_rows = True
+    null_rows = 0
     while null_rows < 10:
         contact_info = r.fetch_row(how=2)
         if contact_info:
