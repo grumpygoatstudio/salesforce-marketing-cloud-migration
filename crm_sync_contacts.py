@@ -107,7 +107,7 @@ def active_campaign_sync():
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    db.query("""SELECT * FROM contacts_mv WHERE email_address in (SELECT DISTINCT(email) FROM orders_mv WHERE email != '' AND venue_id = 297)""")
+    db.query("""SELECT * FROM contacts_mv WHERE email_address != ''""")
     r = db.store_result()
     more_rows = True
     while more_rows:
