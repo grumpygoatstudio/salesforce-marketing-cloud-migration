@@ -165,13 +165,13 @@ def active_campaign_sync(new_venue=297):
                 orders[ol["orders_mv.email"]].append(ol)
             except IndexError:
                 more_rows = False
+        db.close()
         for o in orders:
             ols = orders[o]
             # build order and customer JSON and POST the JSON objects to AC server
             customer_json = build_customer_json(connection, ols)
             if customer_json:
                 crm_id = post_customer_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
-                print(crm_id)
                 if crm_id:
                     order_json = build_order_json(connection, str(crm_id), ols)
                     post_order_to_crm(orders_url, auth_header, order_json, venue_id, configs)
