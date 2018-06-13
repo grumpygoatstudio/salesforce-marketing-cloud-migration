@@ -23,13 +23,50 @@ def write_config(config, dir_path):
 
 
 def build_contact_data(data, api_key):
-    print(data)
     d = collections.OrderedDict()
     d["api_key"] = api_key
     d["api_action"] = "contact_edit"
     d["api_output"] = "json"
-    d["email"] = data[2]
+    d["email"] = data['contacts_mv.email_address']
     d["overwrite"] = "0"
+    # all custom contacts fields
+    d['LAST_EVENT_TITLE'] = data['contacts_mv.last_event_title']
+    d['LAST_ORDERED_DATE'] = data['contacts_mv.last_ordered_date']
+    d['TOTAL_LIFETIME_COMP_TICKETS'] = data['contacts_mv.total_lifetime_comp_tickets']
+    d['PAID_ORDERS_COUNT_90'] = data['contacts_mv.paid_orders_count_90']
+    d['TOTAL_REVENUE'] = data['contacts_mv.total_revenue']
+    d['PAID_ORDERS_REVENUE_360'] = data['contacts_mv.paid_orders_revenue_360']
+    d['TOTAL_LIFETIME_PAID_TICKETS'] = data['contacts_mv.total_lifetime_paid_tickets']
+    d['AVG_TICKETS_PER_PAID_ORDER'] = data['contacts_mv.avg_tickets_per_paid_order']
+    d['LAST_EVENT_VENUE'] = data['contacts_mv.last_event_venue']
+    d['TOTAL_LIFETIME_COMP_ORDERS'] = data['contacts_mv.total_lifetime_comp_orders']
+    d['NEXT_SHOW_ATTENDING'] = data['contacts_mv.next_show_attending']
+    d['COMP_ORDERS_COUNT_360'] = data['contacts_mv.comp_orders_count_360']
+    d['FIRST_SHOW_ATTENDED'] = data['contacts_mv.first_show_attended']
+    d['COMP_ORDERS_COUNT_180'] = data['contacts_mv.comp_orders_count_180']
+    d['COMP_ORDERS_COUNT_90'] = data['contacts_mv.comp_orders_count_90']
+    d['FIRST_EVENT_TITLE'] = data['contacts_mv.first_event_title']
+    d['LAST_COMP_SHOW_DATE'] = data['contacts_mv.last_comp_show_date']
+    d['PAID_ORDERS_REVENUE_90'] = data['contacts_mv.paid_orders_revenue_90']
+    d['COUNT_SHOWS_SPECIAL'] = data['contacts_mv.count_shows_special']
+    d['COUNT_SHOWS_PERSENTS'] = data['contacts_mv.count_shows_persents']
+    d['FIRST_EVENT_VENUE'] = data['contacts_mv.first_event_venue']
+    d['PAID_ORDERS_COUNT_180'] = data['contacts_mv.paid_orders_count_180']
+    d['SHOWS_ATTENDED_M'] = data['contacts_mv.shows_attended_M']
+    d['SHOWS_ATTENDED_T'] = data['contacts_mv.shows_attended_T']
+    d['SHOWS_ATTENDED_W'] = data['contacts_mv.shows_attended_W']
+    d['SHOWS_ATTENDED_R'] = data['contacts_mv.shows_attended_R']
+    d['SHOWS_ATTENDED_F'] = data['contacts_mv.shows_attended_F']
+    d['SHOWS_ATTENDED_S'] = data['contacts_mv.shows_attended_S']
+    d['SHOWS_ATTENDED_U'] = data['contacts_mv.shows_attended_U']
+    d['PAID_ORDERS_REVENUE_180'] = data['contacts_mv.paid_orders_revenue_180']
+    d['PAID_ORDERS_COUNT_360'] = data['contacts_mv.paid_orders_count_360']
+    d['LAST_SHOW_ATTENDED'] = data['contacts_mv.last_show_attended']
+    d['AVG_TICKETS_PER_COMP_ORDER'] = data['contacts_mv.avg_tickets_per_comp_order']
+    d['AVG_PURCHASE_TO_SHOW_DAYS'] = data['contacts_mv.avg_purchase_to_show_days']
+    d['NEXT_EVENT_TITLE'] = data['contacts_mv.next_event_title']
+    d['AVG_TICKETS_PER_ORDER'] = data['contacts_mv.avg_tickets_per_order']
+    d['TOTAL_LIFETIME_PAID_ORDERS'] = data['contacts_mv.total_lifetime_paid_orders']
     return d
 
 
@@ -101,7 +138,7 @@ def active_campaign_sync():
     r = db.store_result()
     more_rows = True
     while more_rows:
-        contact_info = r.fetch_row()[0]
+        contact_info = r.fetch_row(how=2)[0]
         print(contact_info)
         if contact_info:
             # build contact JSON
