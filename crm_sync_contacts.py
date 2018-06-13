@@ -2,7 +2,6 @@ import os
 import sys
 import requests
 import json
-import csv
 import collections
 import _mysql
 
@@ -31,43 +30,47 @@ def build_contact_data(data, api_key):
     d["id"] = None
     d["overwrite"] = "0"
     # all custom contacts fields
-    # d['LAST_EVENT_TITLE'] = data['contacts_mv.last_event_title']
-    # d['LAST_ORDERED_DATE'] = data['contacts_mv.last_ordered_date']
-    # d['TOTAL_LIFETIME_COMP_TICKETS'] = data['contacts_mv.total_lifetime_comp_tickets']
-    # d['PAID_ORDERS_COUNT_90'] = data['contacts_mv.paid_orders_count_90']
-    # d['TOTAL_REVENUE'] = data['contacts_mv.total_revenue']
-    # d['PAID_ORDERS_REVENUE_360'] = data['contacts_mv.paid_orders_revenue_360']
-    # d['TOTAL_LIFETIME_PAID_TICKETS'] = data['contacts_mv.total_lifetime_paid_tickets']
-    # d['AVG_TICKETS_PER_PAID_ORDER'] = data['contacts_mv.avg_tickets_per_paid_order']
-    # d['LAST_EVENT_VENUE'] = data['contacts_mv.last_event_venue']
-    # d['TOTAL_LIFETIME_COMP_ORDERS'] = data['contacts_mv.total_lifetime_comp_orders']
-    # d['NEXT_SHOW_ATTENDING'] = data['contacts_mv.next_show_attending']
-    # d['COMP_ORDERS_COUNT_360'] = data['contacts_mv.comp_orders_count_360']
-    # d['FIRST_SHOW_ATTENDED'] = data['contacts_mv.first_show_attended']
-    # d['COMP_ORDERS_COUNT_180'] = data['contacts_mv.comp_orders_count_180']
-    # d['COMP_ORDERS_COUNT_90'] = data['contacts_mv.comp_orders_count_90']
-    # d['FIRST_EVENT_TITLE'] = data['contacts_mv.first_event_title']
-    # d['LAST_COMP_SHOW_DATE'] = data['contacts_mv.last_comp_show_date']
-    # d['PAID_ORDERS_REVENUE_90'] = data['contacts_mv.paid_orders_revenue_90']
-    # d['COUNT_SHOWS_SPECIAL'] = data['contacts_mv.count_shows_special']
-    # d['COUNT_SHOWS_PERSENTS'] = data['contacts_mv.count_shows_persents']
-    # d['FIRST_EVENT_VENUE'] = data['contacts_mv.first_event_venue']
-    # d['PAID_ORDERS_COUNT_180'] = data['contacts_mv.paid_orders_count_180']
-    # d['SHOWS_ATTENDED_M'] = data['contacts_mv.shows_attended_M']
-    # d['SHOWS_ATTENDED_T'] = data['contacts_mv.shows_attended_T']
-    # d['SHOWS_ATTENDED_W'] = data['contacts_mv.shows_attended_W']
-    # d['SHOWS_ATTENDED_R'] = data['contacts_mv.shows_attended_R']
-    # d['SHOWS_ATTENDED_F'] = data['contacts_mv.shows_attended_F']
-    # d['SHOWS_ATTENDED_S'] = data['contacts_mv.shows_attended_S']
-    # d['SHOWS_ATTENDED_U'] = data['contacts_mv.shows_attended_U']
-    # d['PAID_ORDERS_REVENUE_180'] = data['contacts_mv.paid_orders_revenue_180']
-    # d['PAID_ORDERS_COUNT_360'] = data['contacts_mv.paid_orders_count_360']
-    # d['LAST_SHOW_ATTENDED'] = data['contacts_mv.last_show_attended']
-    # d['AVG_TICKETS_PER_COMP_ORDER'] = data['contacts_mv.avg_tickets_per_comp_order']
-    # d['AVG_PURCHASE_TO_SHOW_DAYS'] = data['contacts_mv.avg_purchase_to_show_days']
-    # d['NEXT_EVENT_TITLE'] = data['contacts_mv.next_event_title']
-    # d['AVG_TICKETS_PER_ORDER'] = data['contacts_mv.avg_tickets_per_order']
-    # d['TOTAL_LIFETIME_PAID_ORDERS'] = data['contacts_mv.total_lifetime_paid_orders']
+    d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_MONDAYS%,0]"] = str(data['contacts_mv.shows_attended_M'])
+    d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_TUESDAYS%,0]"] = str(data['contacts_mv.shows_attended_T'])
+    d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_WEDNESDAYS%,0]"] = str(data['contacts_mv.shows_attended_W'])
+    d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_THURSDAYS%,0]"] = str(data['contacts_mv.shows_attended_R'])
+    d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_FRIDAYS%,0]"] = str(data['contacts_mv.shows_attended_F'])
+    d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_SATURDAYS%,0]"] = str(data['contacts_mv.shows_attended_S'])
+    d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_SUNDAYS%,0]"] = str(data['contacts_mv.shows_attended_U'])
+
+    d["field[%FIRST_SHOW_ATTENDED_DATE%,0]"] = str(data['contacts_mv.first_show_attended'])
+    d["field[%FIRST_SHOW_ATTENDED_NAME%,0]"] = str(data['contacts_mv.first_event_title'])
+    # d['FIRST_EVENT_VENUE'] = str(data['contacts_mv.first_event_venue'])
+    # d['LAST_EVENT_VENUE'] = str(data['contacts_mv.last_event_venue'])
+    d["field[%LAST_SHOW_ATTENDED_DATE%,0]"] = str(data['contacts_mv.last_show_attended'])
+    d["field[%LAST_SHOW_ATTENDED_NAME%,0]"] = str(data['contacts_mv.last_event_title'])
+
+    d["field[%NEXT_SHOW_ATTENDING_DATE%,0]"] = str(data['contacts_mv.next_show_attending'])
+    d["field[%NEXT_SHOW_ATTENDING_NAME%,0]"] = str(data['contacts_mv.next_event_title'])
+
+    d["field[%LAST_ORDER_DATE%,0]"]= str(data['contacts_mv.last_ordered_date'])
+    d["field[%LAST_COMP_SHOW_DATE%,0]"] = str(data['contacts_mv.last_comp_show_date'])
+    d["field[%TOTAL_NUMBER_OF_COMP_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_comp_tickets'])
+    d["field[%TOTAL_NUMBER_OF_PAID_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_paid_tickets'])
+    d["field[%TOTAL_NUMBER_OF_COMP_ORDERS%,0]"] = str(data['contacts_mv.total_lifetime_comp_orders'])
+    d["field[%TOTAL_NUMBER_OF_PAID_ORDERS%,0]"] = str(data['contacts_mv.total_lifetime_paid_orders'])
+
+    d["field[%TOTAL_COMP_ORDER_COUNT_LAST_360_DAYS%,0]"] = str(data['contacts_mv.comp_orders_count_360'])
+    d["field[%TOTAL_COMP_ORDER_COUNT_LAST_180_DAYS%,0]"] = str(data['contacts_mv.comp_orders_count_180'])
+    d["field[%TOTAL_COMP_ORDER_COUNT_LAST_90_DAYS%,0]"] = str(data['contacts_mv.comp_orders_count_90'])
+    d["field[%TOTAL_PAID_ORDERS_LAST_90_DAYS%,0]"] = str(data['contacts_mv.paid_orders_count_90'])
+    d["field[%TOTAL_PAID_ORDERS_LAST_180_DAYS%,0]"] = str(data['contacts_mv.paid_orders_count_180'])
+    d["field[%TOTAL_PAID_ORDERS_LAST_360_DAYS%,0]"] = str(data['contacts_mv.paid_orders_count_360'])
+    d["field[%TOTAL_REVENUE_LAST_90_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_90'])
+    d["field[%TOTAL_REVENUE_LAST_180_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_180'])
+    d["field[%TOTAL_REVENUE_LAST_360_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_360'])
+
+    d["field[%COUNT_OF_SPECIAL_EVENTS_ATTENDED%,0]"] = str(data['contacts_mv.count_shows_special'])
+    d["field[%COUNT_OF_PRESENTS_SHOWS_ATTENDED%,0]"] = str(data['contacts_mv.count_shows_persents'])
+    d["field[%AVERAGE_NUMBER_OF_PAID_TICKETS_PER_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_paid_order'])
+    d["field[%AVERAGE_NUMBER_OF_TICKETS_PER_COMP_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_comp_order'])
+    d["field[%AVERAGE_NUMBER_OF_DAYS_BETWEEN_PURCHASE_AND_EVENT_DATES%,0]"] = str(data['contacts_mv.avg_purchase_to_show_days'])
+    d["field[%AVERAGE_TICKETS_PER_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_order'])
     return d
 
 
@@ -80,34 +83,6 @@ def lookup_crm_id_by_api(url, data, auth_header):
         return None
 
 
-# def lookup_crm_id_by_sql(email, configs):
-#     db = _mysql.connect(user=configs['db_user'],
-#                         passwd=configs['db_password'],
-#                         port=configs['db_port'],
-#                         host=configs['db_host'],
-#                         db=configs['db_name'])
-#     sql = """SELECT crm_id FROM crm_linker_contacts WHERE email = \'%s\'""" % (email)
-#     db.query(sql)
-#     r = db.store_result()
-#     try:
-#         crm_id = int(r.fetch_row()[0][0])
-#     except Exception:
-#         crm_id = None
-#     db.close()
-#     return crm_id
-
-
-# def save_crm_id(email, crm_id, configs):
-#     db = _mysql.connect(user=configs['db_user'],
-#                         passwd=configs['db_password'],
-#                         port=configs['db_port'],
-#                         host=configs['db_host'],
-#                         db=configs['db_name'])
-#     sql = """INSERT INTO crm_linker_contacts SET email=\'%s\', crm_id=%s""" % (email, crm_id)
-#     db.query(sql)
-#     db.close()
-
-
 def update_contact_in_crm(url, auth_header, data, configs):
     # crm_id = lookup_crm_id_by_sql(data["email"], configs)
     # if not crm_id:
@@ -115,7 +90,11 @@ def update_contact_in_crm(url, auth_header, data, configs):
     if crm_id:
         # save_crm_id(data["email"], crm_id, configs)
         data['id'] = crm_id
-    #r = requests.post(url, headers=auth_header, data=data)
+        r = requests.post(url, headers=auth_header, data=data)
+        if r.status_code == 200 and r.json()["result_code"] != 0:
+            print(r.json())
+        else:
+            print("Updating contact via API failed.")
     return crm_id
 
 
@@ -137,16 +116,16 @@ def active_campaign_sync():
     more_rows = True
     while more_rows:
         contact_info = r.fetch_row(how=2)[0]
-        print(contact_info)
         if contact_info:
             # build contact JSON
             contact_data = build_contact_data(contact_info, configs["Api-Token"])
             if contact_data:
                 # PUT/POST the JSON objects to AC server
                 crm_id = update_contact_in_crm(contacts_url, auth_header, contact_data, configs)
-                #print("CONTACT LOOKUP FAILED!", str(contact_data))
+                if crm_id:
+                    print("CONTACT UPDATED! :) ", str(contact_data))
             else:
-                print("BUILD CONTACT DATA FAILED!", str(contact_info))
+                print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
         else:
             more_rows = False
 
