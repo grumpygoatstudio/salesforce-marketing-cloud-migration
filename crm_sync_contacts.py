@@ -89,7 +89,7 @@ def update_contact_in_crm(url, auth_header, data, configs):
         data['id'] = crm_id
         r = requests.post(url, headers=auth_header, data=data)
         if r.status_code == 200 and r.json()["result_code"] != 0:
-            print(r.json())
+            print("SUCCESS: Updated contact via API", data['email'])
         else:
             print("Updating contact via API failed.")
     return crm_id
