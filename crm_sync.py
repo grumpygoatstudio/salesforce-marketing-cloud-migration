@@ -26,7 +26,7 @@ def build_customer_json(connection, data):
         cust_data = {
           "ecomCustomer": {
             "connectionid": connection,
-            "externalid": str(data[0][6]),
+            "externalid": str(data[0]["orders_mv.customerid"]),
             "email": data[0]["orders_mv.email"]
           }
         }
@@ -39,7 +39,7 @@ def build_order_json(connection, crm_id, data):
     return {
       "ecomOrder": {
         "externalid": str(data[0]["orders_mv.externalid"]),
-        "email": data[0]["email"],
+        "email": data[0]["orders_mv.email"],
         "orderNumber": str(data[0]["orders_mv.orderNumber"]),
         "orderProducts": [
           {
