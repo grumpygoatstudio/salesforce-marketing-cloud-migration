@@ -90,7 +90,8 @@ def fetch_crm_list_mapping(configs):
     while more_rows:
         try:
             venue_info = r.fetch_row(how=2)[0]
-            list_mappings[venue_info["id"]] = venue_info["insider_crm_id"]
+            list_mappings[venue_info["venues.id"]
+                          ] = venue_info["venues.insider_crm_id"]
         except IndexError:
             more_rows = False
     return list_mappings
@@ -121,7 +122,7 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings):
             last_venue = str(data['contacts_mv.last_event_venue'])
             if last_venue not in ["None", ""]:
                 list_id = list_mappings[last_venue]
-                d["id[%s]" % list_id] = list_id
+                d["p[%s]" % list_id] = list_id
 
             r = requests.post(url, headers=auth_header, data=data)
             if r.status_code == 200 and r.json()["result_code"] != 0:
