@@ -30,7 +30,7 @@ def build_contact_data(data, api_key):
     d["id"] = None
     d["overwrite"] = "0"
     # all custom contacts fields
-    d["field[%SEAT_ENGINE_NAME%,0]"] = str(data['contacts_mv.name'])
+    d["field[%SEAT_ENGINE_NAME%,0]"] = str(data['contacts_mv.cust_name'])
     d["field[%SEAT_ENGINE_PHONE%,0]"] = str(data['contacts_mv.phone'])
 
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_MONDAYS%,0]"] = str(data['contacts_mv.shows_attended_M'])
@@ -67,6 +67,7 @@ def build_contact_data(data, api_key):
     d["field[%TOTAL_REVENUE_LAST_90_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_90'])
     d["field[%TOTAL_REVENUE_LAST_180_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_180'])
     d["field[%TOTAL_REVENUE_LAST_360_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_360'])
+    d["field[%SE_TOTAL_REVENUE%,0]"] = str(data['contacts_mv.total_revenue'])
 
     d["field[%COUNT_OF_SPECIAL_EVENTS_ATTENDED%,0]"] = str(data['contacts_mv.count_shows_special'])
     d["field[%COUNT_OF_PRESENTS_SHOWS_ATTENDED%,0]"] = str(data['contacts_mv.count_shows_persents'])
