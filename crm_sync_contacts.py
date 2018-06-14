@@ -77,7 +77,7 @@ def build_contact_data(data, api_key):
     return d
 
 
-def fetch_crm_list_mapping(configs)
+def fetch_crm_list_mapping(configs):
     list_mappings = {}
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
