@@ -1,0 +1,149 @@
+{
+    "0": {
+        "id": "1",
+        "name": "Test",
+        "cdate": "2018-04-24 08:40:05",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 13
+    },
+    "1": {
+        "id": "2",
+        "name": "PHL - Insider List",
+        "cdate": "2018-05-01 13:46:08",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "2": {
+        "id": "3",
+        "name": "RDU - Insider List",
+        "cdate": "2018-05-01 13:51:54",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "3": {
+        "id": "5",
+        "name": "PDX - Insider List",
+        "cdate": "2018-05-01 13:53:29",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "4": {
+        "id": "6",
+        "name": "STL - Insider List",
+        "cdate": "2018-05-01 14:02:32",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "5": {
+        "id": "7",
+        "name": "BUF - Insider List",
+        "cdate": "2018-05-01 14:04:46",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 1
+    },
+    "6": {
+        "id": "9",
+        "name": "PHL - Group List",
+        "cdate": "2018-05-30 09:06:07",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 20
+    },
+    "7": {
+        "id": "10",
+        "name": "BUF - Group List ",
+        "cdate": "2018-05-30 11:57:53",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "8": {
+        "id": "11",
+        "name": "PDX - Group List ",
+        "cdate": "2018-05-30 11:58:28",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "9": {
+        "id": "12",
+        "name": "HAS - Group List",
+        "cdate": "2018-05-30 12:00:14",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "10": {
+        "id": "13",
+        "name": "RDU - Group List",
+        "cdate": "2018-05-30 12:01:05",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "11": {
+        "id": "14",
+        "name": "STL - Group List",
+        "cdate": "2018-05-30 12:02:04",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "12": {
+        "id": "15",
+        "name": "BUF - Comedy Class",
+        "cdate": "2018-05-30 12:03:43",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "13": {
+        "id": "16",
+        "name": "RDU - Comedy Class List",
+        "cdate": "2018-05-30 12:04:33",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "14": {
+        "id": "17",
+        "name": "STL - Comedy Class List",
+        "cdate": "2018-05-30 12:05:36",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "15": {
+        "id": "18",
+        "name": "PHL - Comedy Class List",
+        "cdate": "2018-05-30 12:06:29",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "16": {
+        "id": "19",
+        "name": "PDX - Comedy Class List",
+        "cdate": "2018-05-30 12:07:16",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 0
+    },
+    "17": {
+        "id": "4",
+        "name": "HAS - Insider List",
+        "cdate": "2018-05-01 13:53:05",
+        "private": "0",
+        "userid": "3",
+        "subscriber_count": 22521
+    },
+    "result_code": 1,
+    "result_message": "Success: Something is returned",
+    "result_output": "json"
+}

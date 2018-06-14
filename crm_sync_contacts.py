@@ -30,6 +30,8 @@ def build_contact_data(data, api_key):
     d["id"] = None
     d["overwrite"] = "0"
     # all custom contacts fields
+    d["field[%SEAT_ENGINE_PHONE%,0]"] = str(data['contacts_mv.phone'])
+
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_MONDAYS%,0]"] = str(data['contacts_mv.shows_attended_M'])
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_TUESDAYS%,0]"] = str(data['contacts_mv.shows_attended_T'])
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_WEDNESDAYS%,0]"] = str(data['contacts_mv.shows_attended_W'])
@@ -92,6 +94,13 @@ def update_contact_in_crm(url, auth_header, data, configs):
             print("SUCCESS: Updated contact via API", data['email'])
         else:
             print("Updating contact via API failed.")
+    else:
+        data["api_action"] = "contacts_add"
+        r = requests.post(url, headers=auth_header, data=data)
+        if r.status_code == 200 and r.json()["result_code"] != 0:
+            print("SUCCESS: Created contact via API", data['email'])
+        else:
+            print("Creating contact via API failed.")
     return crm_id
 
 
