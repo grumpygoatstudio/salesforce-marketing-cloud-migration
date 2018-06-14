@@ -30,6 +30,7 @@ def build_contact_data(data, api_key):
     d["id"] = None
     d["overwrite"] = "0"
     # all custom contacts fields
+    d["field[%SEAT_ENGINE_NAME%,0]"] = str(data['contacts_mv.name'])
     d["field[%SEAT_ENGINE_PHONE%,0]"] = str(data['contacts_mv.phone'])
 
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_MONDAYS%,0]"] = str(data['contacts_mv.shows_attended_M'])
@@ -76,6 +77,25 @@ def build_contact_data(data, api_key):
     return d
 
 
+def fetch_crm_list_mapping(configs)
+    list_mappings = {}
+    db = _mysql.connect(user=configs['db_user'],
+                        passwd=configs['db_password'],
+                        port=configs['db_port'],
+                        host=configs['db_host'],
+                        db=configs['db_name'])
+    db.query("""SELECT id, insider_crm_id FROM venues""")
+    r = db.store_result()
+    more_rows = True
+    while more_rows:
+        try:
+            venue_info = r.fetch_row(how=2)[0]
+            list_mappings[venue_info["id"]] = venue_info["insider_crm_id"]
+        except IndexError:
+            more_rows = False
+    return list_mappings
+
+
 def lookup_crm_id_by_api(url, data, auth_header):
     data["api_action"] = "contact_view_email"
     r = requests.post(url, headers=auth_header, data=data)
@@ -85,7 +105,7 @@ def lookup_crm_id_by_api(url, data, auth_header):
         return None
 
 
-def update_contact_in_crm(url, auth_header, data, configs):
+def update_contact_in_crm(url, auth_header, data, configs, list_mappings):
     crm_id = lookup_crm_id_by_api(url, data, auth_header)
     if crm_id:
         data['id'] = crm_id
@@ -95,12 +115,20 @@ def update_contact_in_crm(url, auth_header, data, configs):
         else:
             print("Updating contact via API failed.")
     else:
-        data["api_action"] = "contacts_add"
-        data.pop("id", None)
-        r = requests.post(url, headers=auth_header, data=data)
-        if r.status_code == 200 and r.json()["result_code"] != 0:
-            print("SUCCESS: Created contact via API", data['email'])
-        else:
+        try:
+            data["api_action"] = "contacts_add"
+            data.pop("id", None)
+            last_venue = str(data['contacts_mv.last_event_venue'])
+            if last_venue not in ["None", ""]:
+                list_id = list_mappings[last_venue]]
+                    d["id[%s]" % list_id = list_id
+
+            r = requests.post(url, headers=auth_header, data=data)
+            if r.status_code == 200 and r.json()["result_code"] != 0:
+                print("SUCCESS: Created contact via API", data['email'])
+            else:
+                print("Creating contact via API failed.")
+        except Exception:
             print("Creating contact via API failed.")
     return crm_id
 
@@ -110,8 +138,8 @@ def active_campaign_sync():
     configs = load_config(dir_path)
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
     last_crm_contacts_sync = configs["last_crm_contacts_sync"]
-    contacts_url = "https://heliumcomedy.api-us1.com/admin/api.php"
-
+    url = "https://heliumcomedy.api-us1.com/admin/api.php"
+    list_mappings = fetch_crm_list_mapping(configs)
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
@@ -125,7 +153,8 @@ def active_campaign_sync():
             contact_info = r.fetch_row(how=2)[0]
             contact_data = build_contact_data(contact_info, configs["Api-Token"])
             if contact_data:
-                update_contact_in_crm(contacts_url, auth_header, contact_data, configs)
+                update_contact_in_crm(
+                    url, auth_header, contact_data, configs, list_mappings)
             else:
                 print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
         except IndexError:
