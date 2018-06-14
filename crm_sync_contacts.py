@@ -96,6 +96,7 @@ def update_contact_in_crm(url, auth_header, data, configs):
             print("Updating contact via API failed.")
     else:
         data["api_action"] = "contacts_add"
+        data.pop("id", None)
         r = requests.post(url, headers=auth_header, data=data)
         if r.status_code == 200 and r.json()["result_code"] != 0:
             print("SUCCESS: Created contact via API", data['email'])
