@@ -120,8 +120,8 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings):
             data.pop("id", None)
             last_venue = str(data['contacts_mv.last_event_venue'])
             if last_venue not in ["None", ""]:
-                list_id = list_mappings[last_venue]]
-                    d["id[%s]" % list_id = list_id
+                list_id = list_mappings[last_venue]
+                    d["id[%s]" % list_id] = list_id
 
             r = requests.post(url, headers=auth_header, data=data)
             if r.status_code == 200 and r.json()["result_code"] != 0:
