@@ -118,7 +118,7 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings):
             print("Updating contact via API failed.")
     else:
         try:
-            data["api_action"] = "contacts_add"
+            data["api_action"] = "contact_add"
             data.pop("id", None)
             last_venue = str(data['contacts_mv.last_event_venue'])
             if last_venue not in ["None", ""]:
