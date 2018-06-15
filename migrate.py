@@ -170,13 +170,8 @@ def rebuild_orderlines():
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
     pull_limit = parse("1900-01-01T00:00:01", ignoretz=True)
-    data_types = ["orderlines", "orders", "contacts"]
-    data = {
-        "orderlines": [],
-        "orders": [],
-        "contacts": []
-    }
-
+    data_types = ["orderlines"]
+    data = {"orderlines": []}
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
@@ -184,6 +179,7 @@ def rebuild_orderlines():
                         db=configs['db_name'])
     db.query("""SELECT DISTINCT venue_id, orderproduct_category FROM orders_mv ORDER BY venue_id, orderproduct_category""")
     r = db.store_result()
+    db.close()
     more_rows = True
     while more_rows:
         try:
@@ -193,17 +189,14 @@ def rebuild_orderlines():
             show_orders = get_show_orders(venue_id, show_id, auth_header)
             if show_orders:
                 order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit)
-                data['orders'] += order_info_objs[0]
                 data['orderlines'] += order_info_objs[1]
-                data['contacts'] += order_info_objs[2]
         except IndexError:
             more_rows = False
-    db.close()
 
     for dt in data_types:
         try:
             file_path = os.path.join(
-                dir_path, 'bdir', dt + '-rebuild.csv')
+                dir_path, dt + '-rebuild.csv')
             os.remove(file_path)
         except OSError:
             pass
