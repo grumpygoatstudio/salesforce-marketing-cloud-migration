@@ -32,7 +32,6 @@ def build_contact_data(data, api_key):
     # all custom contacts fields
     d["field[%SEAT_ENGINE_NAME%,0]"] = str(data['contacts_mv.cust_name'])
     d["field[%SEAT_ENGINE_PHONE%,0]"] = str(data['contacts_mv.phone'])
-
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_MONDAYS%,0]"] = str(data['contacts_mv.shows_attended_M'])
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_TUESDAYS%,0]"] = str(data['contacts_mv.shows_attended_T'])
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_WEDNESDAYS%,0]"] = str(data['contacts_mv.shows_attended_W'])
@@ -40,13 +39,11 @@ def build_contact_data(data, api_key):
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_FRIDAYS%,0]"] = str(data['contacts_mv.shows_attended_F'])
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_SATURDAYS%,0]"] = str(data['contacts_mv.shows_attended_S'])
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_SUNDAYS%,0]"] = str(data['contacts_mv.shows_attended_U'])
-
     # d['FIRST_EVENT_VENUE'] = str(data['contacts_mv.first_event_venue'])
     # d['LAST_EVENT_VENUE'] = str(data['contacts_mv.last_event_venue'])
     d["field[%FIRST_SHOW_ATTENDED_NAME%,0]"] = str(data['contacts_mv.first_event_title'])
     d["field[%LAST_SHOW_ATTENDED_NAME%,0]"] = str(data['contacts_mv.last_event_title'])
     d["field[%NEXT_SHOW_ATTENDING_NAME%,0]"] = str(data['contacts_mv.next_event_title'])
-
     first_show = str(data['contacts_mv.first_show_attended']).replace('T', ' ')
     last_show = str(data['contacts_mv.last_show_attended']).replace('T', ' ')
     next_show = str(data['contacts_mv.next_show_attending']).replace('T', ' ')
@@ -57,12 +54,10 @@ def build_contact_data(data, api_key):
     d["field[%NEXT_SHOW_ATTENDING_DATE%,0]"] = "" if next_show == "None" else next_show
     d["field[%LAST_ORDER_DATE%,0]"] = "" if last_order == "None" else last_order
     d["field[%LAST_COMP_SHOW_DATE%,0]"] = "" if last_comp == "None" else last_comp
-
     d["field[%TOTAL_NUMBER_OF_COMP_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_comp_tickets'])
     d["field[%TOTAL_NUMBER_OF_PAID_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_paid_tickets'])
     d["field[%TOTAL_NUMBER_OF_COMP_ORDERS%,0]"] = str(data['contacts_mv.total_lifetime_comp_orders'])
     d["field[%TOTAL_NUMBER_OF_PAID_ORDERS%,0]"] = str(data['contacts_mv.total_lifetime_paid_orders'])
-
     d["field[%TOTAL_COMP_ORDER_COUNT_LAST_360_DAYS%,0]"] = str(data['contacts_mv.comp_orders_count_360'])
     d["field[%TOTAL_COMP_ORDER_COUNT_LAST_180_DAYS%,0]"] = str(data['contacts_mv.comp_orders_count_180'])
     d["field[%TOTAL_COMP_ORDER_COUNT_LAST_90_DAYS%,0]"] = str(data['contacts_mv.comp_orders_count_90'])
@@ -73,7 +68,6 @@ def build_contact_data(data, api_key):
     d["field[%TOTAL_REVENUE_LAST_180_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_180'])
     d["field[%TOTAL_REVENUE_LAST_360_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_360'])
     d["field[%SE_TOTAL_REVENUE%,0]"] = str(data['contacts_mv.total_revenue'])
-
     d["field[%COUNT_OF_SPECIAL_EVENTS_ATTENDED%,0]"] = str(data['contacts_mv.count_shows_special'])
     d["field[%COUNT_OF_PRESENTS_SHOWS_ATTENDED%,0]"] = str(data['contacts_mv.count_shows_persents'])
     d["field[%AVERAGE_NUMBER_OF_PAID_TICKETS_PER_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_paid_order'])
@@ -129,11 +123,11 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings, last_v
                 list_id = list_mappings[last_venue]
                 field = "p[%s]" % list_id
                 d[field] = list_id
-            r = requests.post(url, headers=auth_header, data=data)
-            if r.status_code == 200 and r.json()["result_code"] != 0:
-                print("SUCCESS: Created contact via API", data['email'])
-            else:
-                print("ERROR: Creating contact via API failed.", data['email'])
+                r = requests.post(url, headers=auth_header, data=data)
+                if r.status_code == 200 and r.json()["result_code"] != 0:
+                    print("SUCCESS: Created contact via API", data['email'])
+                else:
+                    print("ERROR: Creating contact via API failed.", data['email'])
         except Exception:
             print("ERROR: Creating contact via API failed.", data['email'])
     return crm_id
