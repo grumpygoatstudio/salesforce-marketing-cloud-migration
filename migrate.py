@@ -172,42 +172,46 @@ def rebuild_orderlines():
     pull_limit = parse("1900-01-01T00:00:01", ignoretz=True)
     data_types = ["orderlines"]
     data = {"orderlines": []}
-    db = _mysql.connect(user=configs['db_user'],
-                        passwd=configs['db_password'],
-                        port=configs['db_port'],
-                        host=configs['db_host'],
-                        db=configs['db_name'])
-    db.query("""SELECT DISTINCT venue_id, orderproduct_category FROM orders_mv ORDER BY venue_id, orderproduct_category""")
-    r = db.store_result()
-    more_rows = True
-    while more_rows:
-        try:
-            show_info = r.fetch_row(how=2)[0]
-            venue_id = show_info['orders_mv.venue_id']
-            show_id = show_info['orders_mv.orderproduct_category']
-            show_orders = get_show_orders(venue_id, show_id, auth_header)
-            if show_orders:
-                order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit)
-                data['orderlines'] += order_info_objs[1]
-        except IndexError:
-            more_rows = False
-    db.close()
+    venues = [297] # 1, 5, 6, 7, 21, 23, 53, 63, 131, 133
+    for venue in venues:
+        db = _mysql.connect(user=configs['db_user'],
+                            passwd=configs['db_password'],
+                            port=configs['db_port'],
+                            host=configs['db_host'],
+                            db=configs['db_name'])
+        db.query("""SELECT DISTINCT venue_id, orderproduct_category FROM orders_mv WHERE venue_id = %s ORDER BY venue_id, orderproduct_category""" % venue)
+        r = db.store_result()
+        more_rows = 1
+        while more_rows:
+            try:
+                show_info = r.fetch_row(how=2)[0]
+                venue_id = show_info['orders_mv.venue_id']
+                show_id = show_info['orders_mv.orderproduct_category']
+                show_orders = get_show_orders(venue_id, show_id, auth_header)
+                if show_orders:
+                    order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit)
+                    data['orderlines'] += order_info_objs[1]
+                print("Venue %s - Processed: %s" % (venue_id, more_rows))
+                more_rows += 1
+            except IndexError:
+                more_rows = False
+        db.close()
 
-    for dt in data_types:
-        try:
-            file_path = os.path.join(
-                dir_path, dt + '-rebuild.csv')
-            os.remove(file_path)
-        except OSError:
-            pass
+        for dt in data_types:
+            try:
+                file_path = os.path.join(
+                    dir_path, dt + '-' + str(venue) + '-rebuild.csv')
+                os.remove(file_path)
+            except OSError:
+                pass
 
-        # BUILD CSV FILES FROM THE API SOURCE DATA COLLECTED
-        the_file = open(file_path, "w")
-        if len(data[dt]) > 0:
-            writer = DictWriter(the_file, data[dt][0].keys())
-            writer.writeheader()
-            writer.writerows(data[dt])
-        the_file.close()
+            # BUILD CSV FILES FROM THE API SOURCE DATA COLLECTED
+            the_file = open(file_path, "w")
+            if len(data[dt]) > 0:
+                writer = DictWriter(the_file, data[dt][0].keys())
+                writer.writeheader()
+                writer.writerows(data[dt])
+            the_file.close()
 
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
     # sql_upload()
