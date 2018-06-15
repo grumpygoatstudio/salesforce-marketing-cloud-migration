@@ -181,14 +181,14 @@ def rebuild_orderlines():
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    db.query("""SELECT DISTINCT venue_id, show_id FROM orders_mv""")
+    db.query("""SELECT DISTINCT venue_id, orderproduct_category FROM orders_mv ORDER BY venue_id, orderproduct_category""")
     r = db.store_result()
     more_rows = True
     while more_rows:
         try:
             show_info = r.fetch_row(how=2)[0]
             venue_id = show_info['orders_mv.venue_id']
-            show_id = show_info['orders_mv.show_id']
+            show_id = show_info['orders_mv.orderproduct_category']
             show_orders = get_show_orders(venue_id, show_id, auth_header)
             if show_orders:
                 order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit)
@@ -216,7 +216,7 @@ def rebuild_orderlines():
         the_file.close()
 
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
-    sql_upload()
+    # sql_upload()
     print("Orderlines Rebuild Completed - " +
           datetime.today().strftime("%Y-%m-%dT%H:%M:%S"))
 
