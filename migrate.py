@@ -5,6 +5,7 @@ import json
 import random
 import collections
 import csv
+import _mysql
 
 from datetime import datetime
 from dateutil.parser import parse
@@ -136,9 +137,10 @@ def create_objects_from_orders(orders, show_id, pull_limit):
             temp_order['addons'] = "\t".join([str(a['name']) for a in order['addons']]) if order['addons'] != [] else ""
 
             for tix_type in order['tickets']:
+                c = 1
                 for tix in order['tickets'][tix_type]:
                     temp_orderline = collections.OrderedDict()
-                    temp_orderline['id'] = str(order['order_number']) + "-%0.6d" % random.randint(0, 999999)
+                    temp_orderline['id'] = str(order['order_number']) + "-%s" % c
                     temp_orderline['order_number'] = str(order['order_number'])
                     temp_orderline['ticket_name'] = str(tix_type).strip().replace(",", " ")
                     temp_orderline['ticket_price'] = tix['price']
@@ -152,10 +154,67 @@ def create_objects_from_orders(orders, show_id, pull_limit):
                         temp_order['order_total'] += int(tix['price'])
                     except Exception:
                         pass
+                    c += 1
             orders_info += [temp_order]
             customers_info += [temp_cust]
 
     return (orders_info, orderlines_info, customers_info)
+
+
+def rebuild_orderlines():
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    configs = load_config(dir_path)
+    auth_header = {e: configs[e] for e in configs if "X-" in e}
+    data_types = ["orderlines", "orders", "contacts"]
+    data = {
+        "orderlines": [],
+        "orders": [],
+        "contacts": []
+    }
+
+    db = _mysql.connect(user=configs['db_user'],
+                        passwd=configs['db_password'],
+                        port=configs['db_port'],
+                        host=configs['db_host'],
+                        db=configs['db_name'])
+    db.query("""SELECT DISTINCT venue_id, show_id FROM orders_mv""")
+    r = db.store_result()
+    more_rows = True
+    while more_rows:
+        try:
+            show_info = r.fetch_row(how=2)[0]
+            venue_id = show_info['orders_mv.venue_id']
+            show_id = show_info['orders_mv.show_id']
+            show_orders = get_show_orders(venue_id, show_id, auth_header)
+            if show_orders:
+                order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit)
+                data['orders'] += order_info_objs[0]
+                data['orderlines'] += order_info_objs[1]
+                data['contacts'] += order_info_objs[2]
+        except IndexError:
+            more_rows = False
+    db.close()
+
+    for dt in data_types:
+        try:
+            file_path = os.path.join(
+                dir_path, 'bdir', dt + '-rebuild.csv')
+            os.remove(file_path)
+        except OSError:
+            pass
+
+        # BUILD CSV FILES FROM THE API SOURCE DATA COLLECTED
+        the_file = open(file_path, "w")
+        if len(data[dt]) > 0:
+            writer = DictWriter(the_file, data[dt][0].keys())
+            writer.writeheader()
+            writer.writerows(data[dt])
+        the_file.close()
+
+    # UPLOAD ALL SQL FILES TO AWS RDS SERVER
+    sql_upload()
+    print("Orderlines Rebuild Completed - " +
+          datetime.today().strftime("%Y-%m-%dT%H:%M:%S"))
 
 
 def backload():
@@ -275,7 +334,7 @@ def main():
     print("Data Pull Completed - " + configs['last_pull'])
 
     # TRIGGER POST-PROCESSING FOR SQL TABLES
-    sql_post_processing()
+    #sql_post_processing()
 
 
 def sql_upload(backload=False):

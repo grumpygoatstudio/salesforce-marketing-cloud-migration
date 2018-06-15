@@ -151,7 +151,8 @@ BEGIN
 					COUNT(CASE WHEN show_day = 6 THEN 1 END) AS shows_attended_U -- Comp'd or Paid Events Attended on Sunday
 				FROM (
 						SELECT o.cust_id AS cust_id,
-							s.start_date_formatted AS show_day,
+							# CONVERT START DATE TO A DAY OF THE WEEK!!! 
+                            DAYOFWEEK(s.start_date_formatted) AS show_day,
 							COUNT(*) AS shows_attended
 						FROM seatengine.orders_processed o
 						JOIN seatengine.shows_processed s ON (o.show_id = s.id)
