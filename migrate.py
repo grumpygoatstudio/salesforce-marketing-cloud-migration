@@ -169,6 +169,7 @@ def rebuild_orderlines():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
+    pull_limit = parse("1900-01-01T00:00:01", ignoretz=True)
     data_types = ["orderlines", "orders", "contacts"]
     data = {
         "orderlines": [],
