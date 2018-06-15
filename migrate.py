@@ -342,13 +342,20 @@ def main():
 def sql_upload(backload=False):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
-    venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
-    data_types = ["events", "shows", "orderlines", "orders", "contacts"]
+    if backload == "rebuild":
+        venues = [6, 7, 23,63, 297] # 1,5,21,53,133
+        data_types = ["orderlines"]
+    else:
+        venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
+        data_types = ["events", "shows", "orderlines", "orders", "contacts"]
 
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
     for venue_id in venues:
         for dt in data_types:
-            if backload:
+            if backload == "rebuild":
+                file_path = os.path.join(
+                    dir_path, dt + '-' + str(venue) + '-rebuild.csv')
+            elif backload:
                 file_path = os.path.join(dir_path, 'bdir', dt + '-' + str(venue_id) + '.csv')
             else:
                 file_path = os.path.join(dir_path, 'api-data', dt + '-' + str(venue_id) + '.csv')
@@ -424,7 +431,10 @@ if __name__ == '__main__':
         sql_post_processing()
     else:
         if options.rebuild:
-            rebuild_orderlines()
+            if options.sql:
+                sql_upload("rebuild")
+            else:
+                rebuild_orderlines()
         else:
             if options.names:
                 missing_names()
