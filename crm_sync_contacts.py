@@ -55,15 +55,15 @@ def build_contact_data(data, api_key):
     d["field[%LAST_ORDER_DATE%,0]"] = "" if last_order == "None" else last_order
     d["field[%LAST_COMP_SHOW_DATE%,0]"] = "" if last_comp == "None" else last_comp
     d["field[%TOTAL_NUMBER_OF_COMP_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_comp_tickets'])
-    d["field[%TOTAL_NUMBER_OF_PAID_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_paid_tickets'])
     d["field[%TOTAL_NUMBER_OF_COMP_ORDERS%,0]"] = str(data['contacts_mv.total_lifetime_comp_orders'])
+    d["field[%TOTAL_NUMBER_OF_PAID_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_paid_tickets'])
     d["field[%TOTAL_NUMBER_OF_PAID_ORDERS%,0]"] = str(data['contacts_mv.total_lifetime_paid_orders'])
     d["field[%TOTAL_COMP_ORDER_COUNT_LAST_360_DAYS%,0]"] = str(data['contacts_mv.comp_orders_count_360'])
     d["field[%TOTAL_COMP_ORDER_COUNT_LAST_180_DAYS%,0]"] = str(data['contacts_mv.comp_orders_count_180'])
     d["field[%TOTAL_COMP_ORDER_COUNT_LAST_90_DAYS%,0]"] = str(data['contacts_mv.comp_orders_count_90'])
-    d["field[%TOTAL_PAID_ORDERS_LAST_90_DAYS%,0]"] = str(data['contacts_mv.paid_orders_count_90'])
-    d["field[%TOTAL_PAID_ORDERS_LAST_180_DAYS%,0]"] = str(data['contacts_mv.paid_orders_count_180'])
-    d["field[%TOTAL_PAID_ORDERS_LAST_360_DAYS%,0]"] = str(data['contacts_mv.paid_orders_count_360'])
+    d["field[%TOTAL_PAID_ORDER_COUNT_LAST_90_DAYS%,0]"] = str(data['contacts_mv.paid_orders_count_90'])
+    d["field[%TOTAL_PAID_ORDER_COUNT_LAST_180_DAYS%,0]"] = str(data['contacts_mv.paid_orders_count_180'])
+    d["field[%TOTAL_PAID_ORDER_COUNT_LAST_360_DAYS%,0]"] = str(data['contacts_mv.paid_orders_count_360'])
     d["field[%TOTAL_REVENUE_LAST_90_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_90'])
     d["field[%TOTAL_REVENUE_LAST_180_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_180'])
     d["field[%TOTAL_REVENUE_LAST_360_DAYS%,0]"] = str(data['contacts_mv.paid_orders_revenue_360'])
@@ -122,7 +122,7 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings, last_v
             if last_venue not in ["None", ""]:
                 list_id = list_mappings[last_venue]
                 field = "p[%s]" % list_id
-                d[field] = list_id
+                data[field] = list_id
                 r = requests.post(url, headers=auth_header, data=data)
                 if r.status_code == 200 and r.json()["result_code"] != 0:
                     print("SUCCESS: Created contact via API", data['email'])
