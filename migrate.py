@@ -19,6 +19,10 @@ parser.add_option("-s", "--sql", dest="sql", type="string",
                   help="Upload all CSV files to SQL server only", metavar="sql")
 parser.add_option("-n", "--name", dest="names", type="string",
                   help="Fix missing names in database", metavar="names")
+parser.add_option("-r", "--rebuild", dest="rebuild", type="string",
+                  help="Rebuild all orders/orderlines in database", metavar="rebuild")
+parser.add_option("-p", "--postprocess", dest="postprocess", type="string",
+                  help="Run only postprocessing scripts", metavar="postprocess")
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -418,16 +422,22 @@ def missing_names():
 
 if __name__ == '__main__':
     (options, args) = parser.parse_args()
-    if options.names:
-        missing_names()
+    if options.postprocess:
+        sql_post_processing()
     else:
-        if options.sql:
-            if options.backload:
-                sql_upload(True)
-            else:
-                sql_upload()
-            sql_post_processing()
-        elif options.backload:
-            backload()
+        if options.rebuild:
+            rebuild_orderlines()
         else:
-            main()
+            if options.names:
+                missing_names()
+            else:
+                if options.sql:
+                    if options.backload:
+                        sql_upload(True)
+                    else:
+                        sql_upload()
+                    sql_post_processing()
+                elif options.backload:
+                    backload()
+                else:
+                    main()
