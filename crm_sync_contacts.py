@@ -75,7 +75,7 @@ def build_contact_data(data, api_key):
     d["field[%AVERAGE_NUMBER_OF_TICKETS_PER_COMP_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_comp_order'])
     d["field[%AVERAGE_NUMBER_OF_DAYS_BETWEEN_PURCHASE_AND_EVENT_DATES%,0]"] = str(data['contacts_mv.avg_purchase_to_show_days'])
     d["field[%AVERAGE_TICKETS_PER_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_order'])
-    return d
+    return d, str(data['contacts_mv.last_event_venue'])
 
 
 def fetch_crm_list_mapping(configs):
@@ -107,7 +107,7 @@ def lookup_crm_id_by_api(url, data, auth_header):
         return None
 
 
-def update_contact_in_crm(url, auth_header, data, configs, list_mappings):
+def update_contact_in_crm(url, auth_header, data, configs, list_mappings, last_venue):
     crm_id = lookup_crm_id_by_api(url, data, auth_header)
     if crm_id:
         data['id'] = crm_id
@@ -115,12 +115,11 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings):
         if r.status_code == 200 and r.json()["result_code"] != 0:
             print("SUCCESS: Updated contact via API", data['email'])
         else:
-            print("Updating contact via API failed.")
+            print("ERROR: Updating contact via API failed.", data['email'])
     else:
         try:
             data["api_action"] = "contact_add"
-            data.pop("id", None)
-            last_venue = str(data['contacts_mv.last_event_venue'])
+            data.pop("id", "")
             if last_venue not in ["None", ""]:
                 list_id = list_mappings[last_venue]
                 field = "p[%s]" % list_id
@@ -129,9 +128,9 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings):
             if r.status_code == 200 and r.json()["result_code"] != 0:
                 print("SUCCESS: Created contact via API", data['email'])
             else:
-                print("Creating contact via API failed.")
+                print("ERROR: Creating contact via API failed.", data['email'])
         except Exception:
-            print("Creating contact via API failed.")
+            print("ERROR: Creating contact via API failed.", data['email'])
     return crm_id
 
 
@@ -153,10 +152,10 @@ def active_campaign_sync():
     while more_rows:
         try:
             contact_info = r.fetch_row(how=2)[0]
-            contact_data = build_contact_data(contact_info, configs["Api-Token"])
+            contact_data, last_venue = build_contact_data(contact_info, configs["Api-Token"])
             if contact_data:
                 update_contact_in_crm(
-                    url, auth_header, contact_data, configs, list_mappings)
+                    url, auth_header, contact_data, configs, list_mappings, last_venue)
             else:
                 print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
         except IndexError:
