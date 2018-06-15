@@ -80,7 +80,7 @@ def build_contact_data(data, api_key):
     d["field[%AVERAGE_NUMBER_OF_TICKETS_PER_COMP_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_comp_order'])
     d["field[%AVERAGE_NUMBER_OF_DAYS_BETWEEN_PURCHASE_AND_EVENT_DATES%,0]"] = str(data['contacts_mv.avg_purchase_to_show_days'])
     d["field[%AVERAGE_TICKETS_PER_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_order'])
-    return d, str(data['contacts_mv.last_event_venue'])
+    return d
 
 
 def fetch_crm_list_mapping(configs):
@@ -157,7 +157,8 @@ def active_campaign_sync():
     while more_rows:
         try:
             contact_info = r.fetch_row(how=2)[0]
-            contact_data, last_venue = build_contact_data(contact_info, configs["Api-Token"])
+            last_venue = str(contact_info['contacts_mv.last_event_venue'])
+            contact_data = build_contact_data(contact_info, configs["Api-Token"])
             if contact_data:
                 update_contact_in_crm(
                     url, auth_header, contact_data, configs, list_mappings, last_venue)
