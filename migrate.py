@@ -179,7 +179,6 @@ def rebuild_orderlines():
                         db=configs['db_name'])
     db.query("""SELECT DISTINCT venue_id, orderproduct_category FROM orders_mv ORDER BY venue_id, orderproduct_category""")
     r = db.store_result()
-    db.close()
     more_rows = True
     while more_rows:
         try:
@@ -192,6 +191,7 @@ def rebuild_orderlines():
                 data['orderlines'] += order_info_objs[1]
         except IndexError:
             more_rows = False
+    db.close()
 
     for dt in data_types:
         try:
