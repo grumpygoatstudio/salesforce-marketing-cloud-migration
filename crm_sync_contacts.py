@@ -26,7 +26,7 @@ def build_contact_data(data, api_key):
     d["api_key"] = api_key
     d["api_action"] = "contact_edit"
     d["api_output"] = "json"
-    d["email"] = str(data['contacts_mv.email_address'])
+    d["email"] = str(data['contacts_mv.email_address']).replace("\r", "")
     d["id"] = None
     d["overwrite"] = "0"
     # all custom contacts fields
