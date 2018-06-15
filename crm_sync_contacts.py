@@ -47,11 +47,16 @@ def build_contact_data(data, api_key):
     d["field[%LAST_SHOW_ATTENDED_NAME%,0]"] = str(data['contacts_mv.last_event_title'])
     d["field[%NEXT_SHOW_ATTENDING_NAME%,0]"] = str(data['contacts_mv.next_event_title'])
 
-    d["field[%FIRST_SHOW_ATTENDED_DATE%,0]"] = "" if str(data['contacts_mv.first_show_attended']) == "None" else str(data['contacts_mv.first_show_attended']).replace('T', ' ')
-    d["field[%LAST_SHOW_ATTENDED_DATE%,0]"] = "" if str(data['contacts_mv.last_show_attended']) == "None" else str(data['contacts_mv.last_show_attended']).replace('T', ' ')
-    d["field[%NEXT_SHOW_ATTENDING_DATE%,0]"] = "" if str(data['contacts_mv.next_show_attending']) == "None" else str(data['contacts_mv.next_show_attending']).replace('T', ' ')
-    d["field[%LAST_ORDER_DATE%,0]"] = "" if str(data['contacts_mv.last_ordered_date']) == "None" else str(data['contacts_mv.last_ordered_date']).replace('T', ' ')
-    d["field[%LAST_COMP_SHOW_DATE%,0]"] = "" if str(data['contacts_mv.last_comp_show_date']) == "None" else str(data['contacts_mv.last_comp_show_date']).replace('T', ' ')
+    first_show = str(data['contacts_mv.first_show_attended']).replace('T', ' ')
+    last_show = str(data['contacts_mv.last_show_attended']).replace('T', ' ')
+    next_show = str(data['contacts_mv.next_show_attending']).replace('T', ' ')
+    last_order = str(data['contacts_mv.last_ordered_date']).replace('T', ' ')
+    last_comp = str(data['contacts_mv.last_comp_show_date']).replace('T', ' ')
+    d["field[%FIRST_SHOW_ATTENDED_DATE%,0]"] = "" if first_show == "None" else first_show
+    d["field[%LAST_SHOW_ATTENDED_DATE%,0]"] = "" if last_show == "None" else last_show
+    d["field[%NEXT_SHOW_ATTENDING_DATE%,0]"] = "" if next_show == "None" else next_show
+    d["field[%LAST_ORDER_DATE%,0]"] = "" if last_order == "None" else last_order
+    d["field[%LAST_COMP_SHOW_DATE%,0]"] = "" if last_comp == "None" else last_comp
 
     d["field[%TOTAL_NUMBER_OF_COMP_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_comp_tickets'])
     d["field[%TOTAL_NUMBER_OF_PAID_TICKETS%,0]"] = str(data['contacts_mv.total_lifetime_paid_tickets'])
