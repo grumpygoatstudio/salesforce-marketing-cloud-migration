@@ -172,7 +172,7 @@ def rebuild_orderlines():
     pull_limit = parse("1900-01-01T00:00:01", ignoretz=True)
     data_types = ["orderlines"]
     data = {"orderlines": []}
-    venues = [297] # 1, 5, 6, 7, 21, 23, 53, 63, 131, 133
+    venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
     for venue in venues:
         db = _mysql.connect(user=configs['db_user'],
                             passwd=configs['db_password'],
@@ -214,7 +214,7 @@ def rebuild_orderlines():
             the_file.close()
 
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
-    # sql_upload()
+    sql_upload()
     print("Orderlines Rebuild Completed - " +
           datetime.today().strftime("%Y-%m-%dT%H:%M:%S"))
 
@@ -336,7 +336,7 @@ def main():
     print("Data Pull Completed - " + configs['last_pull'])
 
     # TRIGGER POST-PROCESSING FOR SQL TABLES
-    #sql_post_processing()
+    sql_post_processing()
 
 
 def sql_upload(backload=False):
