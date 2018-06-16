@@ -92,14 +92,13 @@ def save_crm_id(se_id, venue_id, crm_id, configs):
 
 
 def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecomCustomer'):
+    crm_id = None
     se_id = data[obj_type]["externalid"]
     r = requests.post(url, headers=auth_header, data=json.dumps(data))
     if r.status_code != 201:
         if obj_type == 'ecomCustomer':
             if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
                 crm_id = lookup_crm_id(se_id, venue_id, configs)
-        else:
-            crm_id = None
     else:
         if obj_type == 'ecomCustomer':
             try:
@@ -110,7 +109,6 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
                 pass
         else:
             print("New Order Created", se_id, venue_id)
-            crm_id = None
     return crm_id
 
 

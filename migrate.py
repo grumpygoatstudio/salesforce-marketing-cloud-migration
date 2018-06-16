@@ -118,7 +118,7 @@ def create_objects_from_orders(orders, show_id, pull_limit):
             temp_cust = collections.OrderedDict()
             temp_cust['subscriber_key'] = str(order['customer']['id'])
             temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ")
-            temp_cust['email_address'] = str(order['customer']['email'])
+            temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "")
             temp_cust['sys_entry_date'] = sys_entry_time
             try:
                 payment_method = str(order["payments"][0]['payment_method'])
@@ -269,7 +269,7 @@ def backload():
             the_file.close()
 
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
-    sql_upload(True, True)
+    sql_upload(True)
     print("Old Data Pull Completed - " + datetime.today().strftime("%Y-%m-%dT%H:%M:%S"))
 
     # TRIGGER POST-PROCESSING FOR SQL TABLES
