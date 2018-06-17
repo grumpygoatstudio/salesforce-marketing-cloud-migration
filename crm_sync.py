@@ -112,7 +112,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
     return crm_id
 
 
-def active_campaign_sync(new_venue=297):
+def active_campaign_sync(new_venue=None):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "Api-Token" in e}

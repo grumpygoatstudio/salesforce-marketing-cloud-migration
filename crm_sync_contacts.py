@@ -112,7 +112,7 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings, last_v
         data['id'] = crm_id
         r = requests.post(url, headers=auth_header, data=data)
         if r.status_code == 200 and r.json()["result_code"] != 0:
-            print("SUCCESS: Updated contact via API", data['email'])
+            pass
         else:
             print("ERROR: Updating contact via API failed.", data['email'])
     else:
@@ -125,7 +125,7 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings, last_v
                 data[field] = list_id
                 r = requests.post(url, headers=auth_header, data=data)
                 if r.status_code == 200 and r.json()["result_code"] != 0:
-                    print("SUCCESS: Created contact via API", data['email'])
+                    pass
                 else:
                     print("ERROR: Creating contact via API failed.", data['email'])
         except Exception:
