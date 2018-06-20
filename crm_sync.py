@@ -112,7 +112,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
     return crm_id
 
 
-def active_campaign_sync(new_venue=None):
+def active_campaign_sync():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "Api-Token" in e}
@@ -120,8 +120,8 @@ def active_campaign_sync(new_venue=None):
     last_crm_sync = configs["last_crm_sync"]
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    #venues = [(1,''), (5,''), (6,''), (7,''), (21,''), (23,''), (53,''), (63,''), (131,''), (133,''), (297,'')]
-    venues = [(297, '2')]
+    venues = [(1,'3'), (5,'4'), (6,'5'), (7,'6'), (21,'7'), (23,'10'), (53,'11'), (63,'12'), (131,'9'), (133,'8'), (297,'2')]
+    new_venues = [1,5,6,7,21,23,53,63,131,133]
 
     for venue_id, connection in venues:
         # download CSV file from MySQL DB
@@ -130,7 +130,7 @@ def active_campaign_sync(new_venue=None):
                             port=configs['db_port'],
                             host=configs['db_host'],
                             db=configs['db_name'])
-        if venue_id == new_venue:
+        if venue_id in new_venues:
             sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != '' AND customerid != 'None'""" % (
                 str(venue_id), last_crm_sync.replace('T', ' ')
             )
