@@ -30,6 +30,7 @@ def build_contact_data(data, api_key):
     d["id"] = None
     d["overwrite"] = "0"
     # all custom contacts fields
+    d["field[%SEAT_ENGINE_ID%,0]"] = str(data['contacts_mv.subscriber_key'])
     d["field[%SEAT_ENGINE_NAME%,0]"] = str(data['contacts_mv.cust_name'])
     d["field[%SEAT_ENGINE_PHONE%,0]"] = str(data['contacts_mv.phone'])
     d["field[%NUMBER_OF_SHOWS_ATTENDED_ON_MONDAYS%,0]"] = str(data['contacts_mv.shows_attended_M'])

@@ -43,8 +43,8 @@ def build_order_json(connection, crm_id, data):
         "orderNumber": str(data[0]["orders_mv.orderNumber"]),
         "orderProducts": [
           {
-            # name is a placeholder for the "<show number> - <event name>"
-            "name": str(ol["orders_mv.orderproduct_category"]) + " - " + str(unicode(ol["orders_mv.event_name"], errors='ignore')),
+            # name is a placeholder for the "<show number> - <event name> - <ticket type>"
+            "name": str(ol["orders_mv.orderproduct_category"]) + " - " + str(unicode(ol["orders_mv.event_name"], errors='ignore')) + " - " + ol["orders_mv.orderproduct_name"],
             "price": str(ol["orders_mv.orderproduct_price"]),
             "quantity": "1",
             # category is a placeholder for ticket type

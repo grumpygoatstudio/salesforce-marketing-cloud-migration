@@ -202,8 +202,8 @@ BEGIN
 				o.cust_id AS subscriber_key,
                 o.phone AS phone,
 				MAX(o.purchase_date_formatted) AS last_ordered_date, -- Last Ordered Date
-				COUNT(e.special_event) AS count_shows_special, -- Special Event Total Order Count
-				COUNT(e.presents_event) AS count_shows_persents -- Presents Event Total Order Count
+				COUNT(CASE WHEN e.special_event = 1 THEN 1 END) AS count_shows_special, -- Special Event Total Order Count
+				COUNT(CASE WHEN e.presents_event = 1 THEN 1 END) AS count_shows_persents -- Presents Event Total Order Count
 			FROM seatengine.orders_processed o
 			JOIN seatengine.shows_processed s ON (s.id = o.show_id)
 			JOIN seatengine.events_processed e ON (e.id = s.event_id)
