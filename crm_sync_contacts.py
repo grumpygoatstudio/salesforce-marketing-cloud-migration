@@ -115,7 +115,7 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings, last_v
         data['id'] = crm_id
         r = requests.post(url, headers=auth_header, data=data)
         if r.status_code == 200 and r.json()["result_code"] != 0:
-            pass
+            print("SUCCESS: Updated contact.", data['email'])
         else:
             print("ERROR: Updating contact via API failed.", data['email'])
     else:
@@ -128,7 +128,7 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings, last_v
                 data[field] = list_id
                 r = requests.post(url, headers=auth_header, data=data)
                 if r.status_code == 200 and r.json()["result_code"] != 0:
-                    pass
+                    print("SUCCESS: Created contact.", data['email'])
                 else:
                     print("ERROR: Creating contact via API failed.", data['email'])
         except Exception:
@@ -148,7 +148,7 @@ def active_campaign_sync():
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    db.query("""SELECT * FROM contacts_mv WHERE email_address != ''""")
+    db.query("""SELECT * FROM contacts_mv WHERE email_address != '' AND email_address in (SELECT DISTINCT email FROM orders_mv WHERE email != '' AND orderDate BETWEEN NOW() - INTERVAL 3 DAY AND NOW())""")
     r = db.store_result()
     more_rows = True
     while more_rows:
