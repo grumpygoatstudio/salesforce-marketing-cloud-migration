@@ -17,6 +17,8 @@ BEGIN
 		SELECT
 			c.subscriber_key AS subscriber_key,
 			c.name AS cust_name,
+			c.name_first AS cust_name_first,
+			c.name_last AS cust_name_last,
 			c.email_address AS email_address,
 			phone AS phone,
 			total_revenue,  -- Total Revenue from customerid

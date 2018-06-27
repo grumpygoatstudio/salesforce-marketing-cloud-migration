@@ -29,6 +29,8 @@ def build_contact_data(data, api_key):
     d["email"] = str(data['contacts_mv.email_address']).replace("\r", "")
     d["id"] = None
     d["overwrite"] = "0"
+    d["first_name"] = str(data['contacts_mv.cust_name_first'])
+    d["last_name"] = str(data['contacts_mv.cust_name_last'])
     # all custom contacts fields
     d["field[%SEAT_ENGINE_ID%,0]"] = str(data['contacts_mv.subscriber_key'])
     d["field[%SEAT_ENGINE_NAME%,0]"] = str(data['contacts_mv.cust_name'])

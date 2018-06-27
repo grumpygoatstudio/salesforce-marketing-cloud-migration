@@ -118,6 +118,8 @@ def create_objects_from_orders(orders, show_id, pull_limit):
             temp_cust = collections.OrderedDict()
             temp_cust['subscriber_key'] = str(order['customer']['id'])
             temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ")
+            temp_cust['name_first'] = str(order['delivery_data']['first_name']).strip().replace("\"", "").replace(",", " ")
+            temp_cust['name_last'] = str(order['delivery_data']['last_name']).strip().replace("\"", "").replace(",", " ")
             temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "")
             temp_cust['sys_entry_date'] = sys_entry_time
             try:
