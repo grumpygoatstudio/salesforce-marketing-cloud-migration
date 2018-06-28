@@ -123,7 +123,7 @@ def create_objects_from_orders(orders, show_id, pull_limit):
                 temp_cust['name_last'] = str(order["delivery_data"]["last_name"]).strip().replace("\"", "").replace(",", " ")
             except KeyError:
                 try:
-                    names = order['customer']['name']).strip().split(", ")
+                    names = str(order['customer']['name']).strip().split(", ")
                     temp_cust['name_first']=" ".join(names[1:]).replace("\"", "").replace(",", " ")
                     temp_cust['name_last'] = names[0].replace("\"", "").replace(",", " ")
                 except Exception:
