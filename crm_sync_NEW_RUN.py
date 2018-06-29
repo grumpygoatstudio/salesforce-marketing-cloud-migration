@@ -105,9 +105,9 @@ def active_campaign_sync():
     last_crm_sync = configs["last_crm_sync"]
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
-              (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
-    new_venues = []
+    venues = [] #(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
+                #(53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')
+    new_venues = [1,3,5,6,7,21,23,,53,63,131,133,297]
     
     for venue_id, connection in venues:
         print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
