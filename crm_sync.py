@@ -96,24 +96,30 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
     if obj_type == 'ecomCustomer':
         crm_id = None
         se_id = data[obj_type]["externalid"]
-    r = requests.post(url, headers=auth_header, data=json.dumps(data))
-    if r.status_code != 201:
-        if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-            if obj_type == 'ecomCustomer':
-                crm_id = lookup_crm_id(se_id, venue_id, configs)
-            else:
-                return True
-    else:
-        if obj_type == 'ecomCustomer':
-            try:
-                print("New Customer Created", se_id, venue_id, int(crm_id))
-                crm_id = r.json()[obj_type]["id"]
-                save_crm_id(se_id, venue_id, int(crm_id), configs)
-            except Exception:
-                pass
+    try:
+        r = requests.post(url, headers=auth_header, data=json.dumps(data))
+        if r.status_code != 201:
+            if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
+                if obj_type == 'ecomCustomer':
+                    crm_id = lookup_crm_id(se_id, venue_id, configs)
+                else:
+                    print("ERROR: Order Not Created!\n%s" % r.json()['errors'])
+                    return True
         else:
-            print("New Order Created!")
-            return True
+            if obj_type == 'ecomCustomer':
+                try:
+                    print("New Customer Created", se_id, venue_id, int(crm_id))
+                    crm_id = r.json()[obj_type]["id"]
+                    save_crm_id(se_id, venue_id, int(crm_id), configs)
+                except Exception:
+                    pass
+            else:
+                print("New Order Created!")
+                return True
+    except UnicodeDecodeError:
+        # skip over orders with Unicode Decode errors
+        print("ERROR: UnicodeDecodeError while posting (%s): #%s" % (obj_type, data))
+        crm_id = None
     return crm_id
 
 
