@@ -171,6 +171,7 @@ def active_campaign_sync():
                 print("BUILD CUSTOMER JSON FAILED!", str(ols))
 
         crm_orders = []
+        print("~~ POSTING ORDERS PAYLOAD ~~")
         for i in crm_postings:
             if i[0]:
                 try:
@@ -179,7 +180,6 @@ def active_campaign_sync():
                     print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
 
         # post all valid orders to the CRM in one go
-        print("~~ POSTING ORDERS PAYLOAD ~~")
         post_object_to_crm(orders_url, auth_header,
                             crm_orders, venue_id, configs, 'ecomOrder')
 
