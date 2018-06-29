@@ -112,7 +112,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
             except Exception:
                 pass
         else:
-            print("New Order Created! %s" % int(crm_id))
+            print("New Order Created!")
             return True
     return crm_id
 
