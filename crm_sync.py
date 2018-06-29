@@ -161,7 +161,7 @@ def active_campaign_sync():
             customer_json = build_customer_json(connection, ols)
             if customer_json:
                 crm_id = post_object_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
-                crm_postings += (crm_id, ols,)
+                crm_postings.append([crm_id, ols])
             else:
                 print("BUILD CUSTOMER JSON FAILED!", str(ols))
 
