@@ -102,13 +102,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
             if obj_type == 'ecomCustomer':
                 crm_id = lookup_crm_id(se_id, venue_id, configs)
             else:
-                try:
-                    r = requests.post(url, headers=auth_header, data=json.dumps(data))
-                    if r.status_code == 200:
-                        return True
-                except Exception:
-                    print("New Orders Error!\n%s" % str(r.json()['errors']))
-                    return True
+                return True
     else:
         if obj_type == 'ecomCustomer':
             try:
