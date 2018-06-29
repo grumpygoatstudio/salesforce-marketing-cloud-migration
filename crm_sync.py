@@ -101,6 +101,9 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
         if obj_type == 'ecomCustomer':
             if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
                 crm_id = lookup_crm_id(se_id, venue_id, configs)
+        else:
+            print("New Orders Error!\n%s" % str(r.json()['errors']))
+            return True
     else:
         if obj_type == 'ecomCustomer':
             try:
@@ -111,6 +114,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
                 pass
         else:
             print("New Orders Created! ~ Count: %s" % len(data))
+            return True
     return crm_id
 
 
