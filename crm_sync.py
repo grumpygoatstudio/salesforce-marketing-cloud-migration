@@ -63,36 +63,16 @@ def build_order_json(connection, crm_id, data):
     }
 
 
-def lookup_crm_id(se_id, venue_id, configs):
-    db = _mysql.connect(user=configs['db_user'],
-                        passwd=configs['db_password'],
-                        port=configs['db_port'],
-                        host=configs['db_host'],
-                        db=configs['db_name'])
-
-    sql = """SELECT crm_id FROM crm_linker_custs WHERE se_id = \'%s\' AND venue_id = %s""" % (se_id, venue_id)
-    db.query(sql)
-    r = db.store_result()
-    try:
-        crm_id = int(r.fetch_row()[0][0])
-    except Exception:
-        crm_id = None
-    db.close()
-    return crm_id
+def lookup_crm_id(email, url, auth_header, connection):
+    r = requests.get(url+"?filters[email]=%s" % email,headers=auth_header)
+    if r.status_code == 200:
+        for c in r.json()["ecomCustomers"]:
+            if c["connectionid"] == connection:
+                return c["id"]
+    return None
 
 
-def save_crm_id(se_id, venue_id, crm_id, configs):
-    db = _mysql.connect(user=configs['db_user'],
-                        passwd=configs['db_password'],
-                        port=configs['db_port'],
-                        host=configs['db_host'],
-                        db=configs['db_name'])
-    sql = """INSERT INTO crm_linker_custs SET se_id=\'%s\', venue_id=%s, crm_id=%s""" % (se_id, venue_id, crm_id)
-    db.query(sql)
-    db.close()
-
-
-def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecomCustomer'):
+def post_object_to_crm(url, auth_header, data, venue_id, configs, connection, obj_type='ecomCustomer'):
     if obj_type == 'ecomCustomer':
         crm_id = None
         se_id = data[obj_type]["externalid"]
@@ -101,20 +81,14 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
         if r.status_code != 201:
             if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
                 if obj_type == 'ecomCustomer':
-                    crm_id = lookup_crm_id(se_id, venue_id, configs)
+                    crm_id = lookup_crm_id(data[obj_type]['email'], url, auth_header, connection)
             else:
                 print("ERROR: %s Not Created!\n%s" % (obj_type, r.json()['errors']))
                 return True
         else:
             if obj_type == 'ecomCustomer':
-                try:
-                    print("New Customer Created", se_id, venue_id, int(crm_id))
-                    crm_id = r.json()[obj_type]["id"]
-                    save_crm_id(se_id, venue_id, int(crm_id), configs)
-                except Exception:
-                    pass
+                crm_id = r.json()[obj_type]["id"]
             else:
-                print("New Order Created!")
                 return True
     except UnicodeDecodeError:
         # skip over orders with Unicode Decode errors
@@ -131,9 +105,9 @@ def active_campaign_sync():
     last_crm_sync = configs["last_crm_sync"]
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    venues = [(297, '2'), (1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
-              (53, '11'), (63, '12'), (131, '9'), (133, '8')]
-    new_venues = [1,5,6,7,21,23,53,63,131,133]
+    venues = [(5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
+              (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')] # (1, '3')
+    new_venues = []
 
     for venue_id, connection in venues:
         print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
@@ -165,25 +139,26 @@ def active_campaign_sync():
         db.close()
         crm_postings = []
         print("~~ POSTING CUSTOMERS ~~")
+        print("TOTAL ORDERS TO PUSH: %s" % len(orders))
         for o in orders:
             ols = orders[o]
             # build order and customer JSON and POST the JSON objects to AC server
             customer_json = build_customer_json(connection, ols)
             if customer_json:
-                crm_id = post_object_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
+                crm_id = post_object_to_crm(customers_url, auth_header, customer_json, venue_id, configs, connection)
                 crm_postings.append([crm_id, ols])
             else:
                 print("BUILD CUSTOMER JSON FAILED!", str(ols))
 
         print("~~ POSTING ORDERS PAYLOAD ~~")
+        crm_postings = [i for i in crm_postings if i[0]]
+        print("TOTAL ORDERS TO PUSH - LESS BAD CUST DATA: %s" % len(crm_postings))
         for i in crm_postings:
-            if i[0]:
-                try:
-                    crm_order = build_order_json(connection, str(i[0]), i[1])
-                    post_object_to_crm(orders_url, auth_header,
-                                       crm_order, venue_id, configs, 'ecomOrder')
-                except:
-                    print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
+            try:
+                crm_order = build_order_json(connection, str(i[0]), i[1])
+                post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
+            except:
+                print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
