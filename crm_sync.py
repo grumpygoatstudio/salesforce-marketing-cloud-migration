@@ -93,8 +93,9 @@ def save_crm_id(se_id, venue_id, crm_id, configs):
 
 
 def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecomCustomer'):
-    crm_id = None
-    se_id = data[obj_type]["externalid"]
+    if obj_type == 'ecomCustomer':
+        crm_id = None
+        se_id = data[obj_type]["externalid"]
     r = requests.post(url, headers=auth_header, data=json.dumps(data))
     if r.status_code != 201:
         if obj_type == 'ecomCustomer':
@@ -109,7 +110,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
             except Exception:
                 pass
         else:
-            print("New Order Created", se_id, venue_id)
+            print("New Orders Created! ~ Count: %s" % len(data))
     return crm_id
 
 
@@ -171,7 +172,7 @@ def active_campaign_sync():
                 try:
                     crm_orders += build_order_json(connection, str(i[0]), i[1])
                 except:
-                    print("BUILD ORDER JSON FAILED!", str(ols[0]["orders_mv.orderNumber"]))
+                    print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
 
         # post all valid orders to the CRM in one go
         print("~~ POSTING ORDERS PAYLOAD ~~")
