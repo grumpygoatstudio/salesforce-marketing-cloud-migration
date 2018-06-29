@@ -39,14 +39,15 @@ def build_order_json(connection, crm_id, data):
     return {
       "ecomOrder": {
         "externalid": str(data[0]["orders_mv.externalid"]),
+        "source": 0,
         "email": data[0]["orders_mv.email"],
         "orderNumber": str(data[0]["orders_mv.orderNumber"]),
         "orderProducts": [
           {
             # name is a placeholder for the "<show number> - <event name> - <ticket type>"
             "name": str(ol["orders_mv.orderproduct_category"]) + " - " + str(unicode(ol["orders_mv.event_name"], errors='ignore')) + " - " + ol["orders_mv.orderproduct_name"],
-            "price": str(ol["orders_mv.orderproduct_price"]),
-            "quantity": "1",
+            "price": int(ol["orders_mv.orderproduct_price"]),
+            "quantity": 1,
             # category is a placeholder for ticket type
             "category": ol["orders_mv.orderproduct_name"]
           } for ol in data
@@ -56,8 +57,8 @@ def build_order_json(connection, crm_id, data):
         "shippingMethod": data[0]["orders_mv.shippingMethod"],
         "totalPrice": str(data[0]["orders_mv.totalPrice"]),
         "currency": "USD",
-        "connectionid": connection,
-        "customerid": crm_id
+        "connectionid": int(connection),
+        "customerid": int(crm_id)
       }
     }
 
@@ -125,7 +126,7 @@ def active_campaign_sync():
     new_venues = [1,5,6,7,21,23,53,63,131,133]
 
     for venue_id, connection in venues:
-        print("Processing Orders for venue #%s" % venue_id )
+        print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
         # download CSV file from MySQL DB
         db = _mysql.connect(user=configs['db_user'],
                             passwd=configs['db_password'],
@@ -152,17 +153,27 @@ def active_campaign_sync():
             except IndexError:
                 more_rows = False
         db.close()
+        crm_postings = []
+        print("~~ POSTING CUSTOMERS ~~")
         for o in orders:
             ols = orders[o]
             # build order and customer JSON and POST the JSON objects to AC server
             customer_json = build_customer_json(connection, ols)
             if customer_json:
                 crm_id = post_object_to_crm(customers_url, auth_header, customer_json, venue_id, configs)
-                if crm_id:
-                    order_json = build_order_json(connection, str(crm_id), ols)
-                    post_object_to_crm(orders_url, auth_header, order_json, venue_id, configs, 'ecomOrder')
+                crm_postings += (crm_id, ols)
             else:
                 print("BUILD CUSTOMER JSON FAILED!", str(ols))
+
+        for i in crm_postings:
+            if i[0]:
+                order_json = build_order_json(connection, str(i[0]), i[1])
+
+        # post all valid orders to the CRM in one go
+        print("~~ POSTING ORDERS PAYLOAD ~~")
+        post_object_to_crm(orders_url, auth_header,
+                            order_json, venue_id, configs, 'ecomOrder')
+
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
