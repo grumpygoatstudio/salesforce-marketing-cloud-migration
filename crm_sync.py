@@ -98,12 +98,18 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
         se_id = data[obj_type]["externalid"]
     r = requests.post(url, headers=auth_header, data=json.dumps(data))
     if r.status_code != 201:
-        if obj_type == 'ecomCustomer':
-            if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
+        if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
+            if obj_type == 'ecomCustomer':
                 crm_id = lookup_crm_id(se_id, venue_id, configs)
-        else:
-            print("New Orders Error!\n%s" % str(r.json()['errors']))
-            return True
+            else:
+                try:
+                    r = requests.post(url, headers=auth_header, data=json.dumps(data))
+                    if r.status_code == 200:
+                        print("New Order Created! %s" % int(crm_id))
+                        return True
+                except Exception:
+                    print("New Orders Error!\n%s" % str(r.json()['errors']))
+                    return True
     else:
         if obj_type == 'ecomCustomer':
             try:
@@ -113,7 +119,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, obj_type='ecom
             except Exception:
                 pass
         else:
-            print("New Orders Created! ~ Count: %s" % len(data))
+            print("New Order Created! %s" % int(crm_id))
             return True
     return crm_id
 
