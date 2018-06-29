@@ -170,19 +170,15 @@ def active_campaign_sync():
             else:
                 print("BUILD CUSTOMER JSON FAILED!", str(ols))
 
-        crm_orders = []
         print("~~ POSTING ORDERS PAYLOAD ~~")
         for i in crm_postings:
             if i[0]:
                 try:
-                    crm_orders += build_order_json(connection, str(i[0]), i[1])
+                    crm_order = build_order_json(connection, str(i[0]), i[1])
+                    post_object_to_crm(orders_url, auth_header,
+                                       crm_order, venue_id, configs, 'ecomOrder')
                 except:
                     print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
-
-        # post all valid orders to the CRM in one go
-        post_object_to_crm(orders_url, auth_header,
-                            crm_orders, venue_id, configs, 'ecomOrder')
-
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
