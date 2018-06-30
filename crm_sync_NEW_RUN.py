@@ -115,14 +115,15 @@ def active_campaign_sync():
     deadline = parse("2018-06-15", ignoretz=True)
     step_30 = timedelta(days=30)
 
-    while start_date < deadline:
-        # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
-        header = 'From: kevin@matsongroup.com\n'
-        header += 'To: flygeneticist@gmail.com\n'
-        # header += 'Cc: jason@matsongroup.com\n'
-        header += 'Subject: Venue Completed FULL Backload - SeatEngine AWS\n'
-        msg = header + "\nThis is the AWS Server for Seatengine.\nJust a friendly notice regarding the backloading efforts of Orders into AC.\n"
+    # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
+    sender = "kevin@matsongroup.com"
+    recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
+    header = 'From: %s\n'
+    header += 'To: %s\n' % ", ".join(recipients)
+    header += 'Subject: Venue Completed FULL Backload - SeatEngine AWS\n'
 
+    while start_date < deadline:
+        msg = header + "\nThis is the AWS Server for Seatengine.\nJust a friendly notice regarding the backloading efforts of Orders into AC.\n"
         start_date = start_date + step_30
         for venue_id, connection in venues:
             print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
@@ -182,9 +183,9 @@ def active_campaign_sync():
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.ehlo()
         server.starttls()
-        server.login("kevin@matsongroup.com",
-                     "tie3Quoo!jaeneix2wah5chahchai%bi")
-        server.sendmail("kevin@matsongroup.com", "flygeneticist@gmail.com", "jason@matsongroup.com", msg)
+        server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
+        server.sendmail(sender, recipients, msg)
+        server.quit()
         print("Sent Message. Taking a rest...")
         time.sleep(10800)  # Taking a 3 hour break to avoid ssl locks
 
