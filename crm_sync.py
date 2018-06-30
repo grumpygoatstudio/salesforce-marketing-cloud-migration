@@ -159,16 +159,18 @@ def active_campaign_sync():
                 print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
 
     # send a completion email notifying Kevin and Jason that daily updates have finished
+    sender = "kevin@matsongroup.com"
+    recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()
-    server.login("kevin@matsongroup.com", "tie3Quoo!jaeneix2wah5chahchai%bi")
-    header = 'From: kevin@matsongroup.com\n'
-    header += 'To: flygeneticist@gmail.com\n'
-    header += 'Cc: jason@matsongroup.com\n'
+    server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
+    header = 'From: %s\n' % sender
+    header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed DAILY Orders Sync - SeatEngine AWS\n'
-    msg = header + "\nThis is the AWS Server for Seatengine.\nJust a friendly notice regarding the daily updates have completed: SUCCESS"
-    server.sendmail("kevin@matsongroup.com","flygeneticist@gmail.com", "jason@matsongroup.com", msg)
+    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM sync updates have completed: SUCCESS"
+    server.sendmail(sender,recipients, msg)
+    server.quit()
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
