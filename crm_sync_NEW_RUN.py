@@ -108,9 +108,8 @@ def active_campaign_sync():
     last_crm_sync = configs["last_crm_sync"]
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    # venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
-    #             (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
-    venues = [(53, '1')]
+    venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
+                (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
     start_date = parse("2017-01-31", ignoretz=True)
     deadline = parse("2018-06-15", ignoretz=True)
     step_30 = timedelta(days=30)
@@ -118,7 +117,7 @@ def active_campaign_sync():
     # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
     sender = "kevin@matsongroup.com"
     recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
-    header = 'From: %s\n'
+    header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Venue Completed FULL Backload - SeatEngine AWS\n'
 
