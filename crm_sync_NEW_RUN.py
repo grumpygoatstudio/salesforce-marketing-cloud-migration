@@ -5,6 +5,7 @@ import json
 import collections
 import _mysql
 import smtplib
+import time
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse
@@ -179,8 +180,9 @@ def active_campaign_sync():
             msg += "For Venue #%s:\nCustomer push (qty: %s) - SUCCESS\nOrder push (qty: %s) - SUCCESS\n" % (
                 venue_id, len(crm_postings), order_count)
 
-        msg += "\nDates Covered For This Push: % s - %s" % (start_date.strftime("%Y-%m-%d"), (start_date+step_30).strftime("%Y-%m-%d"))
+        msg += "\nDates Covered For This Push: % s - %s\n\nTaking a long siesta...back to work in 3 hours." % (start_date.strftime("%Y-%m-%d"), (start_date+step_30).strftime("%Y-%m-%d"))
         server.sendmail("kevin@matsongroup.com", "flygeneticist@gmail.com", "jason@matsongroup.com", msg)
+        time.sleep(10800)  # Takinf a 3 hour break to avoid ssl locks
 
     print("CRM Sync Completed - " + configs['last_crm_sync'])
 
