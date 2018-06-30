@@ -4,6 +4,7 @@ import requests
 import json
 import collections
 import _mysql
+import smtplib
 
 from datetime import datetime
 
@@ -27,7 +28,7 @@ def build_customer_json(connection, data):
           "ecomCustomer": {
             "connectionid": connection,
             "externalid": str(data[0]["orders_mv.customerid"]),
-            "email": data[0]["orders_mv.email"]
+            "email": str(data[0]["orders_mv.email"])
           }
         }
     except Exception:
@@ -108,7 +109,7 @@ def active_campaign_sync():
     venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
               (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
     new_venues = []
-    
+
     for venue_id, connection in venues:
         print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
         # download CSV file from MySQL DB
@@ -159,6 +160,18 @@ def active_campaign_sync():
                 post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
             except:
                 print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
+
+    # send a completion email notifying Kevin and Jason that daily updates have finished
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login("kevin@matsongroup.com", "tie3Quoo!jaeneix2wah5chahchai%bi")
+    header = 'From: kevin@matsongroup.com\n'
+    header += 'To: flygeneticist@gmail.com\n'
+    header += 'Cc: jason@matsongroup.com\n'
+    header += 'Subject: Completed DAILY Orders Sync - SeatEngine AWS\n'
+    msg = header + "\nThis is the AWS Server for Seatengine.\nJust a friendly notice regarding the daily updates have completed: SUCCESS"
+    server.sendmail("kevin@matsongroup.com","flygeneticist@gmail.com", "jason@matsongroup.com", msg)
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
