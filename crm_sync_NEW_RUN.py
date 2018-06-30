@@ -135,8 +135,8 @@ def active_campaign_sync():
                                 port=configs['db_port'],
                                 host=configs['db_host'],
                                 db=configs['db_name'])
-            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND orderDate BETWEEN STR_TO_DATE(\'%s\', \'%Y-%m-%d\') AND STR_TO_DATE(\'%s\', \'%Y-%m-%d\') + INTERVAL 30 DAY AND email != '' AND customerid != 'None'""" % (
-                str(venue_id), start_date.strftime("%Y-%m-%d")
+            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND orderDate BETWEEN STR_TO_DATE(\'%s\', \'%%Y-%%m-%%d\') AND STR_TO_DATE(\'%s\', '%%Y-%%m-%%d') + INTERVAL 30 DAY AND email != '' AND customerid != 'None'""" % (
+                str(venue_id), start_date.strftime("%Y-%m-%d"), start_date.strftime("%Y-%m-%d")
             )
             db.query(sql)
             r = db.store_result()
