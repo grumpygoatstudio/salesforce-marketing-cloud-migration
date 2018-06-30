@@ -82,7 +82,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, connection, ob
                 if obj_type == 'ecomCustomer':
                     return lookup_crm_id(data[obj_type]['email'], url, auth_header, connection)
             else:
-                print("ERROR: %s Not Created!\n%s" % (obj_type, r.json()['errors']))
+                print("ERROR: %s Not Created!\n%s" % (obj_type, se_id))
                 return None
         else:
             if obj_type == 'ecomCustomer':
@@ -106,6 +106,12 @@ def active_campaign_sync():
     venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
               (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
     new_venues = []
+
+    # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
+    header = 'From: %s\n' % sender
+    header += 'To: %s\n' % ", ".join(recipients)
+    header += 'Subject: Completed DAILY Orders Sync - SeatEngine AWS\n'
+    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM sync updates have completed: SUCCESS"
 
     for venue_id, connection in venues:
         print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
@@ -151,24 +157,28 @@ def active_campaign_sync():
         print("~~ POSTING ORDERS PAYLOAD ~~")
         crm_postings = [i for i in crm_postings if i[0]]
         print("TOTAL ORDERS TO PUSH - LESS BAD CUST DATA: %s" % len(crm_postings))
+        order_count = 0
+        order_err = 0
         for i in crm_postings:
             try:
                 crm_order = build_order_json(connection, str(i[0]), i[1])
-                post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
+                if post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
+                    order_count += 1
+                else:
+                    order_err += 1
             except:
                 print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
 
+        # add venue details for the month running to the final email msg
+        msg += "~~~~~ VENUE #%s ~~~~~\nCustomer push (SUCCESS qty: %s, ERROR qty: %s)\nOrder push (SUCCESS qty: %s, ERROR qty: %s)\n" % (
+                venue_id, len(crm_postings), len(orders)-len(crm_postings), order_count, order_err)
+
+
     # send a completion email notifying Kevin and Jason that daily updates have finished
-    sender = "kevin@matsongroup.com"
-    recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()
     server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
-    header = 'From: %s\n' % sender
-    header += 'To: %s\n' % ", ".join(recipients)
-    header += 'Subject: Completed DAILY Orders Sync - SeatEngine AWS\n'
-    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM sync updates have completed: SUCCESS"
     server.sendmail(sender,recipients, msg)
     server.quit()
 

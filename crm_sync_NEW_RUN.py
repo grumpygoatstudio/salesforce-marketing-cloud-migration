@@ -72,7 +72,7 @@ def lookup_crm_id(email, url, auth_header, connection):
         for c in r.json()["ecomCustomers"]:
             if c["connectionid"] == connection:
                 return c["id"]
-    return None
+    return False
 
 
 def post_object_to_crm(url, auth_header, data, venue_id, configs, connection, obj_type='ecomCustomer'):
@@ -84,8 +84,8 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, connection, ob
                 if obj_type == 'ecomCustomer':
                     return lookup_crm_id(data[obj_type]['email'], url, auth_header, connection)
             else:
-                print("ERROR: %s Not Created!\n%s" % (obj_type, r.json()['errors']))
-                return None
+                print("ERROR: %s Not Created!\n%s" % (obj_type, r.text()))
+                return False
         else:
             if obj_type == 'ecomCustomer':
                 return r.json()[obj_type]["id"]
@@ -94,7 +94,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, connection, ob
     except UnicodeDecodeError:
         # skip over orders with Unicode Decode errors
         print("ERROR: UnicodeDecodeError while posting (%s): #%s" % (obj_type, data))
-        return None
+        return False
 
 
 def active_campaign_sync():
@@ -161,17 +161,20 @@ def active_campaign_sync():
             crm_postings = [i for i in crm_postings if i[0]]
             print("TOTAL ORDERS TO PUSH - LESS BAD CUST DATA: %s" % len(crm_postings))
             order_count = 0
+            order_err = 0
             for i in crm_postings:
                 try:
                     crm_order = build_order_json(connection, str(i[0]), i[1])
-                    post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
-                    order_count += 1
+                    if post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
+                        order_count += 1
+                    else:
+                        order_err += 1
                 except Exception as e:
                     print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]), e)
 
             # add venue details for the month running to the final email msg
-            msg += "For Venue #%s:\nCustomer push (qty: %s) - SUCCESS\nOrder push (qty: %s) - SUCCESS\n" % (
-                venue_id, len(crm_postings), order_count)
+            msg += "~~~~~ VENUE #%s ~~~~~\nCustomer push (SUCCESS qty: %s, ERROR qty: %s)\nOrder push (SUCCESS qty: %s, ERROR qty: %s)\n" % (
+                venue_id, len(crm_postings), len(orders)-len(crm_postings), order_count, order_err)
 
         # send a completion email notifying Kevin and Jason that a month's push updates have finished
         msg += "\nDates Covered For This Push: % s - %s\n\nTaking a long siesta...back to work in 3 hours." % (
