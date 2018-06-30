@@ -111,16 +111,12 @@ def active_campaign_sync():
     venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
                 (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
 
-    start_date = parse("2017-01-01", ignoretz=True)
+    start_date = parse("2017-01-31", ignoretz=True)
     deadline = parse("2018-06-15", ignoretz=True)
     step_30 = timedelta(days=30)
 
     while start_date < deadline:
         # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.ehlo()
-        server.starttls()
-        server.login("kevin@matsongroup.com", "tie3Quoo!jaeneix2wah5chahchai%bi")
         header = 'From: kevin@matsongroup.com\n'
         header += 'To: flygeneticist@gmail.com\n'
         header += 'Cc: jason@matsongroup.com\n'
@@ -181,8 +177,12 @@ def active_campaign_sync():
                 venue_id, len(crm_postings), order_count)
 
         msg += "\nDates Covered For This Push: % s - %s\n\nTaking a long siesta...back to work in 3 hours." % (start_date.strftime("%Y-%m-%d"), (start_date+step_30).strftime("%Y-%m-%d"))
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.ehlo()
+        server.starttls()
+        server.login("kevin@matsongroup.com", "tie3Quoo!jaeneix2wah5chahchai%bi")
         server.sendmail("kevin@matsongroup.com", "flygeneticist@gmail.com", "jason@matsongroup.com", msg)
-        time.sleep(10800)  # Takinf a 3 hour break to avoid ssl locks
+        time.sleep(10800)  # Taking a 3 hour break to avoid ssl locks
 
     print("CRM Sync Completed - " + configs['last_crm_sync'])
 
