@@ -76,28 +76,25 @@ def lookup_crm_id(email, url, auth_header, connection):
 
 
 def post_object_to_crm(url, auth_header, data, venue_id, configs, connection, obj_type='ecomCustomer'):
-    if obj_type == 'ecomCustomer':
-        crm_id = None
-        se_id = data[obj_type]["externalid"]
     try:
+        se_id = data[obj_type]["externalid"]
         r = requests.post(url, headers=auth_header, data=json.dumps(data))
         if r.status_code != 201:
             if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
                 if obj_type == 'ecomCustomer':
-                    crm_id = lookup_crm_id(data[obj_type]['email'], url, auth_header, connection)
+                    return lookup_crm_id(data[obj_type]['email'], url, auth_header, connection)
             else:
                 print("ERROR: %s Not Created!\n%s" % (obj_type, r.json()['errors']))
                 return None
         else:
             if obj_type == 'ecomCustomer':
-                crm_id = r.json()[obj_type]["id"]
+                return r.json()[obj_type]["id"]
             else:
                 return True
     except UnicodeDecodeError:
         # skip over orders with Unicode Decode errors
         print("ERROR: UnicodeDecodeError while posting (%s): #%s" % (obj_type, data))
-        crm_id = None
-    return crm_id
+        return None
 
 
 def active_campaign_sync():
@@ -110,7 +107,7 @@ def active_campaign_sync():
     customers_url = configs['Api-Url'] + 'ecomCustomers'
     venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
                 (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
-    start_date = parse("2017-01-31", ignoretz=True)
+    start_date = parse("2017-01-01", ignoretz=True)
     deadline = parse("2018-06-15", ignoretz=True)
     step_30 = timedelta(days=30)
 
