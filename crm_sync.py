@@ -162,7 +162,7 @@ def active_campaign_sync():
         for i in crm_postings:
             try:
                 crm_order = build_order_json(connection, str(i[0]), i[1])
-                if post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
+                if post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder'):
                     order_count += 1
                 else:
                     order_err += 1

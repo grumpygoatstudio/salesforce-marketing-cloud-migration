@@ -107,7 +107,7 @@ def active_campaign_sync():
     customers_url = configs['Api-Url'] + 'ecomCustomers'
     venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
                 (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
-    start_date = parse("2017-01-01", ignoretz=True)
+    start_date = parse("2017-03-02", ignoretz=True)
     deadline = parse("2018-06-15", ignoretz=True)
     step_30 = timedelta(days=30)
 
@@ -165,7 +165,7 @@ def active_campaign_sync():
             for i in crm_postings:
                 try:
                     crm_order = build_order_json(connection, str(i[0]), i[1])
-                    if post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
+                    if post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder'):
                         order_count += 1
                     else:
                         order_err += 1
