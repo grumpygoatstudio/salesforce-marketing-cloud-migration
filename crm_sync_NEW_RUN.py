@@ -108,9 +108,9 @@ def active_campaign_sync():
     last_crm_sync = configs["last_crm_sync"]
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
-                (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
-
+    # venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
+    #             (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
+    venues = [(53, '1')]
     start_date = parse("2017-01-31", ignoretz=True)
     deadline = parse("2018-06-15", ignoretz=True)
     step_30 = timedelta(days=30)
@@ -119,7 +119,7 @@ def active_campaign_sync():
         # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
         header = 'From: kevin@matsongroup.com\n'
         header += 'To: flygeneticist@gmail.com\n'
-        header += 'Cc: jason@matsongroup.com\n'
+        # header += 'Cc: jason@matsongroup.com\n'
         header += 'Subject: Venue Completed FULL Backload - SeatEngine AWS\n'
         msg = header + "\nThis is the AWS Server for Seatengine.\nJust a friendly notice regarding the backloading efforts of Orders into AC.\n"
 
@@ -169,19 +169,23 @@ def active_campaign_sync():
                     crm_order = build_order_json(connection, str(i[0]), i[1])
                     post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
                     order_count += 1
-                except:
-                    print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
+                except Exception as e:
+                    print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]), e)
 
             # add venue details for the month running to the final email msg
             msg += "For Venue #%s:\nCustomer push (qty: %s) - SUCCESS\nOrder push (qty: %s) - SUCCESS\n" % (
                 venue_id, len(crm_postings), order_count)
 
-        msg += "\nDates Covered For This Push: % s - %s\n\nTaking a long siesta...back to work in 3 hours." % (start_date.strftime("%Y-%m-%d"), (start_date+step_30).strftime("%Y-%m-%d"))
+        # send a completion email notifying Kevin and Jason that a month's push updates have finished
+        msg += "\nDates Covered For This Push: % s - %s\n\nTaking a long siesta...back to work in 3 hours." % (
+            start_date.strftime("%Y-%m-%d"), (start_date+step_30).strftime("%Y-%m-%d"))
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.ehlo()
         server.starttls()
-        server.login("kevin@matsongroup.com", "tie3Quoo!jaeneix2wah5chahchai%bi")
+        server.login("kevin@matsongroup.com",
+                     "tie3Quoo!jaeneix2wah5chahchai%bi")
         server.sendmail("kevin@matsongroup.com", "flygeneticist@gmail.com", "jason@matsongroup.com", msg)
+        print("Sent Message. Taking a rest...")
         time.sleep(10800)  # Taking a 3 hour break to avoid ssl locks
 
     print("CRM Sync Completed - " + configs['last_crm_sync'])
