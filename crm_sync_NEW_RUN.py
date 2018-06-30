@@ -6,12 +6,8 @@ import collections
 import _mysql
 import smtplib
 
-from datetime import datetime
-
-server = smtplib.SMTP('smtp.gmail.com', 587)
-server.ehlo()
-server.starttls()
-server.login("kevin@matsongroup.com", "tie3Quoo!jaeneix2wah5chahchai%bi")
+from datetime import datetime, timedelta
+from dateutil.parser import parse
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -33,7 +29,7 @@ def build_customer_json(connection, data):
           "ecomCustomer": {
             "connectionid": connection,
             "externalid": str(data[0]["orders_mv.customerid"]),
-            "email": data[0]["orders_mv.email"]
+            "email": str(data[0]["orders_mv.email"])
           }
         }
     except Exception:
@@ -113,74 +109,81 @@ def active_campaign_sync():
     customers_url = configs['Api-Url'] + 'ecomCustomers'
     venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
                 (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
-    new_venues = [1,3,5,6,7,21,23,53,63,131,133,297]
-    
-    for venue_id, connection in venues:
-        print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
-        # download CSV file from MySQL DB
-        db = _mysql.connect(user=configs['db_user'],
-                            passwd=configs['db_password'],
-                            port=configs['db_port'],
-                            host=configs['db_host'],
-                            db=configs['db_name'])
-        if venue_id in new_venues:
-            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != '' AND customerid != 'None'""" % (
-                str(venue_id), last_crm_sync.replace('T', ' ')
-            )
-        else:
-            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''AND customerid != 'None'""" % (
-                str(venue_id), last_crm_sync.replace('T', ' ')
-            )
-        db.query(sql)
-        r = db.store_result()
-        # group the orderlines into orders
-        orders = collections.defaultdict(list)
-        more_rows = True
-        while more_rows:
-            try:
-                ol = r.fetch_row(how=2)[0]
-                orders[ol["orders_mv.email"]].append(ol)
-            except IndexError:
-                more_rows = False
-        db.close()
-        crm_postings = []
-        print("~~ POSTING CUSTOMERS ~~")
-        print("TOTAL ORDERS TO PUSH: %s" % len(orders))
-        for o in orders:
-            ols = orders[o]
-            # build order and customer JSON and POST the JSON objects to AC server
-            customer_json = build_customer_json(connection, ols)
-            if customer_json:
-                crm_id = post_object_to_crm(customers_url, auth_header, customer_json, venue_id, configs, connection)
-                crm_postings.append([crm_id, ols])
-            else:
-                print("BUILD CUSTOMER JSON FAILED!", str(ols))
 
-        print("~~ POSTING ORDERS PAYLOAD ~~")
-        crm_postings = [i for i in crm_postings if i[0]]
-        print("TOTAL ORDERS TO PUSH - LESS BAD CUST DATA: %s" % len(crm_postings))
-        order_count = 0
-        for i in crm_postings:
-            try:
-                crm_order = build_order_json(connection, str(i[0]), i[1])
-                post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
-                order_count += 1
-            except:
-                print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
-        
-        # send a completion email notifying Kevin and Jason that a BIG Venue has finished
-        header  = 'From: kevin@matsongroup.com\n'
+    start_date = parse("2017-01-01", ignoretz=True)
+    deadline = parse("2018-06-15", ignoretz=True)
+    step_30 = timedelta(days=30)
+
+    while start_date < deadline:
+        # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.ehlo()
+        server.starttls()
+        server.login("kevin@matsongroup.com", "tie3Quoo!jaeneix2wah5chahchai%bi")
+        header = 'From: kevin@matsongroup.com\n'
         header += 'To: flygeneticist@gmail.com\n'
         header += 'Cc: jason@matsongroup.com\n'
         header += 'Subject: Venue Completed FULL Backload - SeatEngine AWS\n'
-        msg = header + "\nThis is the AWS Server for Seatengine.\nJust a friendly notice regarding the full backloading of Orders for Venue #%s:\nCustomer push (qty: %s) - SUCCESS\nOrder push (qty: %s) - SUCCESS\n" % (venue_id, len(crm_postings), order_count)
+        msg = header + "\nThis is the AWS Server for Seatengine.\nJust a friendly notice regarding the backloading efforts of Orders into AC.\n"
+
+        start_date = start_date + step_30
+        for venue_id, connection in venues:
+            print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
+            # download CSV file from MySQL DB
+            db = _mysql.connect(user=configs['db_user'],
+                                passwd=configs['db_password'],
+                                port=configs['db_port'],
+                                host=configs['db_host'],
+                                db=configs['db_name'])
+            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND orderDate BETWEEN STR_TO_DATE(\'%s\', \'%Y-%m-%d\') AND STR_TO_DATE(\'%s\', \'%Y-%m-%d\') + INTERVAL 30 DAY AND email != '' AND customerid != 'None'""" % (
+                str(venue_id), start_date.strftime("%Y-%m-%d")
+            )
+            db.query(sql)
+            r = db.store_result()
+            # group the orderlines into orders
+            orders = collections.defaultdict(list)
+            more_rows = True
+            while more_rows:
+                try:
+                    ol = r.fetch_row(how=2)[0]
+                    orders[ol["orders_mv.email"]].append(ol)
+                except IndexError:
+                    more_rows = False
+            db.close()
+            crm_postings = []
+            print("~~ POSTING CUSTOMERS ~~")
+            print("TOTAL ORDERS TO PUSH: %s" % len(orders))
+            for o in orders:
+                ols = orders[o]
+                # build order and customer JSON and POST the JSON objects to AC server
+                customer_json = build_customer_json(connection, ols)
+                if customer_json:
+                    crm_id = post_object_to_crm(customers_url, auth_header, customer_json, venue_id, configs, connection)
+                    crm_postings.append([crm_id, ols])
+                else:
+                    print("BUILD CUSTOMER JSON FAILED!", str(ols))
+
+            print("~~ POSTING ORDERS PAYLOAD ~~")
+            crm_postings = [i for i in crm_postings if i[0]]
+            print("TOTAL ORDERS TO PUSH - LESS BAD CUST DATA: %s" % len(crm_postings))
+            order_count = 0
+            for i in crm_postings:
+                try:
+                    crm_order = build_order_json(connection, str(i[0]), i[1])
+                    post_object_to_crm(orders_url, auth_header, crm_order, venue_id, configs, connection, 'ecomOrder')
+                    order_count += 1
+                except:
+                    print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
+
+            # add venue details for the month running to the final email msg
+            msg += "For Venue #%s:\nCustomer push (qty: %s) - SUCCESS\nOrder push (qty: %s) - SUCCESS\n" % (
+                venue_id, len(crm_postings), order_count)
+
+        msg += "\nDates Covered For This Push: % s - %s" % (start_date.strftime("%Y-%m-%d"), (start_date+step_30).strftime("%Y-%m-%d"))
         server.sendmail("kevin@matsongroup.com", "flygeneticist@gmail.com", "jason@matsongroup.com", msg)
 
-    # WRITE NEW DATETIME FOR LAST CRM SYNC
-    configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-    write_config(configs, dir_path)
     print("CRM Sync Completed - " + configs['last_crm_sync'])
-    
+
 
 if __name__ == '__main__':
     active_campaign_sync()
