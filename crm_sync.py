@@ -110,6 +110,8 @@ def active_campaign_sync():
     new_venues = []
 
     # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
+    sender = "kevin@matsongroup.com"
+    recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed DAILY Orders Sync - SeatEngine AWS\n'

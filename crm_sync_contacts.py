@@ -169,6 +169,20 @@ def active_campaign_sync():
     write_config(configs, dir_path)
     print("CRM Contacts Sync Completed - " + configs['last_crm_contacts_sync'])
 
+    # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
+    sender = "kevin@matsongroup.com"
+    recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
+    header = 'From: %s\n' % sender
+    header += 'To: %s\n' % ", ".join(recipients)
+    header += 'Subject: Completed DAILY Contacts Push - SeatEngine AWS\n'
+    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM sync updates have completed: SUCCESS"
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
+    server.sendmail(sender, recipients, msg)
+    server.quit()
+
 
 if __name__ == '__main__':
     active_campaign_sync()
