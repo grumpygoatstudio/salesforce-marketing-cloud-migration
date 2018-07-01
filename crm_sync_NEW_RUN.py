@@ -86,7 +86,7 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, connection, ob
                 else:
                     return True
             else:
-                print("ERROR: %s Not Created!\n%s" % (obj_type, r.text()))
+                print("ERROR: %s Not Created: %s" % (obj_type, se_id))
                 return False
         else:
             if obj_type == 'ecomCustomer':
