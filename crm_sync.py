@@ -81,6 +81,8 @@ def post_object_to_crm(url, auth_header, data, venue_id, configs, connection, ob
             if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
                 if obj_type == 'ecomCustomer':
                     return lookup_crm_id(data[obj_type]['email'], url, auth_header, connection)
+                else:
+                    return True
             else:
                 print("ERROR: %s Not Created!\n%s" % (obj_type, se_id))
                 return None
