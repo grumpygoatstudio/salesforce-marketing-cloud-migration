@@ -115,7 +115,7 @@ def active_campaign_sync():
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed DAILY Orders Sync - SeatEngine AWS\n'
-    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM sync updates have completed: SUCCESS"
+    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM sync updates have completed: SUCCESS\n"
 
     for venue_id, connection in venues:
         print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
