@@ -151,7 +151,7 @@ def active_campaign_sync():
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    db.query("""SELECT * FROM contacts_mv WHERE email_address != '' AND email_address in (SELECT DISTINCT email FROM orders_mv WHERE email != '' AND orderDate BETWEEN NOW() - INTERVAL 30 DAY AND NOW())""")
+    db.query("""SELECT * FROM contacts_mv WHERE email_address != '' AND email_address in (SELECT DISTINCT email FROM orders_mv WHERE email != '' AND orderDate BETWEEN NOW() - INTERVAL 2 DAY AND NOW())""")
     r = db.store_result()
     more_rows = True
     contact_err = 0
