@@ -116,9 +116,10 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings, last_v
         data['id'] = crm_id
         r = requests.post(url, headers=auth_header, data=data)
         if r.status_code == 200 and r.json()["result_code"] != 0:
-            print("SUCCESS: Updated contact.", data['email'])
+            return True
         else:
             print("ERROR: Updating contact via API failed.", data['email'])
+            return False
     else:
         try:
             data["api_action"] = "contact_add"
@@ -129,9 +130,10 @@ def update_contact_in_crm(url, auth_header, data, configs, list_mappings, last_v
                 data[field] = list_id
                 r = requests.post(url, headers=auth_header, data=data)
                 if r.status_code == 200 and r.json()["result_code"] != 0:
-                    print("SUCCESS: Created contact.", data['email'])
+                    return True
                 else:
                     print("ERROR: Creating contact via API failed.", data['email'])
+                    return False
         except Exception:
             print("ERROR: Creating contact via API failed.", data['email'])
     return crm_id
@@ -154,6 +156,8 @@ def active_campaign_sync():
         % (last_crm_contacts_sync.replace('T', ' ')))
     r = db.store_result()
     more_rows = True
+    contact_err = 0
+    contact_count = 0
     while more_rows:
         try:
             contact_info = r.fetch_row(how=2)[0]
@@ -162,7 +166,9 @@ def active_campaign_sync():
             if contact_data:
                 update_contact_in_crm(
                     url, auth_header, contact_data, configs, list_mappings, last_venue)
+                contact_count += 1
             else:
+                contact_err += 1
                 print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
         except IndexError:
             more_rows = False
@@ -178,7 +184,7 @@ def active_campaign_sync():
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed DAILY Contacts Push - SeatEngine AWS\n'
-    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM sync updates have completed: SUCCESS"
+    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM Contact syncs have completed:\nContacts pushed (SUCCESS qty: %s, ERROR qty: %s)\n" % (contact_count, contact_err)
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()
