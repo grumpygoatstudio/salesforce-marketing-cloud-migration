@@ -34,8 +34,7 @@ def build_contact_data(data, api_key):
     d["first_name"] = str(data[1])
     d["last_name"] = str(data[2])
     if data[4] not in ["None", ""]:
-        field = "p[%s]" % data[4]
-        data[field] = data[4]
+        d["p[%s]" % data[4]] = data[4]
     return d
 
 
