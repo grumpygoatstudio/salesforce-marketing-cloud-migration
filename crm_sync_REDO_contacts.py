@@ -4,6 +4,7 @@ import requests
 import json
 import collections
 import csv
+import _mysql
 import smtplib
 
 from datetime import datetime
