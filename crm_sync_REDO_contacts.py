@@ -28,13 +28,13 @@ def build_contact_data(data, api_key):
     d["api_key"] = api_key
     d["api_action"] = "contact_edit"
     d["api_output"] = "json"
-    d["email"] = str(data[0]).replace("\r", "")
+    d["email"] = str(data['email']).replace("\r", "")
     d["id"] = None
     d["overwrite"] = "0"
-    d["first_name"] = str(data[1])
-    d["last_name"] = str(data[2])
-    if data[4] not in ["None", ""]:
-        d["p[%s]" % data[4]] = data[4]
+    d["first_name"] = str(data['fname'])
+    d["last_name"] = str(data['lname'])
+    if data['list'] not in ["None", ""]:
+        d["p[%s]" % data['list']] = data['list']
     return d
 
 
@@ -107,11 +107,18 @@ def active_campaign_sync():
     with open(file_path, "r") as file_data:
         file_data = csv.reader(file_data, delimiter=',')
         for l in file_data:
+                contact_info = {
+                    'email': l[0],
+                    'fname': l[1],
+                    'lname': l[2],
+                    'venue': l[3],
+                    'list': l[4],
+                }
                 list_subcrip = str(l[4])
-                contact_data = build_contact_data(l, configs["Api-Token"])
+                contact_data = build_contact_data(contact_info, configs["Api-Token"])
                 if contact_data:
                     update_contact_in_crm(
-                        url, auth_header, l, configs, list_subcrip)
+                        url, auth_header, contact_data, configs, list_subcrip)
                     contact_count += 1
                 else:
                     contact_err += 1
