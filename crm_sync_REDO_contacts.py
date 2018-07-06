@@ -122,7 +122,7 @@ def active_campaign_sync():
                     contact_count += 1
                 else:
                     contact_err += 1
-                    print("BUILD CONTACT DATA FAILED!", str(l[0]))
+                    print("BUILD CONTACT DATA FAILED!", str(contact_info['email']))
 
     # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
     sender = "kevin@matsongroup.com"
