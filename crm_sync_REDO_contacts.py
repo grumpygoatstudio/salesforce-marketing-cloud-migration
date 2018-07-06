@@ -32,7 +32,7 @@ def build_contact_data(data, api_key):
     d["overwrite"] = "0"
     d["first_name"] = str(data[1])
     d["last_name"] = str(data[2])
-    if  not in ["None", ""]:
+    if data[4] not in ["None", ""]:
         field = "p[%s]" % data[4]
         data[field] = data[4]
     return d
