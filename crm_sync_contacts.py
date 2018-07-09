@@ -22,7 +22,7 @@ def write_config(config, dir_path):
         json.dump(config, f)
 
 
-def build_contact_data(data, api_key):
+def build_contact_data(data, api_key, last_venue, list_mappings):
     d = collections.OrderedDict()
     d["api_key"] = api_key
     d["api_action"] = "contact_edit"
@@ -78,6 +78,11 @@ def build_contact_data(data, api_key):
     d["field[%AVERAGE_NUMBER_OF_TICKETS_PER_COMP_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_comp_order'])
     d["field[%AVERAGE_NUMBER_OF_DAYS_BETWEEN_PURCHASE_AND_EVENT_DATES%,0]"] = str(data['contacts_mv.avg_purchase_to_show_days'])
     d["field[%AVERAGE_TICKETS_PER_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_order'])
+
+    if last_venue not in ["None", ""]:
+        list_id = list_mappings[last_venue]
+        field = "p[%s]" % list_id
+        data[field] = list_id
     return d
 
 
@@ -110,32 +115,28 @@ def lookup_crm_id_by_api(url, data, auth_header):
         return None
 
 
-def update_contact_in_crm(url, auth_header, data, configs, list_mappings, last_venue):
+def update_contact_in_crm(url, auth_header, data, configs, last_venue):
     crm_id = lookup_crm_id_by_api(url, data, auth_header)
-    if crm_id:
-        data['id'] = crm_id
-        r = requests.post(url, headers=auth_header, data=data)
-        if r.status_code == 200 and r.json()["result_code"] != 0:
-            return True
+    if last_venue not in ["None", ""]:
+        if crm_id:
+            data['id'] = crm_id
+            r = requests.post(url, headers=auth_header, data=data)
+            if r.status_code == 200 and r.json()["result_code"] != 0:
+                return "success"
+            else:
+                print("ERROR: Updating contact via API failed.", data['email'])
+                return "err_update"
         else:
-            print("ERROR: Updating contact via API failed.", data['email'])
-            return False
-    else:
-        try:
             data["api_action"] = "contact_add"
             data.pop("id", None)
-            if last_venue not in ["None", ""]:
-                list_id = list_mappings[last_venue]
-                field = "p[%s]" % list_id
-                data[field] = list_id
-                r = requests.post(url, headers=auth_header, data=data)
-                if r.status_code == 200 and r.json()["result_code"] != 0:
-                    return True
-                else:
-                    print("ERROR: Creating contact via API failed.", data['email'])
-                    return False
-        except Exception:
-            print("ERROR: Creating contact via API failed.", data['email'])
+            r = requests.post(url, headers=auth_header, data=data)
+            if r.status_code == 200 and r.json()["result_code"] != 0:
+                return "success"
+            else:
+                print("ERROR: Creating contact via API failed.", data['email'])
+                return "err_add"
+    else:
+        return "err_list"
     return crm_id
 
 
@@ -156,19 +157,29 @@ def active_campaign_sync():
         % (last_crm_contacts_sync.replace('T', ' ')))
     r = db.store_result()
     more_rows = True
-    contact_err = 0
+    contact_err = {"list":0, "add":0, "update":0, "other":0}
     contact_count = 0
     while more_rows:
         try:
             contact_info = r.fetch_row(how=2)[0]
             last_venue = str(contact_info['contacts_mv.last_event_venue'])
-            contact_data = build_contact_data(contact_info, configs["Api-Token"])
+            contact_data = build_contact_data(contact_info, configs["Api-Token"], last_venue)
             if contact_data:
-                update_contact_in_crm(
-                    url, auth_header, contact_data, configs, list_mappings, last_venue)
-                contact_count += 1
+                updated = update_contact_in_crm(
+                    url, auth_header, contact_data, configs, last_venue)
+                if updated == 'success':
+                    contact_count += 1
+                else:
+                    if updated == 'err_list':
+                        contact_err['list'] += 1
+                    elif updated == 'err_add':
+                        contact_err['add'] += 1
+                    elif updated == 'err_update':
+                        contact_err['update'] += 1
+                    else:
+                        contact_err['other'] += 1
             else:
-                contact_err += 1
+                contact_err['other'] += 1
                 print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
         except IndexError:
             more_rows = False
@@ -184,7 +195,9 @@ def active_campaign_sync():
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed DAILY Contacts Push - SeatEngine AWS\n'
-    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM Contact syncs have completed:\nContacts pushed (SUCCESS qty: %s, ERROR qty: %s)\n" % (contact_count, contact_err)
+    msg = header + \
+        "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM Contact syncs have completed:\nSUCCESS: %s\n\nERRORS:\nAdd Errors:%s\nUpdate Errors:%s\nList Errors:%s\nOther Errors:%s\n\n" % (
+            contact_count, contact_err['add'], contact_err['update'], contact_err['list'], contact_err['other'])
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()
