@@ -225,7 +225,7 @@ def active_campaign_sync():
         for i in crm_postings:
             try:
                 crm_order = build_order_json(connection, str(i[0]), i[1])
-                updated = update_data(orders_url, auth_header, crm_order, configs, connection, 'ecomOrder'):
+                updated = update_data(orders_url, auth_header, crm_order, configs, connection, 'ecomOrder')
                 if updated == "success":
                     order_count += 1
                 elif updated == 'err-update':
