@@ -158,17 +158,16 @@ def active_campaign_sync():
     customers_url = configs['Api-Url'] + 'ecomCustomers'
     venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
               (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
-    new_venues = []
-
-    # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
-    sender = "kevin@matsongroup.com"
-    recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
-    header = 'From: %s\n' % sender
-    header += 'To: %s\n' % ", ".join(recipients)
-    header += 'Subject: Completed DAILY Orders Sync - SeatEngine AWS\n'
-    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM sync updates have completed: SUCCESS\n"
 
     for venue_id, connection in venues:
+        # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
+        sender = "kevin@matsongroup.com"
+        recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
+        header = 'From: %s\n' % sender
+        header += 'To: %s\n' % ", ".join(recipients)
+        header += 'Subject: Big Orders RESYNC - Venue %s - SeatEngine AWS\n' % venue_id
+        msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that BIG RESYNC Updates have completed for venue #%s.\n" % venue_id
+
         print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
         # download CSV file from MySQL DB
         db = _mysql.connect(user=configs['db_user'],
@@ -176,14 +175,10 @@ def active_campaign_sync():
                             port=configs['db_port'],
                             host=configs['db_host'],
                             db=configs['db_name'])
-        if venue_id in new_venues:
-            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != '' AND customerid != 'None'""" % (
-                str(venue_id), last_crm_sync.replace('T', ' ')
-            )
-        else:
-            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''AND customerid != 'None'""" % (
-                str(venue_id), last_crm_sync.replace('T', ' ')
-            )
+
+        sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date < NOW()) AND email != '' AND customerid != 'None'""" % (
+            str(venue_id)
+        )
         db.query(sql)
         r = db.store_result()
         # group the orderlines into orders
@@ -241,13 +236,13 @@ def active_campaign_sync():
         msg += "~~~~~ VENUE #%s ~~~~~\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\n" % (
             venue_id, len(crm_postings), cust_err['build'], cust_err['push'], cust_err['unicode'], order_count, order_err['build'], order_err['update'], order_err['unicode'], order_err['other'])
 
-    # send a completion email notifying Kevin and Jason that daily updates have finished
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.ehlo()
-    server.starttls()
-    server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
-    server.sendmail(sender,recipients, msg)
-    server.quit()
+        # send a completion email notifying Kevin and Jason that daily updates have finished
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.ehlo()
+        server.starttls()
+        server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
+        server.sendmail(sender,recipients, msg)
+        server.quit()
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
     configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
