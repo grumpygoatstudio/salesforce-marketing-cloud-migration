@@ -163,7 +163,7 @@ def active_campaign_sync():
         try:
             contact_info = r.fetch_row(how=2)[0]
             last_venue = str(contact_info['contacts_mv.last_event_venue'])
-            contact_data = build_contact_data(contact_info, configs["Api-Token"], last_venue)
+            contact_data = build_contact_data(contact_info, configs["Api-Token"], last_venue, list_mappings)
             if contact_data:
                 updated = update_contact_in_crm(
                     url, auth_header, contact_data, configs, last_venue)
