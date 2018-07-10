@@ -244,11 +244,6 @@ def active_campaign_sync():
         server.sendmail(sender,recipients, msg)
         server.quit()
 
-    # WRITE NEW DATETIME FOR LAST CRM SYNC
-    configs['last_crm_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-    write_config(configs, dir_path)
-    print("CRM Sync Completed - " + configs['last_crm_sync'])
-
 
 if __name__ == '__main__':
     active_campaign_sync()
