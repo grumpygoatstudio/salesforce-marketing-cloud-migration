@@ -153,7 +153,7 @@ def active_campaign_sync():
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "Api-Token" in e}
     auth_header["Content-Type"] = "application/json"
-    last_crm_sync = configs["last_crm_sync"]
+    last_crm_sync = "00-00-00T00:00:01"
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
     venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
