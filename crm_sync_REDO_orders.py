@@ -5,6 +5,7 @@ import json
 import collections
 import _mysql
 import smtplib
+import sleep
 
 from datetime import datetime
 
@@ -156,8 +157,8 @@ def active_campaign_sync():
     last_crm_sync = "00-00-00T00:00:01"
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
-              (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
+    venues = [(6, '5'), (7, '6'), (1, '3'), (5, '4'),
+              (21, '7'), (23, '10'), (133, '8'), (297, '2')]
 
     for venue_id, connection in venues:
         # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
@@ -235,7 +236,7 @@ def active_campaign_sync():
         # add venue details for the month running to the final email msg
         msg += "~~~~~ VENUE #%s ~~~~~\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\n" % (
             venue_id, len(crm_postings), cust_err['build'], cust_err['push'], cust_err['unicode'], order_count, order_err['build'], order_err['update'], order_err['unicode'], order_err['other'])
-
+        msg += "\nSleeping for 2 hours to avoid SSL issues..."
         # send a completion email notifying Kevin and Jason that daily updates have finished
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.ehlo()
@@ -243,7 +244,8 @@ def active_campaign_sync():
         server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
         server.sendmail(sender,recipients, msg)
         server.quit()
-
+        print("Done! Sleeping for 2 hours to avoid SSL issues..."")
+        sleep(7200)
 
 if __name__ == '__main__':
     active_campaign_sync()
