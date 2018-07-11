@@ -157,8 +157,8 @@ def active_campaign_sync():
     last_crm_sync = "00-00-00T00:00:01"
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    venues = [(6, '5'), (7, '6'), (1, '3'), (5, '4'),
-              (21, '7'), (23, '10'), (133, '8'), (297, '2')]
+    venues = [(5, '4'),  (6, '5'), (133, '8'), (7, '6'),
+              (21, '7'), (23, '10'), (1, '3'), (297, '2')]
 
     for venue_id, connection in venues:
         # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
