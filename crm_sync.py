@@ -50,7 +50,7 @@ def build_order_json(connection, crm_id, data):
             "price": int(ol["orders_mv.orderproduct_price"]),
             "quantity": 1,
             # category is a placeholder for ticket type
-            "category": ol["orders_mv.orderproduct_name"]
+            "category": str(ol["orders_mv.orderproduct_name"]).replace('\x92', '\'').replace('\xe2\x80\x99', '\'')
           } for ol in data
         ],
         "orderDate": str(data[0]["orders_mv.orderDate"]),
