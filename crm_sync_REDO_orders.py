@@ -5,9 +5,10 @@ import json
 import collections
 import _mysql
 import smtplib
-import sleep
 
+from time import sleep
 from datetime import datetime
+from itertools import islice
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -163,7 +164,7 @@ def active_campaign_sync():
     last_crm_sync = "00-00-00T00:00:01"
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    venues = [(1, '3'), (21, '7')]
+    venues = [(297, '2'), (1, '3'), (21, '7')]
 
     for venue_id, connection in venues:
 
@@ -207,7 +208,7 @@ def active_campaign_sync():
         print("~~ POSTING CUSTOMERS ~~")
         print("TOTAL ORDERS TO PUSH: %s" % len(orders))
         crm_postings = []
-        for chunk in chunks(orders, 10000):
+        for chunk in chunks(orders):
             for o in chunk:
                 ols = chunk[o]
                 # build order and customer JSON and POST the JSON objects to AC server
