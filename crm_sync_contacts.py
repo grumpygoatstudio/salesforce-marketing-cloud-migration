@@ -165,11 +165,12 @@ def active_campaign_sync():
             contact_info = r.fetch_row(how=2)[0]
             last_venue = str(contact_info['contacts_mv.last_event_venue'])
             next_venue = str(contact_info['contacts_mv.next_event_venue'])
-            home_venue = ""
-            if next_venue:
+            if next_venue != "None":
                 home_venue = next_venue
-            else:
+            elif last_venue != "None":
                 home_venue = last_venue
+            else:
+                home_venue = ""
 
             contact_data = build_contact_data(contact_info, configs["Api-Token"], home_venue, list_mappings)
             if contact_data:
