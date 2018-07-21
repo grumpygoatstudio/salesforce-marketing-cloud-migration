@@ -164,7 +164,7 @@ def active_campaign_sync():
     last_crm_sync = "00-00-00T00:00:01"
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    venues = [(297, '2'), (1, '3'), (21, '7')]
+    venues = [(1, '3')]
 
     for venue_id, connection in venues:
 
@@ -204,10 +204,11 @@ def active_campaign_sync():
         cust_err = {'build':0, 'push':0, 'unicode':0}
         order_count = 0
         order_err = {'build': 0, 'update': 0, 'unicode': 0, 'other': 0}
-
-        print("~~ POSTING CUSTOMERS ~~")
         print("TOTAL ORDERS TO PUSH: %s" % len(orders))
+
         for chunk in chunks(orders):
+            print("~~ POSTING CUSTOMERS ~~")
+            print("CUSTOMERS TO PUSH: %s" % len(chunk))
             crm_postings = []
             for o in chunk:
                 ols = chunk[o]
@@ -227,8 +228,8 @@ def active_campaign_sync():
                     print("BUILD CUSTOMER JSON FAILED!", str(ols))
                     cust_err['build'] += 1
 
-            print("~~ POSTING ORDERS PAYLOAD ~~")
-            print("TOTAL ORDERS TO PUSH: %s" % len(crm_postings))
+            print("~~ POSTING ORDERS ~~")
+            print("ORDERS TO PUSH: %s" % len(crm_postings))
             cust_count += len(crm_postings)
             for i in crm_postings:
                 try:
