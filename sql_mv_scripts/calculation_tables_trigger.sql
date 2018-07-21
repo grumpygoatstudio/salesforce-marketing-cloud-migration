@@ -165,15 +165,15 @@ BEGIN
         INSERT INTO last_360
 			SELECT
 					o.cust_id AS subscriber_key,
-					SUM(CASE WHEN o.not_comped = 1
+					CONVERT((SUM(CASE WHEN o.not_comped = 1
 									AND purchase_date_formatted BETWEEN NOW() - INTERVAL 360 DAY AND NOW()
-									THEN o.order_total END) AS paid_orders_revenue_360,
-					SUM(CASE WHEN o.not_comped = 1
+									THEN o.order_total END)/100), DECIMAL) AS paid_orders_revenue_360,
+					CONVERT((SUM(CASE WHEN o.not_comped = 1
 									AND purchase_date_formatted BETWEEN NOW() - INTERVAL 180 DAY AND NOW()
-									THEN o.order_total END) AS paid_orders_revenue_180,
-					SUM(CASE WHEN o.not_comped = 1
+									THEN o.order_total END)/100), DECIMAL) AS paid_orders_revenue_180,
+					CONVERT((SUM(CASE WHEN o.not_comped = 1
 									AND purchase_date_formatted BETWEEN NOW() - INTERVAL 90 DAY AND NOW()
-									THEN o.order_total END) AS paid_orders_revenue_90,
+									THEN o.order_total END)/100), DECIMAL) AS paid_orders_revenue_90,
 					COUNT(CASE WHEN o.not_comped = 1
 									AND purchase_date_formatted BETWEEN NOW() - INTERVAL 360 DAY AND NOW()
 									THEN 1 END) AS paid_orders_count_360,
@@ -214,7 +214,7 @@ BEGIN
         INSERT INTO total_spend
 			SELECT
 				o.cust_id AS subscriber_key,
-                SUM(ol.ticket_price) AS total_revenue -- Total Revenue from customerid
+                CONVERT(SUM(ol.ticket_price)/100, DECIMAL) AS total_revenue -- Total Revenue from customerid
 			FROM seatengine.orders_processed o
 			JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
 			WHERE o.not_comped = 1
