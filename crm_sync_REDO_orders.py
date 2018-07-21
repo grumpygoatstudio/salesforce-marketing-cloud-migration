@@ -207,8 +207,8 @@ def active_campaign_sync():
 
         print("~~ POSTING CUSTOMERS ~~")
         print("TOTAL ORDERS TO PUSH: %s" % len(orders))
-        crm_postings = []
         for chunk in chunks(orders):
+            crm_postings = []
             for o in chunk:
                 ols = chunk[o]
                 # build order and customer JSON and POST the JSON objects to AC server
@@ -222,13 +222,14 @@ def active_campaign_sync():
                         crm_postings.append([crm_id, ols])
                     else:
                         cust_err['push'] += 1
+
                 else:
                     print("BUILD CUSTOMER JSON FAILED!", str(ols))
                     cust_err['build'] += 1
 
             print("~~ POSTING ORDERS PAYLOAD ~~")
             print("TOTAL ORDERS TO PUSH: %s" % len(crm_postings))
-            cust_success += len(crm_postings)
+            cust_count += len(crm_postings)
             for i in crm_postings:
                 try:
                     crm_order = build_order_json(connection, str(i[0]), i[1])
@@ -244,8 +245,8 @@ def active_campaign_sync():
                 except:
                     print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
                     order_err['build'] += 1
-            print("Done a chunk! Sleeping for 30 min to avoid SSL issues...")
-            sleep(1800)
+            print("Done a chunk! Sleeping for 60 min to avoid SSL issues...")
+            sleep(3600)
 
         # add venue details for the month running to the final email msg
         msg += "~~~~~ VENUE #%s ~~~~~\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\n" % (
