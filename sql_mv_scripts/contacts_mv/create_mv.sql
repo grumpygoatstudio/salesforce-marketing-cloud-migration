@@ -14,6 +14,7 @@ CREATE TABLE contacts_mv (
     last_event_venue VARCHAR(255)    NULL, -- Last Event Venue
     next_show_attending DATE    NULL, -- Next Show Attending Date
     next_event_title VARCHAR(255)    NULL, -- Next Event Title
+    next_event_venue VARCHAR(255)    NULL,-- Next Event Venue
     avg_tickets_per_order FLOAT    NULL, -- Average Number of Lifetime Tickets Per Order
     avg_purchase_to_show_days INTEGER(25)    NULL, -- AVG Number of days between purchase and show
     total_lifetime_paid_orders INTEGER(25)    NULL, -- Total Lifetime Paid Orders

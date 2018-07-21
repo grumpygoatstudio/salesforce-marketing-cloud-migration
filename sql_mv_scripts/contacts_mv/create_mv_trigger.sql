@@ -31,6 +31,7 @@ BEGIN
 			last_event_venue, -- Last Event Venue
             next_show_attending, -- Next Show Attending Date
 			next_event_title, -- Next Event Title
+            next_event_venue, -- Next Event Venue
 			avg_tickets_per_order, -- Average Number of Lifetime Tickets Per Order
 			avg_purchase_to_show_days, -- AVG Number of days between purchase and show
 			total_lifetime_paid_orders, -- Total Lifetime Paid Orders
