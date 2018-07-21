@@ -129,7 +129,7 @@ def create_objects_from_orders(orders, show_id, pull_limit):
                 except Exception:
                     temp_cust['name_first'] = ""
                     temp_cust['name_last'] = ""
-            temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "")
+            temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip()
             temp_cust['sys_entry_date'] = sys_entry_time
             try:
                 payment_method = str(order["payments"][0]['payment_method'])
@@ -141,7 +141,7 @@ def create_objects_from_orders(orders, show_id, pull_limit):
             temp_order['show_id'] = str(show_id)
             temp_order['order_number'] = str(order['order_number'])
             temp_order['cust_id'] = str(order['customer']['id'])
-            temp_order['email'] = str(order['customer']['email'])
+            temp_order['email'] = str(order['customer']['email']).strip()
             temp_order['phone'] = str(order['customer']['phone'])
             temp_order['purchase_date'] = str(order['purchase_at'])
             temp_order['payment_method'] = payment_method

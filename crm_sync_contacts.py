@@ -27,7 +27,7 @@ def build_contact_data(data, api_key, last_venue, list_mappings):
     d["api_key"] = api_key
     d["api_action"] = "contact_edit"
     d["api_output"] = "json"
-    d["email"] = str(data['contacts_mv.email_address']).replace("\r", "")
+    d["email"] = str(data['contacts_mv.email_address']).replace("\r", "").strip()
     d["id"] = None
     d["overwrite"] = "0"
     d["first_name"] = str(data['contacts_mv.cust_name_first'])

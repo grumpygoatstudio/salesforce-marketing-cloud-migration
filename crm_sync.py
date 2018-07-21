@@ -41,7 +41,7 @@ def build_order_json(connection, crm_id, data):
       "ecomOrder": {
         "externalid": str(data[0]["orders_mv.externalid"]),
         "source": 0,
-        "email": data[0]["orders_mv.email"],
+        "email": data[0]["orders_mv.email"].strip(),
         "orderNumber": str(data[0]["orders_mv.orderNumber"]),
         "orderProducts": [
           {
