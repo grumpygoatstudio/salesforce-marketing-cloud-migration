@@ -88,6 +88,9 @@ def update_contact_in_crm(url, auth_header, data, configs, list_subcrip):
                 else:
                     print("ERROR: Creating contact via API failed.", data['email'])
                     return False
+            else:
+                print("ERROR: Missing list. Create contact via API failed.", data['email'])
+                return False
         except Exception:
             print("ERROR: Creating contact via API failed.", data['email'])
     return crm_id

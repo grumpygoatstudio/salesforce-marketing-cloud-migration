@@ -82,7 +82,7 @@ def build_contact_data(data, api_key, last_venue, list_mappings):
     if last_venue not in ["None", ""]:
         list_id = list_mappings[last_venue]
         field = "p[%s]" % list_id
-        data[field] = list_id
+        d[field] = list_id
     return d
 
 
