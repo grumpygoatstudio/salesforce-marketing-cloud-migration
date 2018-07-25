@@ -230,7 +230,7 @@ def active_campaign_sync():
                     else:
                         print("BUILD CUSTOMER JSON FAILED!", str(ols))
                         cust_err['build'] += 1
-                except SSLError as e:
+                except requests.exceptions.SSLError as e:
                     cust_err["ssl"] += 1
 
             print("~~ POSTING ORDERS ~~")
@@ -248,7 +248,7 @@ def active_campaign_sync():
                         order_err["unicode"] += 1
                     elif updated == 'err-other':
                         order_err["other"] += 1
-                except SSLError as e:
+                except requests.exceptions.SSLError as e:
                     order_err["ssl"] += 1
                 except Exception:
                     print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
