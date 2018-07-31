@@ -6,7 +6,7 @@ import collections
 import _mysql
 import smtplib
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -194,7 +194,8 @@ def active_campaign_sync():
             more_rows = False
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
-    configs['last_crm_contacts_sync'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
+    d = datetime.today() - timedelta(days=15)
+    configs['last_crm_contacts_sync'] = d.strftime("%Y-%m-%dT%H:%M:%S")
     write_config(configs, dir_path)
     print("CRM Contacts Sync Completed - " + configs['last_crm_contacts_sync'])
 
