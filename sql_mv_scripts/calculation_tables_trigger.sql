@@ -19,6 +19,7 @@ BEGIN
         TRUNCATE TABLE special_shows;
         TRUNCATE TABLE total_spend;
         TRUNCATE TABLE weekday_attendence;
+        TRUNCATE TABLE total_orders;
         
 		# Table for pulling all the first/last/next dates from
         INSERT INTO attended_event_dates
@@ -220,6 +221,15 @@ BEGIN
 			FROM seatengine.orders_processed o
 			JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
 			WHERE o.not_comped = 1
+			GROUP BY subscriber_key
+		;
+        
+         ## TOTAL ORDERS PER CUSTOMER
+        INSERT INTO total_orders
+			SELECT
+				o.email AS subscriber_key,
+                COUNT(DISTINCT o.order_number) AS total_orders -- Total Revenue from customerid
+			FROM seatengine.orders_processed o
 			GROUP BY subscriber_key
 		;
         

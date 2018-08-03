@@ -34,7 +34,8 @@ BEGIN
             next_event_venue, -- Next Event Venue
 			avg_tickets_per_order, -- Average Number of Lifetime Tickets Per Order
 			avg_purchase_to_show_days, -- AVG Number of days between purchase and show
-			total_lifetime_paid_orders, -- Total Lifetime Paid Orders
+			total_orders, -- Total Orders
+            total_lifetime_paid_orders, -- Total Lifetime Paid Orders
 			total_lifetime_paid_tickets, -- Total Number of Lifetime Paid Tickets
 			avg_tickets_per_paid_order, -- Average Number of Lifetime Tickets Per Paid Order
 			total_lifetime_comp_orders, -- Total Lifetime Comp'd Orders
@@ -69,6 +70,7 @@ BEGIN
 		LEFT JOIN last_360 ON (c.subscriber_key = last_360.subscriber_key)
 		LEFT JOIN total_spend ON (c.subscriber_key = total_spend.subscriber_key)
         LEFT JOIN special_shows ON (c.subscriber_key = special_shows.subscriber_key)
+        LEFT JOIN total_orders ON (c.subscriber_key = total_orders.subscriber_key)
         GROUP BY c.subscriber_key; 
         
         # turn ON all FK constraints for tables 
