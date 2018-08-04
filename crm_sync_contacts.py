@@ -207,7 +207,7 @@ def active_campaign_sync(postprocess=False):
 
     if not postprocess:
         # WRITE NEW DATETIME FOR LAST CRM SYNC
-        d = datetime.today() - timedelta(days=15)
+        d = datetime.now()
         configs['last_crm_contacts_sync'] = d.strftime("%Y-%m-%dT%H:%M:%S")
         write_config(configs, dir_path)
         print("CRM Contacts Sync Completed - " + configs['last_crm_contacts_sync'])
