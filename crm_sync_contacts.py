@@ -205,10 +205,13 @@ def active_campaign_sync(postprocess=False):
             more_rows = False
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
-    d = datetime.today() - timedelta(days=15)
-    configs['last_crm_contacts_sync'] = d.strftime("%Y-%m-%dT%H:%M:%S")
-    write_config(configs, dir_path)
-    print("CRM Contacts Sync Completed - " + configs['last_crm_contacts_sync'])
+    if not postprocess:
+        d = datetime.today() - timedelta(days=15)
+        configs['last_crm_contacts_sync'] = d.strftime("%Y-%m-%dT%H:%M:%S")
+        write_config(configs, dir_path)
+        print("CRM Contacts Sync Completed - " + configs['last_crm_contacts_sync'])
+    else:
+        print("CRM Post-Attendees Contacts Sync Completed")
 
     # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
     sender = "kevin@matsongroup.com"
