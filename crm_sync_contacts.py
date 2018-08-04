@@ -204,30 +204,31 @@ def active_campaign_sync(postprocess=False):
         except IndexError:
             more_rows = False
 
-    # WRITE NEW DATETIME FOR LAST CRM SYNC
+
     if not postprocess:
+        # WRITE NEW DATETIME FOR LAST CRM SYNC
         d = datetime.today() - timedelta(days=15)
         configs['last_crm_contacts_sync'] = d.strftime("%Y-%m-%dT%H:%M:%S")
         write_config(configs, dir_path)
         print("CRM Contacts Sync Completed - " + configs['last_crm_contacts_sync'])
+
+        # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
+        sender = "kevin@matsongroup.com"
+        recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
+        header = 'From: %s\n' % sender
+        header += 'To: %s\n' % ", ".join(recipients)
+        header += 'Subject: Completed DAILY Contacts Push - SeatEngine AWS\n'
+        msg = header + \
+            "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM Contact syncs have completed:\nSUCCESS: %s\n\nERRORS:\nAdd Errors:%s\nUpdate Errors:%s\nList Errors:%s\nOther Errors:%s\n\n" % (
+                contact_count, contact_err['add'], contact_err['update'], contact_err['list'], contact_err['other'])
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.ehlo()
+        server.starttls()
+        server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
+        server.sendmail(sender, recipients, msg)
+        server.quit()
     else:
         print("CRM Post-Attendees Contacts Sync Completed")
-
-    # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
-    sender = "kevin@matsongroup.com"
-    recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
-    header = 'From: %s\n' % sender
-    header += 'To: %s\n' % ", ".join(recipients)
-    header += 'Subject: Completed DAILY Contacts Push - SeatEngine AWS\n'
-    msg = header + \
-        "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM Contact syncs have completed:\nSUCCESS: %s\n\nERRORS:\nAdd Errors:%s\nUpdate Errors:%s\nList Errors:%s\nOther Errors:%s\n\n" % (
-            contact_count, contact_err['add'], contact_err['update'], contact_err['list'], contact_err['other'])
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.ehlo()
-    server.starttls()
-    server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
-    server.sendmail(sender, recipients, msg)
-    server.quit()
 
 
 if __name__ == '__main__':
