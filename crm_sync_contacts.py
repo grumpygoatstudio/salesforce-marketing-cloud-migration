@@ -161,7 +161,7 @@ def active_campaign_sync(postprocess=False):
                         db=configs['db_name'])
     if postprocess:
         db.query(
-        """SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT email FROM orders_mv WHERE orderproduct_category IN (SELECT id FROM shows_processed WHERE start_date_time BETWEEN \'%s\' AND NOW()));"""
+        """SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT email FROM orders_mv WHERE orderproduct_category IN (SELECT id FROM shows_processed WHERE start_date_formatted BETWEEN \'%s\' AND NOW()));"""
         % (last_crm_contacts_sync.replace('T', ' ')))
     else:
         db.query(
