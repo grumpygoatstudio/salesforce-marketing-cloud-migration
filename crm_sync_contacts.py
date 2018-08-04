@@ -7,6 +7,11 @@ import _mysql
 import smtplib
 
 from datetime import datetime, timedelta
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option("-p", "--postprocess", dest="postprocess", type="string",
+                  help="Run only postprocessing scripts for show attendees in last 24 hours", metavar="postprocess")
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -142,7 +147,7 @@ def update_contact_in_crm(url, auth_header, data, configs, last_venue):
     return crm_id
 
 
-def active_campaign_sync():
+def active_campaign_sync(postprocess=False):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -154,7 +159,12 @@ def active_campaign_sync():
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    db.query(
+    if postprocess:
+        db.query(
+        """SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT email FROM orders_mv WHERE orderproduct_category IN (SELECT id FROM shows_processed WHERE start_date_time BETWEEN \'%s\' AND NOW()));"""
+        % (last_crm_contacts_sync.replace('T', ' ')))
+    else:
+        db.query(
         """SELECT * FROM contacts_mv WHERE email_address != '' AND email_address in (SELECT DISTINCT email FROM orders_mv WHERE email != '' AND orderDate BETWEEN \'%s\' AND NOW())"""
         % (last_crm_contacts_sync.replace('T', ' ')))
     r = db.store_result()
@@ -218,4 +228,8 @@ def active_campaign_sync():
 
 
 if __name__ == '__main__':
-    active_campaign_sync()
+    (options, args) = parser.parse_args()
+    if options.postprocess:
+        active_campaign_sync(True)
+    else:
+        active_campaign_sync()
