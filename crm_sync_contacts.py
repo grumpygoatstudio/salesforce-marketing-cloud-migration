@@ -38,7 +38,7 @@ def build_contact_data(data, api_key, last_venue, list_mappings):
     d["first_name"] = str(data['contacts_mv.cust_name_first'])
     d["last_name"] = str(data['contacts_mv.cust_name_last'])
     # all custom contacts fields
-    d["field[%SEAT_ENGINE_ID%,0]"] = str(data['contacts_mv.subscriber_key'])
+    # d["field[%SEAT_ENGINE_ID%,0]"] = str(data['contacts_mv.subscriber_key'])
     d["field[%SEAT_ENGINE_NAME%,0]"] = str(data['contacts_mv.cust_name'])
     d["field[%SEAT_ENGINE_PHONE%,0]"] = str(data['contacts_mv.phone'])
     d["field[%SE_TOTAL_ORDERS%,0]"] = str(data['contacts_mv.total_orders'])

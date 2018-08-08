@@ -116,7 +116,8 @@ def create_objects_from_orders(orders, show_id, pull_limit):
         # verify that order hasn't already been processed before
         if parse(order['purchase_at'], ignoretz=True) > pull_limit:
             temp_cust = collections.OrderedDict()
-            temp_cust['subscriber_key'] = str(order['customer']['id'])
+            # temp_cust['subscriber_key'] = str(order['customer']['id'])
+            temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
             temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ")
             try:
                 temp_cust['name_first'] = str(order["delivery_data"]["first_name"]).strip().replace("\"", "").replace(",", " ")
@@ -129,7 +130,6 @@ def create_objects_from_orders(orders, show_id, pull_limit):
                 except Exception:
                     temp_cust['name_first'] = ""
                     temp_cust['name_last'] = ""
-            temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
             temp_cust['sys_entry_date'] = sys_entry_time
             try:
                 payment_method = str(order["payments"][0]['payment_method'])

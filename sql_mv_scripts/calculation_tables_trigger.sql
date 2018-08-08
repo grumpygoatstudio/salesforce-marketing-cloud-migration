@@ -19,24 +19,23 @@ BEGIN
         TRUNCATE TABLE special_shows;
         TRUNCATE TABLE total_spend;
         TRUNCATE TABLE weekday_attendence;
-        TRUNCATE TABLE total_orders;
         
 		# Table for pulling all the first/last/next dates from
         INSERT INTO attended_event_dates
-			SELECT c.subscriber_key AS subscriber_key,
+			SELECT c.email_address AS subscriber_key,
 				start_date_formatted,
 				e.name AS event_title,
 				v.id AS event_venue
 			FROM seatengine.contacts c
-			JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
+			JOIN seatengine.orders_processed o ON (o.email = c.email_address)
 			JOIN seatengine.shows_processed s ON (s.id = o.show_id)
 			JOIN seatengine.events_processed e ON (e.id = s.event_id)
-			JOIN seatengine.venues_processed v ON (v.id = e.venue_id)
+			JOIN seatengine.venues v ON (v.id = e.venue_id)
 		;
         
         # table for joining in all the first/last/next dates
         INSERT INTO fln_event_data
-			SELECT c.subscriber_key,
+			SELECT c.email_address AS subscriber_key,
 				first_show_attended, -- First Show Attended Date
 				first_event_title, -- First Event Title
 				first_event_venue, -- First Event Venue
@@ -59,7 +58,7 @@ BEGIN
 					FROM attended_event_dates
 					WHERE start_date_formatted <= NOW()
 					GROUP BY subscriber_key) AS groupedtt ON (a1.subscriber_key = groupedtt.subscriber_key AND a1.start_date_formatted = groupedtt.MinDateTime)
-				) AS a1 ON (c.subscriber_key = a1.subscriber_key)
+				) AS a1 ON (c.email_address = a1.subscriber_key)
 			## LAST SHOW / EVENT INFO PER CUSTOMER
 			LEFT JOIN
 				(SELECT a2.subscriber_key AS subscriber_key,
@@ -72,7 +71,7 @@ BEGIN
 					FROM attended_event_dates
 					WHERE start_date_formatted <= NOW()
 					GROUP BY subscriber_key) AS groupedtt ON (a2.subscriber_key = groupedtt.subscriber_key AND a2 .start_date_formatted = groupedtt.MaxDateTime)
-				) AS a2 ON (c.subscriber_key = a2.subscriber_key)
+				) AS a2 ON (c.email_address = a2.subscriber_key)
 			## NEXT SHOW / EVENT INFO PER CUSTOMER
 			LEFT JOIN
 				(SELECT a3.subscriber_key,
@@ -85,53 +84,53 @@ BEGIN
 					FROM attended_event_dates
 					WHERE start_date_formatted > NOW()
 					GROUP BY subscriber_key) AS groupedtt ON (a3.subscriber_key = groupedtt.subscriber_key AND a3.start_date_formatted = groupedtt.MinDateTime)
-				) AS a3 ON (c.subscriber_key = a3.subscriber_key)
-			GROUP BY c.subscriber_key
+				) AS a3 ON (c.email_address = a3.subscriber_key)
+			GROUP BY c.email_address
 			;
 
 
         INSERT INTO avg_tickets_per_order
-			SELECT c.subscriber_key,
+			SELECT c.email_address AS subscriber_key,
 				AVG(DATEDIFF(start_date_formatted,purchase_date_formatted)) avg_purchase_to_show_days, -- AVG Number of days between purchase and show
 				SUM(ticket_counts.ticket_count) / COUNT(o.order_number) as avg_tickets_per_order -- Average Number of Lifetime Tickets Per Order
 			FROM seatengine.contacts c
-			JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
+			JOIN seatengine.orders_processed o ON (o.email = c.email_address)
 			JOIN seatengine.shows_processed s ON (o.show_id = s.id)
 			JOIN (
 					SELECT omv.orderNumber, COUNT(omv.unique_id) ticket_count
 					FROM seatengine.orders_mv omv
 					GROUP BY omv.orderNumber
 			) ticket_counts ON (ticket_counts.orderNumber = o.order_number)
-			GROUP BY c.subscriber_key
+			GROUP BY c.email_address
 		;
         
         ## TICKET / ORDER STATS FOR LIFETIME PAID ORDERS
         INSERT INTO per_paid_order
-			SELECT c.subscriber_key,
+			SELECT c.email_address AS  subscriber_key,
 				COUNT(o.order_number) total_lifetime_paid_orders, -- Total Lifetime Paid Orders
 				SUM(ticket_counts.ticket_count) total_lifetime_paid_tickets, -- Total Number of Lifetime Paid Tickets
 				SUM(ticket_counts.ticket_count) /  COUNT(o.order_number) avg_tickets_per_paid_order
 			FROM seatengine.contacts c
-			JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
+			JOIN seatengine.orders_processed o ON (o.email = c.email_address)
 			JOIN (
 					SELECT omv.orderNumber, count(omv.unique_id) ticket_count
 					FROM seatengine.orders_mv omv
 					WHERE omv.not_comped = 1
 					GROUP BY omv.orderNumber
 			) ticket_counts ON (ticket_counts.orderNumber = o.order_number)
-			GROUP BY c.subscriber_key
+			GROUP BY c.email_address
 		;
 
 		## TICKET / ORDER STATS FOR LIFETIME COMP'D ORDERS
 		## COMPUTE LAST COMP'D SHOW DATE PER CUSTOMER
         INSERT INTO per_comp_order
-			SELECT c.subscriber_key,
+			SELECT c.email_address AS subscriber_key,
 				MAX(start_date_formatted) AS last_comp_show_date, -- Last Comp Show Date
 				COUNT(o.order_number) total_lifetime_comp_orders, -- Total Lifetime Comp'd Orders
 				SUM(ticket_counts.ticket_count) total_lifetime_comp_tickets, -- Total Lifetime Comp'd Tickets
 				SUM(ticket_counts.ticket_count) /  COUNT(o.order_number) avg_tickets_per_comp_order
 			FROM seatengine.contacts c
-			JOIN seatengine.orders_processed o ON (o.cust_id = c.subscriber_key)
+			JOIN seatengine.orders_processed o ON (o.email = c.email_address)
 			JOIN seatengine.shows_processed s ON (o.show_id = s.id)
 			JOIN (
 					SELECT omv.orderNumber, count(omv.unique_id) ticket_count
@@ -139,7 +138,7 @@ BEGIN
 					WHERE omv.comped = 1
 					GROUP BY omv.orderNumber
 			) ticket_counts ON (ticket_counts.orderNumber = o.order_number)
-			GROUP BY c.subscriber_key
+			GROUP BY c.email_address
         ;
         
         ## EVENT ATTENDANCE COUNTS BY WEEKDAY PER CUSTOMER
@@ -153,21 +152,21 @@ BEGIN
 					COUNT(CASE WHEN show_day = 5 THEN 1 END) AS shows_attended_S, -- Comp'd or Paid Events Attended on Saturday
 					COUNT(CASE WHEN show_day = 6 THEN 1 END) AS shows_attended_U -- Comp'd or Paid Events Attended on Sunday
 				FROM (
-						SELECT o.cust_id AS cust_id,
+						SELECT o.email AS cust_id,
 							# CONVERT START DATE TO A DAY OF THE WEEK!!! 
                             DAYOFWEEK(s.start_date_formatted) AS show_day,
 							COUNT(*) AS shows_attended
 						FROM seatengine.orders_processed o
 						JOIN seatengine.shows_processed s ON (o.show_id = s.id)
-						GROUP BY o.cust_id, show_day
+						GROUP BY o.email, show_day
 					) AS wk
-				GROUP BY subscriber_key
+				GROUP BY wk.cust_id
 		;
 
 		## COUNT ORDERS BY PAYMENT TYPE & PAID ORDER REVENE IN LAST 90,180,360 DAYS PER CUSTOMER
         INSERT INTO last_360
 			SELECT
-					o.cust_id AS subscriber_key,
+					o.email AS subscriber_key,
 					CONVERT((SUM(CASE WHEN o.not_comped = 1
 									AND purchase_date_formatted BETWEEN NOW() - INTERVAL 360 DAY AND NOW()
 									THEN o.order_total END)/100), DECIMAL) AS paid_orders_revenue_360,
@@ -196,13 +195,13 @@ BEGIN
 									AND purchase_date_formatted BETWEEN NOW() - INTERVAL 90 DAY AND NOW()
 									THEN 1 END) AS comp_orders_count_90
 				FROM seatengine.orders_processed o
-				GROUP BY subscriber_key
+				GROUP BY o.email
 		;
         
         ## COUNT EVENTS THAT ARE SPECIAL TYPES PER CUSTOMER
         INSERT INTO special_shows
 			SELECT
-				o.cust_id AS subscriber_key,
+				o.email AS subscriber_key,
                 o.phone AS phone,
 				MAX(o.purchase_date_formatted) AS last_ordered_date, -- Last Ordered Date
 				COUNT(CASE WHEN e.special_event = 1 THEN 1 END) AS count_shows_special, -- Special Event Total Order Count
@@ -210,27 +209,18 @@ BEGIN
 			FROM seatengine.orders_processed o
 			JOIN seatengine.shows_processed s ON (s.id = o.show_id)
 			JOIN seatengine.events_processed e ON (e.id = s.event_id)
-			GROUP BY subscriber_key
+			GROUP BY o.email
 		;
         
         ## TOTAL ORDER SPENDING PER CUSTOMER
         INSERT INTO total_spend
 			SELECT
-				o.cust_id AS subscriber_key,
+				o.email AS subscriber_key,
                 CONVERT(SUM(ol.ticket_price)/100, DECIMAL) AS total_revenue -- Total Revenue from customerid
 			FROM seatengine.orders_processed o
 			JOIN seatengine.orderlines_processed ol ON (ol.order_number = o.order_number)
 			WHERE o.not_comped = 1
-			GROUP BY subscriber_key
-		;
-        
-         ## TOTAL ORDERS PER CUSTOMER
-        INSERT INTO total_orders
-			SELECT
-				o.email AS subscriber_key,
-                COUNT(DISTINCT o.order_number) AS total_orders -- Total Revenue from customerid
-			FROM seatengine.orders_processed o
-			GROUP BY subscriber_key
+			GROUP BY o.email
 		;
         
         # turn ON all FK constraints for tables 

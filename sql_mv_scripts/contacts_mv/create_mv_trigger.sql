@@ -15,11 +15,10 @@ BEGIN
         # populate with new data
 		INSERT INTO contacts_mv
 		SELECT
-			c.subscriber_key AS subscriber_key,
+			c.email_address AS email_address,
 			c.name AS cust_name,
 			c.name_first AS cust_name_first,
 			c.name_last AS cust_name_last,
-			c.email_address AS email_address,
 			phone AS phone,
 			total_revenue,  -- Total Revenue from customerid
 			last_ordered_date, -- Last Ordered Date
@@ -34,7 +33,7 @@ BEGIN
             next_event_venue, -- Next Event Venue
 			avg_tickets_per_order, -- Average Number of Lifetime Tickets Per Order
 			avg_purchase_to_show_days, -- AVG Number of days between purchase and show
-			total_orders, -- Total Orders
+			total_lifetime_paid_orders + total_lifetime_comp_orders AS total_orders, -- Total Orders
             total_lifetime_paid_orders, -- Total Lifetime Paid Orders
 			total_lifetime_paid_tickets, -- Total Number of Lifetime Paid Tickets
 			avg_tickets_per_paid_order, -- Average Number of Lifetime Tickets Per Paid Order
@@ -63,15 +62,14 @@ BEGIN
             c.sys_entry_date AS sys_entry_date
 		FROM seatengine.contacts c
 		LEFT JOIN fln_event_data ON (c.subscriber_key = fln_event_data.subscriber_key) 
-		LEFT JOIN avg_tickets_per_order ON (c.subscriber_key = avg_tickets_per_order.subscriber_key)
-		LEFT JOIN per_paid_order ON (c.subscriber_key = per_paid_order.subscriber_key)
-		LEFT JOIN per_comp_order ON (c.subscriber_key = per_comp_order.subscriber_key)
-		LEFT JOIN weekday_attendence ON (c.subscriber_key = weekday_attendence.subscriber_key)
-		LEFT JOIN last_360 ON (c.subscriber_key = last_360.subscriber_key)
-		LEFT JOIN total_spend ON (c.subscriber_key = total_spend.subscriber_key)
-        LEFT JOIN special_shows ON (c.subscriber_key = special_shows.subscriber_key)
-        LEFT JOIN total_orders ON (c.subscriber_key = total_orders.subscriber_key)
-        GROUP BY c.subscriber_key; 
+		LEFT JOIN avg_tickets_per_order ON (c.email_address = avg_tickets_per_order.subscriber_key)
+		LEFT JOIN per_paid_order ON (c.email_address = per_paid_order.subscriber_key)
+		LEFT JOIN per_comp_order ON (c.email_address = per_comp_order.subscriber_key)
+		LEFT JOIN weekday_attendence ON (c.email_address = weekday_attendence.subscriber_key)
+		LEFT JOIN last_360 ON (c.email_address = last_360.subscriber_key)
+		LEFT JOIN total_spend ON (c.email_address = total_spend.subscriber_key)
+        LEFT JOIN special_shows ON (c.email_address = special_shows.subscriber_key)
+        GROUP BY c.email_address; 
         
         # turn ON all FK constraints for tables 
         SET FOREIGN_KEY_CHECKS = 1; 

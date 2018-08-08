@@ -36,7 +36,7 @@ BEGIN
 		JOIN seatengine.orderlines_processed ol ON (o.order_number = ol.order_number)
 		JOIN seatengine.shows_processed s ON (s.id = o.show_id)
 		JOIN seatengine.events_processed e ON (e.id = s.event_id)
-		JOIN seatengine.venues_processed v ON (v.id = e.venue_id);
+		JOIN seatengine.venues v ON (v.id = e.venue_id);
         
         # turn ON all FK constraints for tables 
         SET FOREIGN_KEY_CHECKS = 1; 
