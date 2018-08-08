@@ -61,7 +61,7 @@ BEGIN
 			count_shows_persents, -- Presents shows Total Order Count
             c.sys_entry_date AS sys_entry_date
 		FROM seatengine.contacts c
-		LEFT JOIN fln_event_data ON (c.subscriber_key = fln_event_data.subscriber_key) 
+		LEFT JOIN fln_event_data ON (c.email_address = fln_event_data.subscriber_key) 
 		LEFT JOIN avg_tickets_per_order ON (c.email_address = avg_tickets_per_order.subscriber_key)
 		LEFT JOIN per_paid_order ON (c.email_address = per_paid_order.subscriber_key)
 		LEFT JOIN per_comp_order ON (c.email_address = per_comp_order.subscriber_key)
