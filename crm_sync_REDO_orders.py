@@ -185,7 +185,7 @@ def active_campaign_sync():
                             host=configs['db_host'],
                             db=configs['db_name'])
 
-        sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date < "2018-08-10 00:00:01") AND email != '' AND customerid != 'None'""" % (
+        sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date < "2018-08-10") AND email != '' AND customerid != 'None'""" % (
             str(venue_id)
         )
         db.query(sql)
