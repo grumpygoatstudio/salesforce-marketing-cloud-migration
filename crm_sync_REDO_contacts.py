@@ -111,32 +111,30 @@ def lookup_crm_id_by_api(url, data, auth_header):
         return None
 
 
-def update_contact_in_crm(url, auth_header, data, configs, list_subcrip):
+def update_contact_in_crm(url, auth_header, data, configs, last_venue):
     crm_id = lookup_crm_id_by_api(url, data, auth_header)
-    if crm_id:
-        data['id'] = crm_id
-        r = requests.post(url, headers=auth_header, data=data)
-        if r.status_code == 200 and r.json()["result_code"] != 0:
-            return True
+    if last_venue not in ["None", ""]:
+        if crm_id:
+            data['id'] = crm_id
+            r = requests.post(url, headers=auth_header, data=data)
+            if r.status_code == 200 and r.json()["result_code"] != 0:
+                return "success"
+            else:
+                print("ERROR: Updating contact via API failed.", data['email'])
+                return "err_update"
         else:
-            print("ERROR: Updating contact via API failed.", data['email'])
-            return False
-    else:
-        try:
             data["api_action"] = "contact_add"
             data.pop("id", None)
-            if list_subcrip not in ["None", ""]:
-                r = requests.post(url, headers=auth_header, data=data)
-                if r.status_code == 200 and r.json()["result_code"] != 0:
-                    return True
-                else:
-                    print("ERROR: Creating contact via API failed.", data['email'])
-                    return False
+            r = requests.post(url, headers=auth_header, data=data)
+            if r.status_code == 200 and r.json()["result_code"] != 0:
+                return "success"
             else:
-                print("ERROR: Missing list. Create contact via API failed.", data['email'])
-                return False
-        except Exception:
-            print("ERROR: Creating contact via API failed.", data['email'])
+                print("ERROR: Creating contact via API failed.", data['email'])
+                return "err_add"
+    else:
+        print("ERROR: Missing list. Create contact via API failed.",
+              data['email'])
+        return "err_list"
     return crm_id
 
 
