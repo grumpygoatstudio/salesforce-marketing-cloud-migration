@@ -75,10 +75,6 @@ def build_contact_data(data, api_key, last_venue, list_mappings):
     d["field[%AVERAGE_NUMBER_OF_DAYS_BETWEEN_PURCHASE_AND_EVENT_DATES%,0]"] = str(data['contacts_mv.avg_purchase_to_show_days'])
     d["field[%AVERAGE_TICKETS_PER_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_order'])
 
-    if last_venue not in ["None", ""]:
-        list_id = list_mappings[last_venue]
-        field = "p[%s]" % list_id
-        d[field] = list_id
     return d
 
 
@@ -150,8 +146,8 @@ def active_campaign_sync():
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    venue_target = 297
-    db.query("""SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE venue_id = \'%s\');"""
+    venue_target = ("\'5\', \'6\', \'131\'")
+    db.query("""SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE venue_id in (%s));"""
     % venue_target)
     r = db.store_result()
     more_rows = True

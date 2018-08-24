@@ -165,7 +165,7 @@ def active_campaign_sync():
     last_crm_sync = configs["last_crm_contacts_sync"]
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    venues = [(297, '2')]
+    venues = [(5, '4'), (6, '5'), (131, '9')]
     # (1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
     # (53, '11'), (63, '12'), (131, '9'), (133, '8'),
 
@@ -256,7 +256,6 @@ def active_campaign_sync():
                     print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
                     order_err['build'] += 1
             print("Done a chunk! Sleeping for 60 min to avoid SSL issues...")
-            sleep(3600)
 
             # send a post chunk completion email to keep us in loop
             msg += "~~~~~ Chunk %s of %s (chunk size: %s) ~~~~~\n\nCustomers pushed\nSUCCESS Qty: %s\n\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\n\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
