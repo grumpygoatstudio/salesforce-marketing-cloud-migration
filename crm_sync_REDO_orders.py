@@ -172,7 +172,7 @@ def active_campaign_sync():
     for venue_id, connection in venues:
         # setup a completion email notifying that a Month of Venue pushes has finished
         sender = "kevin@matsongroup.com"
-        recipients = ["flygeneticist@gmail.com"]
+        recipients = ["jason@gmatsongroup.com"]
         header = 'From: %s\n' % sender
         header += 'To: %s\n' % ", ".join(recipients)
         header += 'Subject: Big Orders RESYNC - Venue %s - SeatEngine AWS\n' % venue_id
@@ -262,7 +262,7 @@ def active_campaign_sync():
             msg += "~~~~~ Chunk %s of %s (chunk size: %s) ~~~~~\n\nCustomers pushed\nSUCCESS Qty: %s\n\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\n\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
                 chunk_num, total_chunks, chunk_size, cust_count, cust_err['build'], cust_err['push'], cust_err['unicode'], cust_err['ssl'], order_count, order_err['build'], order_err['update'], order_err['unicode'], order_err['other'], order_err['ssl'])
             msg += "\nSleeping for 1 hour to avoid SSL issues..."
-            # send a completion email notifying Kevin and Jason that daily updates have finished
+            # send a completion email notifying Jason that daily updates have finished
             server = smtplib.SMTP('smtp.gmail.com', 587)
             server.ehlo()
             server.starttls()

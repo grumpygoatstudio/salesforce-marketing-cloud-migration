@@ -206,9 +206,9 @@ def active_campaign_sync(postprocess=False):
         write_config(configs, dir_path)
         print("CRM Contacts Sync Completed - " + configs['last_crm_contacts_sync'])
 
-        # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
+        # setup a completion email notifying Jason that a Month of Venue pushes has finished
         sender = "kevin@matsongroup.com"
-        recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
+        recipients = ["jason@matsongroup.com"]
         header = 'From: %s\n' % sender
         header += 'To: %s\n' % ", ".join(recipients)
         header += 'Subject: Completed DAILY Contacts Push - SeatEngine AWS\n'
