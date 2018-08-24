@@ -188,9 +188,9 @@ def active_campaign_sync():
                     contact_info["contacts_mv.email_address"]))
         except IndexError:
             more_rows = False
-    # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
+    # setup a completion email notifying Jason that a Month of Venue pushes has finished
     sender = "kevin@matsongroup.com"
-    recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
+    recipients = ["jason@matsongroup.com"]
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed a MASSIVE UPDATE of Contacts - SeatEngine AWS\n'

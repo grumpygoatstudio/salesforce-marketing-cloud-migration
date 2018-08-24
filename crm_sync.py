@@ -160,9 +160,9 @@ def active_campaign_sync():
               (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
     new_venues = []
 
-    # setup a completion email notifying Kevin and Jason that a Month of Venue pushes has finished
+    # setup a completion email notifying Jason that a Month of Venue pushes has finished
     sender = "kevin@matsongroup.com"
-    recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
+    recipients = ["jason@matsongroup.com"]
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed DAILY Orders Sync - SeatEngine AWS\n'
@@ -241,7 +241,7 @@ def active_campaign_sync():
         msg += "~~~~~ VENUE #%s ~~~~~\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\n" % (
             venue_id, len(crm_postings), cust_err['build'], cust_err['push'], cust_err['unicode'], order_count, order_err['build'], order_err['update'], order_err['unicode'], order_err['other'])
 
-    # send a completion email notifying Kevin and Jason that daily updates have finished
+    # send a completion email notifying Jason that daily updates have finished
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()
