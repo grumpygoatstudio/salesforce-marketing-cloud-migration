@@ -119,16 +119,16 @@ def update_data(url, auth_header, data, configs, connection, obj_type):
                     # that out for use elsewhere with orders.
                     return lookup_customer_crm_id(data[obj_type]['email'], url, auth_header, connection)
                 else:
-                    return "other"
+                    return None
                     # We have an order that's a duplicate in the system.
                     # We should try to PUT update its data.
-                    r = push_data_to_api(url, auth_header, data, 'update')
-                    status = check_api_response(r, obj_type)
-                    if status[0] == 'success':
-                        return "success"
-                    else:
-                        # We have an error with the PUT
-                        return "err-update"
+                    # r = push_data_to_api(url, auth_header, data, 'update')
+                    # status = check_api_response(r, obj_type)
+                    # if status[0] == 'success':
+                    #     return "success"
+                    # else:
+                    #     # We have an error with the PUT
+                    #     return "err-update"
             else:
                 # another kind of error occured :(
                 # we know the data was not updated

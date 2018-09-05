@@ -2,7 +2,6 @@ import os
 import sys
 import requests
 import json
-import collections
 import _mysql
 import smtplib
 
@@ -32,7 +31,7 @@ def get_venue_events_and_shows(venue_id, pull_limit, header):
         events = []
         shows = []
         for event in data:
-            temp_event = collections.OrderedDict()
+            temp_event = {}
             temp_event['id'] = event['id']
             temp_event['venue_id'] = str(venue_id)
             temp_event['name'] = event['name'].replace("\"", "").replace(",", " ").replace('\'','`').strip()
@@ -51,7 +50,7 @@ def get_show_information(venue_id, show_id, header):
     res = requests.get(url, headers=header)
     if res.status_code == 200:
         show = json.loads(res.text)['data']
-        temp_show = collections.OrderedDict()
+        temp_show = {}
         temp_show['id'] = str(show_id)
         temp_show['event_id'] = show['event_id']
         temp_show['start_date_time'] = str(show['start_date_time'])
@@ -79,7 +78,7 @@ def create_objects_from_orders(orders, show_id):
     sys_entry_time = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
 
     for order in orders:
-        temp_cust = collections.OrderedDict()
+        temp_cust = {}
         # temp_cust['subscriber_key'] = str(order['customer']['id'])
         temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
         temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
@@ -100,7 +99,7 @@ def create_objects_from_orders(orders, show_id):
         except Exception:
             payment_method = ""
 
-        temp_order = collections.OrderedDict()
+        temp_order = {}
         temp_order['id'] = str(order['id'])
         temp_order['show_id'] = str(show_id)
         temp_order['order_number'] = str(order['order_number'])
@@ -118,10 +117,10 @@ def create_objects_from_orders(orders, show_id):
         for tix_type in order['tickets']:
             c = 1
             for tix in order['tickets'][tix_type]:
-                temp_orderline = collections.OrderedDict()
+                temp_orderline = {}
                 temp_orderline['id'] = str(order['order_number']) + "-%s" % c
                 temp_orderline['order_number'] = str(order['order_number'])
-                temp_orderline['ticket_name'] = str(tix_type).strip().replace(",", " ").replace('\'','`').strip()
+                temp_orderline['ticket_name'] = str(tix_type).replace(",", " ").replace('\'','`').strip()
                 temp_orderline['ticket_price'] = tix['price']
                 temp_orderline['printed'] = tix['printed']
                 temp_orderline['promo_code_id'] = tix['promo_code_id']
@@ -151,7 +150,6 @@ def sql_insert_events(db, events):
             db.query(query)
             stats['ok'] += 1
         except Exception as err:
-            print("SQL INSERT FAILED - EVENT - TRYING UPDATE FALLBACK", e['id'], err)
             try:
                 query = '''UPDATE events SET
                             venue_id = \'%s\',
@@ -163,7 +161,7 @@ def sql_insert_events(db, events):
                 db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
-                print("SQL UPDATE FAILED - EVENT", e['id'], err2)
+                print("SQL INSERT & UPDATE FAILED- EVENT", e['id'], err2)
                 stats['err'] += 1
     return stats
 
@@ -179,7 +177,6 @@ def sql_insert_shows(db, shows):
             db.query(query)
             stats['ok'] += 1
         except Exception as err:
-            print("SQL INSERT FAILED - SHOW - TRYING UPDATE FALLBACK", s['id'], err)
             try:
                 query = '''UPDATE shows SET
                             event_id = \'%s\',
@@ -192,7 +189,7 @@ def sql_insert_shows(db, shows):
                 db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
-                print("SQL UPDATE FAILED - SHOW", s['id'], err2)
+                print("SQL INSERT & UPDATE FAILED- SHOW", s['id'], err2)
                 stats['err'] += 1
     return stats
 
@@ -208,7 +205,6 @@ def sql_insert_contacts(db, contacts):
             db.query(query)
             stats['ok'] += 1
         except Exception as err:
-            print("SQL INSERT FAILED - CONTACT - TRYING UPDATE FALLBACK", c['email_address'], err)
             try:
                 query = '''UPDATE contacts SET
                             name = \'%s\',
@@ -221,7 +217,7 @@ def sql_insert_contacts(db, contacts):
                 db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
-                print("SQL UPDATE FAILED - CONTACT", c['email_address'], err2)
+                print("SQL INSERT & UPDATE FAILED - CONTACT", c['email_address'], err2)
                 stats['err'] += 1
     return stats
 
@@ -237,7 +233,6 @@ def sql_insert_orders(db, orders):
             db.query(query)
             stats['ok'] += 1
         except Exception as err:
-            print("SQL INSERT FAILED - ORDER - TRYING UPDATE FALLBACK", o['id'], err)
             try:
                 query = '''UPDATE orders SET
                             show_id = \'%s\',
@@ -258,7 +253,7 @@ def sql_insert_orders(db, orders):
                 db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
-                print("SQL UPDATE FAILED - ORDER", o['id'], err2)
+                print("SQL INSERT & UPDATE FAILED - ORDER", o['id'], err2)
                 stats['err'] += 1
     return stats
 
@@ -274,7 +269,6 @@ def sql_insert_orderlines(db, orderlines):
             db.query(query)
             stats['ok'] += 1
         except Exception as err:
-            print("SQL INSERT FAILED - ORDERLINE - TRYING UPDATE FALLBACK", ol['id'], err)
             try:
                 query = '''UPDATE orderlines SET
                             order_number = \'%s\',
@@ -289,7 +283,7 @@ def sql_insert_orderlines(db, orderlines):
                 db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
-                print("SQL UPDATE FAILED - ORDERLINE", ol['id'], err2)
+                print("SQL INSERT & UPDATE FAILED - ORDERLINE", ol['id'], err2)
                 stats['err'] += 1
     return stats
 
@@ -306,9 +300,8 @@ def main():
                         host=configs['db_host'],
                         db=configs['db_name'])
 
-    venues = [133]
-
     # COLLECT AND PROCESS ALL DATA FROM API SOURCE
+    venues = [133]
     for venue_id in venues:
         print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
         data = {
@@ -334,13 +327,12 @@ def main():
 
     # UPLOAD ALL DATA TO AWS RDS SERVER
     db.autocommit(True)
-    db.query("SET FOREIGN_KEY_CHECKS = 0;")
     events_stats = sql_insert_events(db, data["events"])
     shows_stats = sql_insert_shows(db, data["shows"])
     contacts_stats = sql_insert_contacts(db, data["contacts"])
     orders_stats = sql_insert_orders(db, data["orders"])
     orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
-    db.query("SET FOREIGN_KEY_CHECKS = 1;")
+
     # WRITE NEW DATETIME FOR LAST PULLED TIME
     # configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
     # write_config(configs, dir_path)
