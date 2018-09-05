@@ -175,7 +175,7 @@ def create_objects_from_orders(orders, show_id, pull_limit, db):
 
 def invoke_sql(db, query):
     cur = db.cursor()
-    cur.execute(query,)
+    cur.execute(query)
     cur.close()
 
 
@@ -277,6 +277,7 @@ def main():
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
+    db.autocommit(True)
 
     if (configs['last_pull'] == "" or not configs['last_pull']):
         pull_limit = datetime.today() - timedelta(days=2)
