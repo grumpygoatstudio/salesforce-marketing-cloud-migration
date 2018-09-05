@@ -3,26 +3,12 @@ import sys
 import requests
 import json
 import collections
-import csv
 import _mysql
 import smtplib
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse
-from csv import DictWriter
-from optparse import OptionParser
 
-parser = OptionParser()
-parser.add_option("-b", "--backload", dest="backload", type="string",
-                  help="Backload shows and events", metavar="backload")
-parser.add_option("-s", "--sql", dest="sql", type="string",
-                  help="Upload all CSV files to SQL server only", metavar="sql")
-parser.add_option("-n", "--name", dest="names", type="string",
-                  help="Fix missing names in database", metavar="names")
-parser.add_option("-r", "--rebuild", dest="rebuild", type="string",
-                  help="Rebuild all orders/orderlines in database", metavar="rebuild")
-parser.add_option("-p", "--postprocess", dest="postprocess", type="string",
-                  help="Run only postprocessing scripts", metavar="postprocess")
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -59,26 +45,6 @@ def get_venue_events_and_shows(venue_id, pull_limit, header):
     else:
         return []
 
-def get_venue_events_and_shows_from_list(venue_id, file_path, header):
-    with open(file_path, "r") as file_data:
-        f = csv.reader(file_data, delimiter=',')
-        events = []
-        shows = []
-        for event in f:
-            if event[0] != "event id":
-                for show_id in event[1:]:
-                    shows.append(show_id)
-                url = "https://api-2.seatengine.com/api/venues/%s/events/%s" % (venue_id, event[0])
-                res = requests.get(url, headers=header)
-                if res.status_code == 200:
-                    event_data = json.loads(res.text)['data']
-                    temp_event = collections.OrderedDict()
-                    temp_event['id'] = event_data['id']
-                    temp_event['venue_id'] = str(venue_id)
-                    temp_event['name'] = event_data['name'].strip().replace("\"", "").replace(",", " ")
-                    temp_event['logo_url'] = event_data['image_url']
-                    events.append(temp_event)
-        return (events, shows)
 
 def get_show_information(venue_id, show_id, header):
     url = "https://api-2.seatengine.com/api/venues/%s/shows/%s" % (venue_id, show_id)
@@ -106,7 +72,7 @@ def get_show_orders(venue_id, show_id, header):
         return False
 
 
-def create_objects_from_orders(orders, show_id, pull_limit, db):
+def create_objects_from_orders(orders, show_id):
     customers_info = []
     orders_info = []
     orderlines_info = []
@@ -332,7 +298,8 @@ def main():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
-    pull_limit = parse(configs['last_pull'], ignoretz=True)
+    pull_limit = parse(configs['last_pull'], ignoretz=True) - timedelta(days=2)
+
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
@@ -341,7 +308,6 @@ def main():
     db.autocommit(True)
 
     venues = [133]
-    data_types = ["events", "shows", "orderlines", "orders", "contacts"]
 
     # COLLECT AND PROCESS ALL DATA FROM API SOURCE
     for venue_id in venues:
@@ -352,7 +318,8 @@ def main():
             "orders": [],
             "contacts": []
         }
-        # data['events'] += []
+        events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
+        data['events'] += events_and_shows[0]
         shows = [80123]
         for show_id in shows:
             show_info = get_show_information(venue_id, show_id, auth_header)
@@ -360,36 +327,21 @@ def main():
                 data['shows'] += [show_info]
             show_orders = get_show_orders(venue_id, show_id, auth_header)
             if show_orders:
-                order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit, db)
+                order_info_objs = create_objects_from_orders(show_orders, show_id)
                 data['orders'] += order_info_objs[0]
                 data['orderlines'] += order_info_objs[1]
                 data['contacts'] += order_info_objs[2]
 
-        for dt in data_types:
-            try:
-                file_path = os.path.join(dir_path, 'api-data', dt + '-' + str(venue_id) + 'TEST.csv')
-                os.remove(file_path)
-            except OSError:
-                pass
-
-            # BUILD CSV FILES FROM THE API SOURCE DATA COLLECTED
-            the_file = open(file_path, "w")
-            if len(data[dt]) > 0:
-                writer = DictWriter(the_file, data[dt][0].keys())
-                writer.writeheader()
-                writer.writerows(data[dt])
-            the_file.close()
-
-    # UPLOAD ALL SQL FILES TO AWS RDS SERVER
+    # UPLOAD ALL DATA TO AWS RDS SERVER
     events_stats = sql_insert_events(db, data["events"])
     shows_stats = sql_insert_shows(db, data["shows"])
     contacts_stats = sql_insert_contacts(db, data["contacts"])
     orders_stats = sql_insert_orders(db, data["orders"])
     orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
 
-    # sql_upload()
-
     # WRITE NEW DATETIME FOR LAST PULLED TIME
+    # configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
+    # write_config(configs, dir_path)
     print("TEST Data Pull Completed - " + configs['last_pull'])
 
     # TRIGGER POST-PROCESSING FOR SQL TABLES
@@ -414,39 +366,6 @@ def main():
     server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
     server.sendmail(sender, recipients, msg)
     server.quit()
-
-
-def sql_upload(backload=False):
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    configs = load_config(dir_path)
-    if backload == "rebuild":
-        venues = [6, 7, 23,63, 297] # 1,5,21,53,133
-        data_types = ["orderlines"]
-    else:
-        venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
-        data_types = ["events", "shows", "orderlines", "orders", "contacts"]
-
-    # UPLOAD ALL SQL FILES TO AWS RDS SERVER
-    for venue_id in venues:
-        for dt in data_types:
-            if backload == "rebuild":
-                file_path = os.path.join(
-                    dir_path, dt + '-' + str(venue) + '-rebuild.csv')
-            elif backload:
-                file_path = os.path.join(dir_path, 'bdir', dt + '-' + str(venue_id) + '.csv')
-            else:
-                file_path = os.path.join(dir_path, 'api-data', dt + '-' + str(venue_id) + '.csv')
-            # upload new CSV file to the MySQL DB
-            sql_cmd = """mysql %s -h %s -P %s -u %s --password=%s -e \"LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\\"' IGNORE 1 LINES; SHOW WARNINGS\"""" % (
-                configs['db_name'],
-                configs['db_host'],
-                configs['db_port'],
-                configs['db_user'],
-                configs['db_password'],
-                file_path,
-                dt
-            )
-            os.system(sql_cmd)
 
 
 def sql_post_processing():
