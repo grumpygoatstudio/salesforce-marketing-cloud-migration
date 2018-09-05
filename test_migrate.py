@@ -265,7 +265,6 @@ def sql_insert_orders(db, orders):
     for o in orders:
         try:
             query = '''UPDATE orders SET
-                        id = \'%s\',
                         show_id = \'%s\',
                         order_number = \'%s\',
                         cust_id = \'%s\',
@@ -407,8 +406,8 @@ def main():
     msg = msg + "EVENTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (events_stats["ok"], events_stats["err"])
     msg = msg + "SHOWS:\nSUCCESS: %s\nERRORS: %s\n\n" % (shows_stats["ok"], shows_stats["err"])
     msg = msg + "CONTACTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (contacts_stats["ok"], contacts_stats["err"])
-    # msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
-    # msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
+    msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
+    msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()
