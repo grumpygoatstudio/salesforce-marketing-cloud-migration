@@ -218,7 +218,7 @@ def sql_insert_shows(db, shows):
             db.execute()
             stats['ok'] += 1
         except Exception as err:
-            print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", e['id'], err)
+            print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", s['id'], err)
             try:
                 db.query('''INSERT INTO shows (id, event_id, start_date_time, sold_out, cancelled_at)
                             VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
@@ -235,29 +235,29 @@ def sql_insert_shows(db, shows):
 def sql_insert_contacts(db, contacts):
     stats = {"ok": 0, "err": 0}
     for c in contacts:
+        # try:
+        #     db.query('''UPDATE shows SET
+        #                 name = \'%s\',
+        #                 name_first = \'%s\',
+        #                 name_last = \'%s\',
+        #                 sys_entry_date = \'%s\'
+        #                 WHERE email_address = \'%s\';''' % (
+        #         c['name'], c['name_first'], c['name_last'], c['sys_entry_date'], c['email_address']
+        #     ))
+        #     db.execute()
+        #     stats['ok'] += 1
+        # except Exception as err:
+        # print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", e['id'], err)
         try:
-            db.query('''UPDATE shows SET
-                        name = \'%s\',
-                        name_first = \'%s\',
-                        name_last = \'%s\',
-                        sys_entry_date = \'%s\'
-                        WHERE email_address = \'%s\';''' % (
-                c['name'], c['name_first'], c['name_last'], c['sys_entry_date'], c['email_address']
+            db.query('''INSERT INTO contacts (email_address, name, name_first, name_last, sys_entry_date)
+                        VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                c['email_address'], c['name'], c['name_first'], c['name_last'], c['sys_entry_date']
             ))
             db.execute()
             stats['ok'] += 1
-        except Exception as err:
-            print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", e['id'], err)
-            try:
-                db.query('''INSERT INTO contacts (email_address, name, name_first, name_last, sys_entry_date)
-                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
-                    c['email_address'], c['name'], c['name_first'], c['name_last'], c['sys_entry_date']
-                ))
-                db.execute()
-                stats['ok'] += 1
-            except Exception as err2:
-                print("SQL INSERT FAILED - CONTACT", c['email_address'], err2)
-                stats['err'] += 1
+        except Exception as err2:
+            print("SQL INSERT FAILED - CONTACT", c['email_address'], err2)
+            stats['err'] += 1
     return stats
 
 
