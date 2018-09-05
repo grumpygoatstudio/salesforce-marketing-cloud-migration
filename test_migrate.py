@@ -173,27 +173,33 @@ def create_objects_from_orders(orders, show_id, pull_limit, db):
     return (orders_info, orderlines_info, customers_info)
 
 
+def invoke_sql(db, query):
+    cur = db.cursor()
+    cur.execute(query,)
+    cur.close()
+
+
 def sql_insert_events(db, events):
     stats = {"ok": 0, "err": 0}
     for e in events:
         try:
-            cur = db.cursor()
-            cur.execute('''UPDATE events SET
+            query = '''UPDATE events SET
                         venue_id = \'%s\',
                         name = \'%s\',
                         logo_url = \'%s\'
                         WHERE id = \'%s\';''' % (
                 e['venue_id'], e['name'], e['logo_url'], e['id']
-            ))
+            )
+            invoke_sql(db, query)
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - EVENT - TRYING INSERT FALLBACK", e['id'], err)
             try:
-                cur = db.cursor()
-                cur.execute('''INSERT INTO events (id, venue_id, name, logo_url)
+                query = '''INSERT INTO events (id, venue_id, name, logo_url)
                             VALUES (\'%s\',\'%s\',\'%s\',\'%s\');''' % (
                     e['id'], e['venue_id'], e['name'], e['logo_url']
-                ))
+                )
+                invoke_sql(db, query)
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - EVENT", e['id'], err2)
@@ -206,24 +212,24 @@ def sql_insert_shows(db, shows):
     for s in shows:
         print(s)
         try:
-            cur = db.cursor()
-            cur.execute('''UPDATE shows SET
+            query = '''UPDATE shows SET
                         event_id = \'%s\',
                         start_date_time = \'%s\',
                         sold_out = \'%s\',
                         cancelled_at = \'%s\'
                         WHERE id = \'%s\';''' % (
                 s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at'], s['id']
-            ))
+            )
+            invoke_sql(db, query)
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", s['id'], err)
             try:
-                cur = db.cursor()
-                cur.execute('''INSERT INTO shows (id, event_id, start_date_time, sold_out, cancelled_at)
+                query = '''INSERT INTO shows (id, event_id, start_date_time, sold_out, cancelled_at)
                             VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
                     s['id'], s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at']
-                ))
+                )
+                invoke_sql(db, query)
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - SHOW", s['id'], err2)
@@ -236,24 +242,24 @@ def sql_insert_contacts(db, contacts):
     for c in [c for c in contacts if c['email_address'] != ""]:
         print(c)
         try:
-            cur = db.cursor()
-            cur.execute('''UPDATE contacts SET
+            query = '''UPDATE contacts SET
                         name = \'%s\',
                         name_first = \'%s\',
                         name_last = \'%s\',
                         sys_entry_date = \'%s\'
                         WHERE email_address = \'%s\';''' % (
                 c['name'], c['name_first'], c['name_last'], c['sys_entry_date'], c['email_address']
-            ))
+            )
+            invoke_sql(db, query)
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - CONTACT - TRYING INSERT FALLBACK", c['email_address'], err)
             try:
-                cur = db.cursor()
-                cur.execute('''INSERT INTO contacts (email_address, name, name_first, name_last, sys_entry_date)
+                query = '''INSERT INTO contacts (email_address, name, name_first, name_last, sys_entry_date)
                             VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
                     c['email_address'], c['name'], c['name_first'], c['name_last'], c['sys_entry_date']
-                ))
+                )
+                invoke_sql(db, query)
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - CONTACT", c['email_address'], err2)
@@ -320,7 +326,7 @@ def main():
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
     events_stats = sql_insert_events(db, data["events"])
     shows_stats = sql_insert_shows(db, data["shows"])
-    contacts_stats = sql_insert_contacts(db, data["contacts"])
+    # contacts_stats = sql_insert_contacts(db, data["contacts"])
     # orders_stats = sql_insert_orders(db, data["orders"])
     # orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
 
