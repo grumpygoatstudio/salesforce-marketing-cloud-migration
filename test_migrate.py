@@ -173,12 +173,6 @@ def create_objects_from_orders(orders, show_id, pull_limit, db):
     return (orders_info, orderlines_info, customers_info)
 
 
-def invoke_sql(db, query):
-    cur = db.cursor()
-    cur.execute(query,)
-    cur.close()
-
-
 def sql_insert_events(db, events):
     stats = {"ok": 0, "err": 0}
     for e in events:
@@ -190,7 +184,7 @@ def sql_insert_events(db, events):
                         WHERE id = \'%s\';''' % (
                 e['venue_id'], e['name'], e['logo_url'], e['id']
             )
-            invoke_sql(db, query)
+            db.query(query)
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - EVENT - TRYING INSERT FALLBACK", e['id'], err)
@@ -199,7 +193,7 @@ def sql_insert_events(db, events):
                             VALUES (\'%s\',\'%s\',\'%s\',\'%s\');''' % (
                     e['id'], e['venue_id'], e['name'], e['logo_url']
                 )
-                invoke_sql(db, query)
+                db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - EVENT", e['id'], err2)
@@ -220,7 +214,7 @@ def sql_insert_shows(db, shows):
                         WHERE id = \'%s\';''' % (
                 s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at'], s['id']
             )
-            invoke_sql(db, query)
+            db.query(query)
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", s['id'], err)
@@ -229,7 +223,7 @@ def sql_insert_shows(db, shows):
                             VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
                     s['id'], s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at']
                 )
-                invoke_sql(db, query)
+                db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - SHOW", s['id'], err2)
@@ -250,7 +244,7 @@ def sql_insert_contacts(db, contacts):
                         WHERE email_address = \'%s\';''' % (
                 c['name'], c['name_first'], c['name_last'], c['sys_entry_date'], c['email_address']
             )
-            invoke_sql(db, query)
+            db.query(query)
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - CONTACT - TRYING INSERT FALLBACK", c['email_address'], err)
@@ -259,7 +253,7 @@ def sql_insert_contacts(db, contacts):
                             VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
                     c['email_address'], c['name'], c['name_first'], c['name_last'], c['sys_entry_date']
                 )
-                invoke_sql(db, query)
+                db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - CONTACT", c['email_address'], err2)
