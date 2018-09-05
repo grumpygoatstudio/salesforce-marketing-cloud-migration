@@ -131,7 +131,6 @@ def update_contact_in_crm(url, auth_header, data, configs, last_venue):
                 except Exception as e:
                     print("ERROR: Other error.", data['email'], e)
                     return 'err_other'
-
             else:
                 print("ERROR: Updating contact via API failed.", data['email'])
                 return "err_update"
@@ -139,8 +138,16 @@ def update_contact_in_crm(url, auth_header, data, configs, last_venue):
             data["api_action"] = "contact_add"
             data.pop("id", None)
             r = requests.post(url, headers=auth_header, data=data)
-            if r.status_code == 200 and r.json()["result_code"] != 0:
-                return "success"
+            if r.status_code == 200:
+                try:
+                    if r.json()["result_code"] != 0:
+                        return "success"
+                    else:
+                        print("ERROR: Creating contact via API failed.", data['email'])
+                        return "err_add"
+                except Exception as e:
+                    print("ERROR: Other error.", data['email'], e)
+                    return 'err_other'
             else:
                 print("ERROR: Creating contact via API failed.", data['email'])
                 return "err_add"
