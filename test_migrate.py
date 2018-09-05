@@ -5,6 +5,7 @@ import json
 import collections
 import csv
 import _mysql
+import smtplib
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse
@@ -233,7 +234,6 @@ def sql_insert_shows(db, shows):
 def sql_insert_contacts(db, contacts):
     stats = {"ok": 0, "err": 0}
     for c in [c for c in contacts if c['email_address'] != ""]:
-        print(c)
         try:
             query = '''UPDATE contacts SET
                         name = \'%s\',
@@ -260,22 +260,86 @@ def sql_insert_contacts(db, contacts):
     return stats
 
 
+def sql_insert_orders(db, orders):
+    stats = {"ok": 0, "err": 0}
+    for o in orders:
+        try:
+            query = '''UPDATE orders SET
+                        id = \'%s\',
+                        show_id = \'%s\',
+                        order_number = \'%s\',
+                        cust_id = \'%s\',
+                        email = \'%s\',
+                        phone = \'%s\',
+                        purchase_date = \'%s\',
+                        payment_method = \'%s\',
+                        booking_type = \'%s\',
+                        order_total = \'%s\',
+                        new_customer = \'%s\',
+                        sys_entry_date = \'%s\',
+                        addons = \'%s\'
+                        WHERE id = \'%s\';''' % (
+                o['show_id'], o['order_number'], o['cust_id'], o['email'], o['phone'], o['purchase_date'], o['payment_method'], o['booking_type'], o['order_total'], o['new_customer'], o['sys_entry_date'], o['addons'], o['id']
+            )
+            db.query(query)
+            stats['ok'] += 1
+        except Exception as err:
+            print("SQL UPDATE FAILED - ORDER - TRYING INSERT FALLBACK", o['id'], err)
+            try:
+                query = '''INSERT INTO orders (id, show_id, order_number, cust_id, email, phone, purchase_date, payment_method, booking_type, order_total, new_customer, sys_entry_date, addons)
+                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                    o['id'], o['show_id'], o['order_number'], o['cust_id'], o['email'], o['phone'], o['purchase_date'], o['payment_method'], o['booking_type'], o['order_total'], o['new_customer'], o['sys_entry_date'], o['addons']
+                )
+                db.query(query)
+                stats['ok'] += 1
+            except Exception as err2:
+                print("SQL INSERT FAILED - ORDER", o['id'], err2)
+                stats['err'] += 1
+    return stats
+
+
+    def sql_insert_orderlines(db, orderlines):
+    stats = {"ok": 0, "err": 0}
+    for ol in orderlines:
+        try:
+            query = '''UPDATE orderlines SET
+                        order_number = \'%s\',
+                        ticket_name = \'%s\',
+                        ticket_price = \'%s\',
+                        printed = \'%s\',
+                        promo_code_id = \'%s\',
+                        checked_in = \'%s\'
+                        WHERE id = \'%s\';''' % (
+                ol['order_number'], ol['ticket_name'], ol['ticket_price'], ol['printed'], ol['promo_code_id'], ol['checked_in'], ol['id']
+            )
+            db.query(query)
+            stats['ok'] += 1
+        except Exception as err:
+            print("SQL UPDATE FAILED - ORDERLINE - TRYING INSERT FALLBACK", ol['id'], err)
+            try:
+                query = '''INSERT INTO orderlines (id, order_number, ticket_name, ticket_price, printed, promo_code_id, checked_in)
+                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                    ol['id'], ol['order_number'], ol['ticket_name'], ol['ticket_price'], ol['printed'], ol['promo_code_id'], ol['checked_in']
+                )
+                db.query(query)
+                stats['ok'] += 1
+            except Exception as err2:
+                print("SQL INSERT FAILED - ORDERLINE", ol['id'], err2)
+                stats['err'] += 1
+    return stats
+
+
 def main():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
-
+    pull_limit = parse(configs['last_pull'], ignoretz=True)
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
     db.autocommit(True)
-
-    if (configs['last_pull'] == "" or not configs['last_pull']):
-        pull_limit = datetime.today() - timedelta(days=2)
-    else:
-        pull_limit = parse(configs['last_pull'], ignoretz=True)
 
     venues = [133]
     data_types = ["events", "shows", "orderlines", "orders", "contacts"]
@@ -321,8 +385,8 @@ def main():
     events_stats = sql_insert_events(db, data["events"])
     shows_stats = sql_insert_shows(db, data["shows"])
     contacts_stats = sql_insert_contacts(db, data["contacts"])
-    # orders_stats = sql_insert_orders(db, data["orders"])
-    # orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
+    orders_stats = sql_insert_orders(db, data["orders"])
+    orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
 
     # sql_upload()
 
@@ -351,6 +415,7 @@ def main():
     server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
     server.sendmail(sender, recipients, msg)
     server.quit()
+
 
 def sql_upload(backload=False):
     dir_path = os.path.dirname(os.path.abspath(__file__))
