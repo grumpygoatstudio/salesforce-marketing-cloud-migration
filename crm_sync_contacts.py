@@ -6,7 +6,7 @@ import collections
 import _mysql
 import smtplib
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from optparse import OptionParser
 
 parser = OptionParser()
@@ -197,7 +197,6 @@ def active_campaign_sync(postprocess=False):
                 print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
         except IndexError:
             more_rows = False
-
 
     if not postprocess:
         # WRITE NEW DATETIME FOR LAST CRM SYNC
