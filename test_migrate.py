@@ -112,65 +112,63 @@ def create_objects_from_orders(orders, show_id, pull_limit, db):
     sys_entry_time = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
 
     for order in orders:
-        # verify that order hasn't already been processed before
-        if parse(order['purchase_at'], ignoretz=True) > pull_limit:
-            temp_cust = collections.OrderedDict()
-            # temp_cust['subscriber_key'] = str(order['customer']['id'])
-            temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
-            temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ")
+        temp_cust = collections.OrderedDict()
+        # temp_cust['subscriber_key'] = str(order['customer']['id'])
+        temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
+        temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ")
+        try:
+            temp_cust['name_first'] = str(order["delivery_data"]["first_name"]).strip().replace("\"", "").replace(",", " ")
+            temp_cust['name_last'] = str(order["delivery_data"]["last_name"]).strip().replace("\"", "").replace(",", " ")
+        except Exception:
             try:
-                temp_cust['name_first'] = str(order["delivery_data"]["first_name"]).strip().replace("\"", "").replace(",", " ")
-                temp_cust['name_last'] = str(order["delivery_data"]["last_name"]).strip().replace("\"", "").replace(",", " ")
+                names = str(order['customer']['name']).strip().split(", ")
+                temp_cust['name_first']=" ".join(names[1:]).replace("\"", "").replace(",", " ")
+                temp_cust['name_last'] = names[0].replace("\"", "").replace(",", " ")
             except Exception:
+                temp_cust['name_first'] = ""
+                temp_cust['name_last'] = ""
+        temp_cust['sys_entry_date'] = sys_entry_time
+        try:
+            payment_method = str(order["payments"][0]['payment_method'])
+        except Exception:
+            payment_method = ""
+
+        temp_order = collections.OrderedDict()
+        temp_order['id'] = str(order['id'])
+        temp_order['show_id'] = str(show_id)
+        temp_order['order_number'] = str(order['order_number'])
+        temp_order['cust_id'] = str(order['customer']['id'])
+        temp_order['email'] = str(order['customer']['email']).strip().lower()
+        temp_order['phone'] = str(order['customer']['phone'])
+        temp_order['purchase_date'] = str(order['purchase_at'])
+        temp_order['payment_method'] = payment_method
+        temp_order['booking_type'] = str(order['booking_type'])
+        temp_order['order_total'] = 0
+        temp_order['new_customer'] = str(order['customer']['new_customer'])
+        temp_order['sys_entry_date'] = sys_entry_time
+        temp_order['addons'] = "\t".join([str(a['name']) for a in order['addons']]) if order['addons'] != [] else ""
+
+        for tix_type in order['tickets']:
+            c = 1
+            for tix in order['tickets'][tix_type]:
+                temp_orderline = collections.OrderedDict()
+                temp_orderline['id'] = str(order['order_number']) + "-%s" % c
+                temp_orderline['order_number'] = str(order['order_number'])
+                temp_orderline['ticket_name'] = str(tix_type).strip().replace(",", " ")
+                temp_orderline['ticket_price'] = tix['price']
+                temp_orderline['printed'] = tix['printed']
+                temp_orderline['promo_code_id'] = tix['promo_code_id']
+                temp_orderline['checked_in'] = tix['checked_in']
+                # add tickets purchased to ORDERLINE
+                orderlines_info += [temp_orderline]
+                # add ticket cost to ORDER total
                 try:
-                    names = str(order['customer']['name']).strip().split(", ")
-                    temp_cust['name_first']=" ".join(names[1:]).replace("\"", "").replace(",", " ")
-                    temp_cust['name_last'] = names[0].replace("\"", "").replace(",", " ")
+                    temp_order['order_total'] += int(tix['price'])
                 except Exception:
-                    temp_cust['name_first'] = ""
-                    temp_cust['name_last'] = ""
-            temp_cust['sys_entry_date'] = sys_entry_time
-            try:
-                payment_method = str(order["payments"][0]['payment_method'])
-            except Exception:
-                payment_method = ""
-
-            temp_order = collections.OrderedDict()
-            temp_order['id'] = str(order['id'])
-            temp_order['show_id'] = str(show_id)
-            temp_order['order_number'] = str(order['order_number'])
-            temp_order['cust_id'] = str(order['customer']['id'])
-            temp_order['email'] = str(order['customer']['email']).strip().lower()
-            temp_order['phone'] = str(order['customer']['phone'])
-            temp_order['purchase_date'] = str(order['purchase_at'])
-            temp_order['payment_method'] = payment_method
-            temp_order['booking_type'] = str(order['booking_type'])
-            temp_order['order_total'] = 0
-            temp_order['new_customer'] = str(order['customer']['new_customer'])
-            temp_order['sys_entry_date'] = sys_entry_time
-            temp_order['addons'] = "\t".join([str(a['name']) for a in order['addons']]) if order['addons'] != [] else ""
-
-            for tix_type in order['tickets']:
-                c = 1
-                for tix in order['tickets'][tix_type]:
-                    temp_orderline = collections.OrderedDict()
-                    temp_orderline['id'] = str(order['order_number']) + "-%s" % c
-                    temp_orderline['order_number'] = str(order['order_number'])
-                    temp_orderline['ticket_name'] = str(tix_type).strip().replace(",", " ")
-                    temp_orderline['ticket_price'] = tix['price']
-                    temp_orderline['printed'] = tix['printed']
-                    temp_orderline['promo_code_id'] = tix['promo_code_id']
-                    temp_orderline['checked_in'] = tix['checked_in']
-                    # add tickets purchased to ORDERLINE
-                    orderlines_info += [temp_orderline]
-                    # add ticket cost to ORDER total
-                    try:
-                        temp_order['order_total'] += int(tix['price'])
-                    except Exception:
-                        pass
-                    c += 1
-            orders_info += [temp_order]
-            customers_info += [temp_cust]
+                    pass
+                c += 1
+        orders_info += [temp_order]
+        customers_info += [temp_cust]
 
     return (orders_info, orderlines_info, customers_info)
 
@@ -179,23 +177,23 @@ def sql_insert_events(db, events):
     stats = {"ok": 0, "err": 0}
     for e in events:
         try:
-            db.query('''UPDATE events SET
+            cur = db.cursor()
+            cur.execute('''UPDATE events SET
                         venue_id = \'%s\',
                         name = \'%s\',
                         logo_url = \'%s\'
                         WHERE id = \'%s\';''' % (
                 e['venue_id'], e['name'], e['logo_url'], e['id']
             ))
-            db.execute()
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - EVENT - TRYING INSERT FALLBACK", e['id'], err)
             try:
-                db.query('''INSERT INTO events (id, venue_id, name, logo_url)
+                cur = db.cursor()
+                cur.execute('''INSERT INTO events (id, venue_id, name, logo_url)
                             VALUES (\'%s\',\'%s\',\'%s\',\'%s\');''' % (
                     e['id'], e['venue_id'], e['name'], e['logo_url']
                 ))
-                db.execute()
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - EVENT", e['id'], err2)
@@ -208,7 +206,8 @@ def sql_insert_shows(db, shows):
     for s in shows:
         print(s)
         try:
-            db.query('''UPDATE shows SET
+            cur = db.cursor()
+            cur.execute('''UPDATE shows SET
                         event_id = \'%s\',
                         start_date_time = \'%s\',
                         sold_out = \'%s\',
@@ -216,16 +215,15 @@ def sql_insert_shows(db, shows):
                         WHERE id = \'%s\';''' % (
                 s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at'], s['id']
             ))
-            db.execute()
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", s['id'], err)
             try:
-                db.query('''INSERT INTO shows (id, event_id, start_date_time, sold_out, cancelled_at)
+                cur = db.cursor()
+                cur.execute('''INSERT INTO shows (id, event_id, start_date_time, sold_out, cancelled_at)
                             VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
                     s['id'], s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at']
                 ))
-                db.execute()
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - SHOW", s['id'], err2)
@@ -238,7 +236,8 @@ def sql_insert_contacts(db, contacts):
     for c in [c for c in contacts if c['email_address'] != ""]:
         print(c)
         try:
-            db.query('''UPDATE contacts SET
+            cur = db.cursor()
+            cur.execute('''UPDATE contacts SET
                         name = \'%s\',
                         name_first = \'%s\',
                         name_last = \'%s\',
@@ -246,16 +245,15 @@ def sql_insert_contacts(db, contacts):
                         WHERE email_address = \'%s\';''' % (
                 c['name'], c['name_first'], c['name_last'], c['sys_entry_date'], c['email_address']
             ))
-            db.execute()
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - CONTACT - TRYING INSERT FALLBACK", c['email_address'], err)
             try:
-                db.query('''INSERT INTO contacts (email_address, name, name_first, name_last, sys_entry_date)
+                cur = db.cursor()
+                cur.execute('''INSERT INTO contacts (email_address, name, name_first, name_last, sys_entry_date)
                             VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
                     c['email_address'], c['name'], c['name_first'], c['name_last'], c['sys_entry_date']
                 ))
-                db.execute()
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - CONTACT", c['email_address'], err2)
