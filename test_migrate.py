@@ -175,7 +175,7 @@ def create_objects_from_orders(orders, show_id, pull_limit, db):
 
 def invoke_sql(db, query):
     cur = db.cursor()
-    cur.execute(query)
+    cur.execute(query,)
     cur.close()
 
 
