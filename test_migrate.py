@@ -35,7 +35,7 @@ def get_venue_events_and_shows(venue_id, pull_limit, header):
             temp_event = collections.OrderedDict()
             temp_event['id'] = event['id']
             temp_event['venue_id'] = str(venue_id)
-            temp_event['name'] = event['name'].strip().replace("\"", "").replace(",", " ")
+            temp_event['name'] = event['name'].replace("\"", "").replace(",", " ").replace('\'','`').strip()
             temp_event['logo_url'] = event['image_url']
             events.append(temp_event)
             for show in event['shows']:
@@ -82,15 +82,15 @@ def create_objects_from_orders(orders, show_id):
         temp_cust = collections.OrderedDict()
         # temp_cust['subscriber_key'] = str(order['customer']['id'])
         temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
-        temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ")
+        temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
         try:
-            temp_cust['name_first'] = str(order["delivery_data"]["first_name"]).strip().replace("\"", "").replace(",", " ")
-            temp_cust['name_last'] = str(order["delivery_data"]["last_name"]).strip().replace("\"", "").replace(",", " ")
+            temp_cust['name_first'] = str(order["delivery_data"]["first_name"]).replace("\"", "").replace(",", " ").replace('\'','`').strip()
+            temp_cust['name_last'] = str(order["delivery_data"]["last_name"]).replace("\"", "").replace(",", " ").replace('\'','`').strip()
         except Exception:
             try:
                 names = str(order['customer']['name']).strip().split(", ")
-                temp_cust['name_first']=" ".join(names[1:]).replace("\"", "").replace(",", " ")
-                temp_cust['name_last'] = names[0].replace("\"", "").replace(",", " ")
+                temp_cust['name_first']=" ".join(names[1:]).replace("\"", "").replace(",", " ").replace('\'','`').strip()
+                temp_cust['name_last'] = names[0].replace("\"", "").replace(",", " ").replace('\'','`').strip()
             except Exception:
                 temp_cust['name_first'] = ""
                 temp_cust['name_last'] = ""
@@ -121,7 +121,7 @@ def create_objects_from_orders(orders, show_id):
                 temp_orderline = collections.OrderedDict()
                 temp_orderline['id'] = str(order['order_number']) + "-%s" % c
                 temp_orderline['order_number'] = str(order['order_number'])
-                temp_orderline['ticket_name'] = str(tix_type).strip().replace(",", " ")
+                temp_orderline['ticket_name'] = str(tix_type).strip().replace(",", " ").replace('\'','`').strip()
                 temp_orderline['ticket_price'] = tix['price']
                 temp_orderline['printed'] = tix['printed']
                 temp_orderline['promo_code_id'] = tix['promo_code_id']
