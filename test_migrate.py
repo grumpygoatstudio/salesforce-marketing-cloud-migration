@@ -152,6 +152,7 @@ def sql_insert_events(db, events):
                 e['venue_id'], e['name'], e['logo_url'], e['id']
             )
             db.query(query)
+            db.commit()
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - EVENT - TRYING INSERT FALLBACK", e['id'], err)
@@ -161,6 +162,7 @@ def sql_insert_events(db, events):
                     e['id'], e['venue_id'], e['name'], e['logo_url']
                 )
                 db.query(query)
+                db.commit()
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - EVENT", e['id'], err2)
@@ -181,6 +183,7 @@ def sql_insert_shows(db, shows):
                 s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at'], s['id']
             )
             db.query(query)
+            db.commit()
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", s['id'], err)
@@ -190,6 +193,7 @@ def sql_insert_shows(db, shows):
                     s['id'], s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at']
                 )
                 db.query(query)
+                db.commit()
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - SHOW", s['id'], err2)
@@ -210,6 +214,7 @@ def sql_insert_contacts(db, contacts):
                 c['name'], c['name_first'], c['name_last'], c['sys_entry_date'], c['email_address']
             )
             db.query(query)
+            db.commit()
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - CONTACT - TRYING INSERT FALLBACK", c['email_address'], err)
@@ -219,6 +224,7 @@ def sql_insert_contacts(db, contacts):
                     c['email_address'], c['name'], c['name_first'], c['name_last'], c['sys_entry_date']
                 )
                 db.query(query)
+                db.commit()
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - CONTACT", c['email_address'], err2)
@@ -247,6 +253,7 @@ def sql_insert_orders(db, orders):
                 o['show_id'], o['order_number'], o['cust_id'], o['email'], o['phone'], o['purchase_date'], o['payment_method'], o['booking_type'], o['order_total'], o['new_customer'], o['sys_entry_date'], o['addons'], o['id']
             )
             db.query(query)
+            db.commit()
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - ORDER - TRYING INSERT FALLBACK", o['id'], err)
@@ -256,6 +263,7 @@ def sql_insert_orders(db, orders):
                     o['id'], o['show_id'], o['order_number'], o['cust_id'], o['email'], o['phone'], o['purchase_date'], o['payment_method'], o['booking_type'], o['order_total'], o['new_customer'], o['sys_entry_date'], o['addons']
                 )
                 db.query(query)
+                db.commit()
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - ORDER", o['id'], err2)
@@ -278,6 +286,7 @@ def sql_insert_orderlines(db, orderlines):
                 ol['order_number'], ol['ticket_name'], ol['ticket_price'], ol['printed'], ol['promo_code_id'], ol['checked_in'], ol['id']
             )
             db.query(query)
+            db.commit()
             stats['ok'] += 1
         except Exception as err:
             print("SQL UPDATE FAILED - ORDERLINE - TRYING INSERT FALLBACK", ol['id'], err)
@@ -287,6 +296,7 @@ def sql_insert_orderlines(db, orderlines):
                     ol['id'], ol['order_number'], ol['ticket_name'], ol['ticket_price'], ol['printed'], ol['promo_code_id'], ol['checked_in']
                 )
                 db.query(query)
+                db.commit()
                 stats['ok'] += 1
             except Exception as err2:
                 print("SQL INSERT FAILED - ORDERLINE", ol['id'], err2)
@@ -305,12 +315,13 @@ def main():
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    db.autocommit(True)
+    # db.autocommit(True)
 
     venues = [133]
 
     # COLLECT AND PROCESS ALL DATA FROM API SOURCE
     for venue_id in venues:
+        print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
         data = {
             "events": [],
             "shows": [],
