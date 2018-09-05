@@ -144,26 +144,26 @@ def sql_insert_events(db, events):
     stats = {"ok": 0, "err": 0}
     for e in events:
         try:
-            query = '''UPDATE events SET
-                        venue_id = \'%s\',
-                        name = \'%s\',
-                        logo_url = \'%s\'
-                        WHERE id = \'%s\';''' % (
-                e['venue_id'], e['name'], e['logo_url'], e['id']
+            query = '''INSERT INTO events (id, venue_id, name, logo_url)
+                        VALUES (\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                e['id'], e['venue_id'], e['name'], e['logo_url']
             )
             db.query(query)
             stats['ok'] += 1
         except Exception as err:
-            print("SQL UPDATE FAILED - EVENT - TRYING INSERT FALLBACK", e['id'], err)
+            print("SQL INSERT FAILED - EVENT - TRYING UPDATE FALLBACK", e['id'], err)
             try:
-                query = '''INSERT INTO events (id, venue_id, name, logo_url)
-                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\');''' % (
-                    e['id'], e['venue_id'], e['name'], e['logo_url']
+                query = '''UPDATE events SET
+                            venue_id = \'%s\',
+                            name = \'%s\',
+                            logo_url = \'%s\'
+                            WHERE id = \'%s\';''' % (
+                    e['venue_id'], e['name'], e['logo_url'], e['id']
                 )
                 db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
-                print("SQL INSERT FAILED - EVENT", e['id'], err2)
+                print("SQL UPDATE FAILED - EVENT", e['id'], err2)
                 stats['err'] += 1
     return stats
 
@@ -172,27 +172,27 @@ def sql_insert_shows(db, shows):
     stats = {"ok": 0, "err": 0}
     for s in shows:
         try:
-            query = '''UPDATE shows SET
-                        event_id = \'%s\',
-                        start_date_time = \'%s\',
-                        sold_out = \'%s\',
-                        cancelled_at = \'%s\'
-                        WHERE id = \'%s\';''' % (
-                s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at'], s['id']
+            query = '''INSERT INTO shows (id, event_id, start_date_time, sold_out, cancelled_at)
+                        VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                s['id'], s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at']
             )
             db.query(query)
             stats['ok'] += 1
         except Exception as err:
-            print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", s['id'], err)
+            print("SQL INSERT FAILED - SHOW - TRYING UPDATE FALLBACK", s['id'], err)
             try:
-                query = '''INSERT INTO shows (id, event_id, start_date_time, sold_out, cancelled_at)
-                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
-                    s['id'], s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at']
+                query = '''UPDATE shows SET
+                            event_id = \'%s\',
+                            start_date_time = \'%s\',
+                            sold_out = \'%s\',
+                            cancelled_at = \'%s\'
+                            WHERE id = \'%s\';''' % (
+                    s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at'], s['id']
                 )
                 db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
-                print("SQL INSERT FAILED - SHOW", s['id'], err2)
+                print("SQL UPDATE FAILED - SHOW", s['id'], err2)
                 stats['err'] += 1
     return stats
 
@@ -201,27 +201,27 @@ def sql_insert_contacts(db, contacts):
     stats = {"ok": 0, "err": 0}
     for c in [c for c in contacts if c['email_address'] not in ["", "None", None]]:
         try:
-            query = '''UPDATE contacts SET
-                        name = \'%s\',
-                        name_first = \'%s\',
-                        name_last = \'%s\',
-                        sys_entry_date = \'%s\'
-                        WHERE email_address = \'%s\';''' % (
-                c['name'], c['name_first'], c['name_last'], c['sys_entry_date'], c['email_address']
+            query = '''INSERT INTO contacts (email_address, name, name_first, name_last, sys_entry_date)
+                        VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                c['email_address'], c['name'], c['name_first'], c['name_last'], c['sys_entry_date']
             )
             db.query(query)
             stats['ok'] += 1
         except Exception as err:
-            print("SQL UPDATE FAILED - CONTACT - TRYING INSERT FALLBACK", c['email_address'], err)
+            print("SQL INSERT FAILED - CONTACT - TRYING UPDATE FALLBACK", c['email_address'], err)
             try:
-                query = '''INSERT INTO contacts (email_address, name, name_first, name_last, sys_entry_date)
-                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
-                    c['email_address'], c['name'], c['name_first'], c['name_last'], c['sys_entry_date']
+                query = '''UPDATE contacts SET
+                            name = \'%s\',
+                            name_first = \'%s\',
+                            name_last = \'%s\',
+                            sys_entry_date = \'%s\'
+                            WHERE email_address = \'%s\';''' % (
+                    c['name'], c['name_first'], c['name_last'], c['sys_entry_date'], c['email_address']
                 )
                 db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
-                print("SQL INSERT FAILED - CONTACT", c['email_address'], err2)
+                print("SQL UPDATE FAILED - CONTACT", c['email_address'], err2)
                 stats['err'] += 1
     return stats
 
@@ -230,35 +230,35 @@ def sql_insert_orders(db, orders):
     stats = {"ok": 0, "err": 0}
     for o in orders:
         try:
-            query = '''UPDATE orders SET
-                        show_id = \'%s\',
-                        order_number = \'%s\',
-                        cust_id = \'%s\',
-                        email = \'%s\',
-                        phone = \'%s\',
-                        purchase_date = \'%s\',
-                        payment_method = \'%s\',
-                        booking_type = \'%s\',
-                        order_total = \'%s\',
-                        new_customer = \'%s\',
-                        sys_entry_date = \'%s\',
-                        addons = \'%s\'
-                        WHERE id = \'%s\';''' % (
-                o['show_id'], o['order_number'], o['cust_id'], o['email'], o['phone'], o['purchase_date'], o['payment_method'], o['booking_type'], o['order_total'], o['new_customer'], o['sys_entry_date'], o['addons'], o['id']
+            query = '''INSERT INTO orders (id, show_id, order_number, cust_id, email, phone, purchase_date, payment_method, booking_type, order_total, new_customer, sys_entry_date, addons)
+                        VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                o['id'], o['show_id'], o['order_number'], o['cust_id'], o['email'], o['phone'], o['purchase_date'], o['payment_method'], o['booking_type'], o['order_total'], o['new_customer'], o['sys_entry_date'], o['addons']
             )
             db.query(query)
             stats['ok'] += 1
         except Exception as err:
-            print("SQL UPDATE FAILED - ORDER - TRYING INSERT FALLBACK", o['id'], err)
+            print("SQL INSERT FAILED - ORDER - TRYING UPDATE FALLBACK", o['id'], err)
             try:
-                query = '''INSERT INTO orders (id, show_id, order_number, cust_id, email, phone, purchase_date, payment_method, booking_type, order_total, new_customer, sys_entry_date, addons)
-                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
-                    o['id'], o['show_id'], o['order_number'], o['cust_id'], o['email'], o['phone'], o['purchase_date'], o['payment_method'], o['booking_type'], o['order_total'], o['new_customer'], o['sys_entry_date'], o['addons']
+                query = '''UPDATE orders SET
+                            show_id = \'%s\',
+                            order_number = \'%s\',
+                            cust_id = \'%s\',
+                            email = \'%s\',
+                            phone = \'%s\',
+                            purchase_date = \'%s\',
+                            payment_method = \'%s\',
+                            booking_type = \'%s\',
+                            order_total = \'%s\',
+                            new_customer = \'%s\',
+                            sys_entry_date = \'%s\',
+                            addons = \'%s\'
+                            WHERE id = \'%s\';''' % (
+                    o['show_id'], o['order_number'], o['cust_id'], o['email'], o['phone'], o['purchase_date'], o['payment_method'], o['booking_type'], o['order_total'], o['new_customer'], o['sys_entry_date'], o['addons'], o['id']
                 )
                 db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
-                print("SQL INSERT FAILED - ORDER", o['id'], err2)
+                print("SQL UPDATE FAILED - ORDER", o['id'], err2)
                 stats['err'] += 1
     return stats
 
@@ -267,29 +267,29 @@ def sql_insert_orderlines(db, orderlines):
     stats = {"ok": 0, "err": 0}
     for ol in orderlines:
         try:
-            query = '''UPDATE orderlines SET
-                        order_number = \'%s\',
-                        ticket_name = \'%s\',
-                        ticket_price = \'%s\',
-                        printed = \'%s\',
-                        promo_code_id = \'%s\',
-                        checked_in = \'%s\'
-                        WHERE id = \'%s\';''' % (
-                ol['order_number'], ol['ticket_name'], ol['ticket_price'], ol['printed'], ol['promo_code_id'], ol['checked_in'], ol['id']
+            query = '''INSERT INTO orderlines (id, order_number, ticket_name, ticket_price, printed, promo_code_id, checked_in)
+                        VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                ol['id'], ol['order_number'], ol['ticket_name'], ol['ticket_price'], ol['printed'], ol['promo_code_id'], ol['checked_in']
             )
             db.query(query)
             stats['ok'] += 1
         except Exception as err:
-            print("SQL UPDATE FAILED - ORDERLINE - TRYING INSERT FALLBACK", ol['id'], err)
+            print("SQL INSERT FAILED - ORDERLINE - TRYING UPDATE FALLBACK", ol['id'], err)
             try:
-                query = '''INSERT INTO orderlines (id, order_number, ticket_name, ticket_price, printed, promo_code_id, checked_in)
-                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
-                    ol['id'], ol['order_number'], ol['ticket_name'], ol['ticket_price'], ol['printed'], ol['promo_code_id'], ol['checked_in']
+                query = '''UPDATE orderlines SET
+                            order_number = \'%s\',
+                            ticket_name = \'%s\',
+                            ticket_price = \'%s\',
+                            printed = \'%s\',
+                            promo_code_id = \'%s\',
+                            checked_in = \'%s\'
+                            WHERE id = \'%s\';''' % (
+                    ol['order_number'], ol['ticket_name'], ol['ticket_price'], ol['printed'], ol['promo_code_id'], ol['checked_in'], ol['id']
                 )
                 db.query(query)
                 stats['ok'] += 1
             except Exception as err2:
-                print("SQL INSERT FAILED - ORDERLINE", ol['id'], err2)
+                print("SQL UPDATE FAILED - ORDERLINE", ol['id'], err2)
                 stats['err'] += 1
     return stats
 
