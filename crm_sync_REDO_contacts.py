@@ -148,7 +148,7 @@ def active_campaign_sync():
     % venue_target)
     r = db.store_result()
     more_rows = True
-    contact_err = {"list":0, "add":0, "update":0, "other":0}
+    contact_err = {"list": 0, "add": 0, "update": 0, "other": 0}
     contact_count = 0
 
     while more_rows:

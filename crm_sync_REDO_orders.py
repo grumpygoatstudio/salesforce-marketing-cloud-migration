@@ -117,19 +117,18 @@ def update_data(url, auth_header, data, configs, connection, obj_type):
                 if obj_type == 'ecomCustomer':
                     # try to get the CRM id for the customer and return
                     # that out for use elsewhere with orders.
-                    return lookup_customer_crm_id(data[obj_type]['email'],
-                                url, auth_header, connection)
+                    return lookup_customer_crm_id(data[obj_type]['email'], url, auth_header, connection)
                 else:
                     return "other"
-                #     # We have an order that's a duplicate in the system.
-                #     # We should try to PUT update its data.
-                #     r = push_data_to_api(url, auth_header, data, 'update')
-                #     status = check_api_response(r, obj_type)
-                #     if status[0] == 'success':
-                #         return "success"
-                #     else:
-                #         # We have an error with the PUT
-                #         return "err-update"
+                    # We have an order that's a duplicate in the system.
+                    # We should try to PUT update its data.
+                    r = push_data_to_api(url, auth_header, data, 'update')
+                    status = check_api_response(r, obj_type)
+                    if status[0] == 'success':
+                        return "success"
+                    else:
+                        # We have an error with the PUT
+                        return "err-update"
             else:
                 # another kind of error occured :(
                 # we know the data was not updated
@@ -202,12 +201,12 @@ def active_campaign_sync():
         db.close()
 
         cust_count = 0
-        cust_err = {'build':0, 'push':0, 'unicode':0, 'ssl':0}
+        cust_err = {'build': 0, 'push': 0, 'unicode': 0, 'ssl': 0}
         order_count = 0
-        order_err = {'build': 0, 'update': 0, 'unicode': 0, 'other': 0, 'ssl':0}
+        order_err = {'build': 0, 'update': 0, 'unicode': 0, 'other': 0, 'ssl': 0}
         print("TOTAL ORDERS TO PUSH: %s" % len(orders))
         chunk_size = 5000
-        total_chunks = len(orders)/chunk_size
+        total_chunks = len(orders) / chunk_size
         chunk_num = 0
         for chunk in chunks(orders, chunk_size):
             msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly update on the RESYNC progress for venue #%s.\n" % venue_id
@@ -250,7 +249,7 @@ def active_campaign_sync():
                         order_err["unicode"] += 1
                     elif updated == 'err-other':
                         order_err["other"] += 1
-                except requests.exceptions.SSLError as e:
+                except requests.exceptions.SSLError:
                     order_err["ssl"] += 1
                 except Exception:
                     print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
@@ -273,7 +272,7 @@ def active_campaign_sync():
 
 
         # add venue details for the month running to the final email msg
-        recipients = ["flygeneticist@gmail.com","jason@matsongroup.com"]
+        recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
         msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly update on the RESYNC progress for venue #%s.\n" % venue_id
         msg += "~~~~~ VENUE #%s ~~~~~\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
             venue_id, cust_count, cust_err['build'], cust_err['push'], cust_err['unicode'], cust_err['ssl'], order_count, order_err['build'], order_err['update'], order_err['unicode'], order_err['other'], order_err['ssl'])
@@ -283,8 +282,9 @@ def active_campaign_sync():
         server.ehlo()
         server.starttls()
         server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
-        server.sendmail(sender,recipients, msg)
+        server.sendmail(sender, recipients, msg)
         server.quit()
+
 
 if __name__ == '__main__':
     active_campaign_sync()
