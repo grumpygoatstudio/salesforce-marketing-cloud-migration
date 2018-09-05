@@ -33,7 +33,7 @@ BEGIN
             next_event_venue, -- Next Event Venue
 			avg_tickets_per_order, -- Average Number of Lifetime Tickets Per Order
 			avg_purchase_to_show_days, -- AVG Number of days between purchase and show
-			total_lifetime_paid_orders + total_lifetime_comp_orders AS total_orders, -- Total Orders
+			(total_lifetime_paid_orders + total_lifetime_comp_orders) AS total_orders, -- Total Orders
             total_lifetime_paid_orders, -- Total Lifetime Paid Orders
 			total_lifetime_paid_tickets, -- Total Number of Lifetime Paid Tickets
 			avg_tickets_per_paid_order, -- Average Number of Lifetime Tickets Per Paid Order
