@@ -192,7 +192,7 @@ def sql_insert_events(db, events):
             print("SQL UPDATE FAILED - EVENT - TRYING INSERT FALLBACK", e['id'], err)
             try:
                 db.query('''INSERT INTO events (id, venue_id, name, logo_url)
-                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                            VALUES (%s, %s, %s, %s);''' % (
                     e['id'], e['venue_id'], e['name'], e['logo_url']
                 ))
                 db.execute()
@@ -221,7 +221,7 @@ def sql_insert_shows(db, shows):
             print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", s['id'], err)
             try:
                 db.query('''INSERT INTO shows (id, event_id, start_date_time, sold_out, cancelled_at)
-                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                            VALUES (%s, %s, %s, %s, %s);''' % (
                     s['id'], s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at']
                 ))
                 db.execute()
@@ -250,7 +250,7 @@ def sql_insert_contacts(db, contacts):
             print("SQL UPDATE FAILED - CONTACT - TRYING INSERT FALLBACK", c['email_address'], err)
             try:
                 db.query('''INSERT INTO contacts (email_address, name, name_first, name_last, sys_entry_date)
-                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                            VALUES (%s, %s, %s, %s, %s);''' % (
                     c['email_address'], c['name'], c['name_first'], c['name_last'], c['sys_entry_date']
                 ))
                 db.execute()
