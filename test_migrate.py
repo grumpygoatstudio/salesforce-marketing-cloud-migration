@@ -105,7 +105,7 @@ def get_show_orders(venue_id, show_id, header):
         return False
 
 
-def create_objects_from_orders(orders, show_id, pull_limit):
+def create_objects_from_orders(orders, show_id, pull_limit, db):
     customers_info = []
     orders_info = []
     orderlines_info = []
@@ -174,10 +174,103 @@ def create_objects_from_orders(orders, show_id, pull_limit):
 
     return (orders_info, orderlines_info, customers_info)
 
+
+def sql_insert_events(db, events):
+    stats = {"ok": 0, "err": 0}
+    for e in events:
+        try:
+            db.query('''UPDATE events SET
+                        venue_id = \'%s\',
+                        name = \'%s\',
+                        logo_url = \'%s\'
+                        WHERE id = \'%s\';''' % (
+                e['venue_id'], e['name'], e['logo_url'], e['id']
+            ))
+            db.execute()
+            stats['ok'] += 1
+        except Exception as err:
+            print("SQL UPDATE FAILED - EVENT - TRYING INSERT FALLBACK", e['id'], err)
+            try:
+                db.query('''INSERT INTO events (id, venue_id, name, logo_url)
+                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                    e['id'], e['venue_id'], e['name'], e['logo_url']
+                ))
+                db.execute()
+                stats['ok'] += 1
+            except Exception as err2:
+                print("SQL INSERT FAILED - EVENT", e['id'], err2)
+                stats['err'] += 1
+    return stats
+
+
+def sql_insert_shows(db, shows):
+    stats = {"ok": 0, "err": 0}
+    for s in shows:
+        try:
+            db.query('''UPDATE shows SET
+                        event_id = \'%s\',
+                        start_date_time = \'%s\',
+                        sold_out = \'%s\',
+                        cancelled_at = \'%s\'
+                        WHERE id = \'%s\';''' % (
+                s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at'], s['id']
+            ))
+            db.execute()
+            stats['ok'] += 1
+        except Exception as err:
+            print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", e['id'], err)
+            try:
+                db.query('''INSERT INTO shows (id, event_id, start_date_time, sold_out, cancelled_at)
+                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                    s['id'], s['event_id'], s['start_date_time'], s['sold_out'], s['cancelled_at']
+                ))
+                db.execute()
+                stats['ok'] += 1
+            except Exception as err2:
+                print("SQL INSERT FAILED - SHOW", s['id'], err2)
+                stats['err'] += 1
+    return stats
+
+
+def sql_insert_contacts(db, contacts):
+    stats = {"ok": 0, "err": 0}
+    for c in contacts:
+        try:
+            db.query('''UPDATE shows SET
+                        name = \'%s\',
+                        name_first = \'%s\',
+                        name_last = \'%s\',
+                        sys_entry_date = \'%s\'
+                        WHERE email_address = \'%s\';''' % (
+                c['name'], c['name_first'], c['name_last'], c['sys_entry_date'], c['email_address']
+            ))
+            db.execute()
+            stats['ok'] += 1
+        except Exception as err:
+            print("SQL UPDATE FAILED - SHOW - TRYING INSERT FALLBACK", e['id'], err)
+            try:
+                db.query('''INSERT INTO contacts (email_address, name, name_first, name_last, sys_entry_date)
+                            VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
+                    c['email_address'], c['name'], c['name_first'], c['name_last'], c['sys_entry_date']
+                ))
+                db.execute()
+                stats['ok'] += 1
+            except Exception as err2:
+                print("SQL INSERT FAILED - CONTACT", c['email_address'], err2)
+                stats['err'] += 1
+    return stats
+
+
 def main():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
+
+    db = _mysql.connect(user=configs['db_user'],
+                        passwd=configs['db_password'],
+                        port=configs['db_port'],
+                        host=configs['db_host'],
+                        db=configs['db_name'])
 
     if (configs['last_pull'] == "" or not configs['last_pull']):
         pull_limit = datetime.today() - timedelta(days=2)
@@ -204,7 +297,7 @@ def main():
                 data['shows'] += [show_info]
             show_orders = get_show_orders(venue_id, show_id, auth_header)
             if show_orders:
-                order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit)
+                order_info_objs = create_objects_from_orders(show_orders, show_id, pull_limit, db)
                 data['orders'] += order_info_objs[0]
                 data['orderlines'] += order_info_objs[1]
                 data['contacts'] += order_info_objs[2]
@@ -225,6 +318,12 @@ def main():
             the_file.close()
 
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
+    events_stats = sql_insert_events(db, data["events"])
+    shows_stats = sql_insert_shows(db, data["shows"])
+    contacts_stats = sql_insert_contacts(db, data["contacts"])
+    # orders_stats = sql_insert_orders(db, data["orders"])
+    # orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
+
     # sql_upload()
 
     # WRITE NEW DATETIME FOR LAST PULLED TIME
