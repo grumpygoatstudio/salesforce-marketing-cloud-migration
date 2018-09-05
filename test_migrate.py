@@ -298,7 +298,7 @@ def sql_insert_orders(db, orders):
     return stats
 
 
-    def sql_insert_orderlines(db, orderlines):
+def sql_insert_orderlines(db, orderlines):
     stats = {"ok": 0, "err": 0}
     for ol in orderlines:
         try:
