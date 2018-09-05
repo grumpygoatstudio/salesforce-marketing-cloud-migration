@@ -204,7 +204,6 @@ def sql_insert_events(db, events):
 def sql_insert_shows(db, shows):
     stats = {"ok": 0, "err": 0}
     for s in shows:
-        print(s)
         try:
             query = '''UPDATE shows SET
                         event_id = \'%s\',
@@ -321,7 +320,7 @@ def main():
     # UPLOAD ALL SQL FILES TO AWS RDS SERVER
     events_stats = sql_insert_events(db, data["events"])
     shows_stats = sql_insert_shows(db, data["shows"])
-    # contacts_stats = sql_insert_contacts(db, data["contacts"])
+    contacts_stats = sql_insert_contacts(db, data["contacts"])
     # orders_stats = sql_insert_orders(db, data["orders"])
     # orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
 
@@ -333,6 +332,25 @@ def main():
     # TRIGGER POST-PROCESSING FOR SQL TABLES
     # sql_post_processing()
 
+    # setup a completion email notifying Jason that a Month of Venue pushes has finished
+    sender = "kevin@matsongroup.com"
+    recipients = ["flygeneticist@gmail.com"] #"jason@matsongroup.com"
+    header = 'From: %s\n' % sender
+    header += 'To: %s\n' % ", ".join(recipients)
+    header += 'Subject: Completed DAILY SeatEngine PULL - SeatEngine AWS\n'
+    msg = header + \
+        "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily SEATENGINE Orders, Events and Shows have completed:\n\n"
+    msg = msg + "EVENTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (events_stats["ok"], events_stats["err"])
+    msg = msg + "SHOWS:\nSUCCESS: %s\nERRORS: %s\n\n" % (shows_stats["ok"], shows_stats["err"])
+    msg = msg + "CONTACTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (contacts_stats["ok"], contacts_stats["err"])
+    # msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
+    # msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
+    server.sendmail(sender, recipients, msg)
+    server.quit()
 
 def sql_upload(backload=False):
     dir_path = os.path.dirname(os.path.abspath(__file__))
