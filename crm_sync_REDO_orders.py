@@ -170,7 +170,7 @@ def active_campaign_sync():
     for venue_id, connection in venues:
         # setup a completion email notifying that a Month of Venue pushes has finished
         sender = "kevin@matsongroup.com"
-        recipients = ["jason@gmatsongroup.com"]
+        recipients = ['flygeneticist@gmail.com']
         header = 'From: %s\n' % sender
         header += 'To: %s\n' % ", ".join(recipients)
         header += 'Subject: Big Orders RESYNC - Venue %s - SeatEngine AWS\n' % venue_id
@@ -272,7 +272,12 @@ def active_campaign_sync():
 
 
         # add venue details for the month running to the final email msg
-        recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
+        # setup a completion email notifying that a Month of Venue pushes has finished
+        sender = "kevin@matsongroup.com"
+        recipients = ["jason@gmatsongroup.com", 'flygeneticist@gmail.com']
+        header = 'From: %s\n' % sender
+        header += 'To: %s\n' % ", ".join(recipients)
+        header += 'Subject: Big Orders RESYNC - Venue %s - SeatEngine AWS\n' % venue_id
         msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly update on the RESYNC progress for venue #%s.\n" % venue_id
         msg += "~~~~~ VENUE #%s ~~~~~\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
             venue_id, cust_count, cust_err['build'], cust_err['push'], cust_err['unicode'], cust_err['ssl'], order_count, order_err['build'], order_err['update'], order_err['unicode'], order_err['other'], order_err['ssl'])

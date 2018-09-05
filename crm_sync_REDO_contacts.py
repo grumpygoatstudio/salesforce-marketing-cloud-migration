@@ -187,7 +187,7 @@ def active_campaign_sync():
             more_rows = False
     # setup a completion email notifying Jason that a Month of Venue pushes has finished
     sender = "kevin@matsongroup.com"
-    recipients = ["jason@matsongroup.com"]
+    recipients = ["jason@matsongroup.com", 'flygeneticist@gmail.com']
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed a MASSIVE UPDATE of Contacts - SeatEngine AWS\n'
