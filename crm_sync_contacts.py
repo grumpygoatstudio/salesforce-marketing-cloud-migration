@@ -79,7 +79,7 @@ def build_contact_data(data, api_key, last_venue, list_mappings):
     d["field[%AVERAGE_NUMBER_OF_DAYS_BETWEEN_PURCHASE_AND_EVENT_DATES%,0]"] = str(data['contacts_mv.avg_purchase_to_show_days'])
     d["field[%AVERAGE_TICKETS_PER_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_order'])
 
-    if last_venue not in ["None", ""]:
+    if not postprocess and last_venue not in ["None", ""]:
         list_id = list_mappings[last_venue]
         field = "p[%s]" % list_id
         d[field] = list_id
