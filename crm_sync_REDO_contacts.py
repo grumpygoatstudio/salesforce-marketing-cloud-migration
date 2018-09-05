@@ -3,11 +3,9 @@ import sys
 import requests
 import json
 import collections
-import csv
 import _mysql
 import smtplib
 
-from datetime import datetime
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -138,7 +136,6 @@ def active_campaign_sync():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
-    last_crm_contacts_sync = configs["last_crm_contacts_sync"]
     url = "https://heliumcomedy.api-us1.com/admin/api.php"
     list_mappings = fetch_crm_list_mapping(configs)
     db = _mysql.connect(user=configs['db_user'],

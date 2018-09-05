@@ -195,7 +195,7 @@ def active_campaign_sync():
         while more_rows:
             try:
                 ol = r.fetch_row(how=2)[0]
-                hash_id = hash(ol["orders_mv.email"].strip() + ol["orders_mv.orderNumber"])
+                hash_id = str(hash(ol["orders_mv.email"].strip() + ol["orders_mv.orderNumber"]))
                 orders[hash_id].append(ol)
             except IndexError:
                 more_rows = False
