@@ -294,11 +294,22 @@ def main():
     auth_header = {e: configs[e] for e in configs if "X-" in e}
     pull_limit = parse(configs['last_pull'], ignoretz=True) - timedelta(days=2)
 
+    # setup a completion email
+    sender = "kevin@matsongroup.com"
+    recipients = ["flygeneticist@gmail.com"] #"jason@matsongroup.com"
+    header = 'From: %s\n' % sender
+    header += 'To: %s\n' % ", ".join(recipients)
+    header += 'Subject: Completed DAILY SeatEngine PULL - SeatEngine AWS\n'
+    msg = header + \
+        "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily SEATENGINE Orders, Events and Shows have completed:\n\n"
+
+    # connect to the AWS database
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
+    db.autocommit(True)
 
     # COLLECT AND PROCESS ALL DATA FROM API SOURCE
     venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
@@ -325,13 +336,20 @@ def main():
                 data['orderlines'] += order_info_objs[1]
                 data['contacts'] += order_info_objs[2]
 
-    # UPLOAD ALL DATA TO AWS RDS SERVER
-    db.autocommit(True)
-    events_stats = sql_insert_events(db, data["events"])
-    shows_stats = sql_insert_shows(db, data["shows"])
-    contacts_stats = sql_insert_contacts(db, data["contacts"])
-    orders_stats = sql_insert_orders(db, data["orders"])
-    orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
+        # UPLOAD ALL DATA TO AWS RDS SERVER
+        events_stats = sql_insert_events(db, data["events"])
+        shows_stats = sql_insert_shows(db, data["shows"])
+        contacts_stats = sql_insert_contacts(db, data["contacts"])
+        orders_stats = sql_insert_orders(db, data["orders"])
+        orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
+
+        # add details about venue pull to report email
+        msg = msg + "-- VENUE %s -- " % (venue_id)
+        msg = msg + "EVENTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (events_stats["ok"], events_stats["err"])
+        msg = msg + "SHOWS:\nSUCCESS: %s\nERRORS: %s\n\n" % (shows_stats["ok"], shows_stats["err"])
+        msg = msg + "CONTACTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (contacts_stats["ok"], contacts_stats["err"])
+        msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
+        msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
 
     # WRITE NEW DATETIME FOR LAST PULLED TIME
     configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
@@ -341,19 +359,7 @@ def main():
     # TRIGGER POST-PROCESSING FOR SQL TABLES
     sql_post_processing()
 
-    # setup a completion email notifying Jason that a Month of Venue pushes has finished
-    sender = "kevin@matsongroup.com"
-    recipients = ["flygeneticist@gmail.com"] #"jason@matsongroup.com"
-    header = 'From: %s\n' % sender
-    header += 'To: %s\n' % ", ".join(recipients)
-    header += 'Subject: Completed DAILY SeatEngine PULL - SeatEngine AWS\n'
-    msg = header + \
-        "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily SEATENGINE Orders, Events and Shows have completed:\n\n"
-    msg = msg + "EVENTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (events_stats["ok"], events_stats["err"])
-    msg = msg + "SHOWS:\nSUCCESS: %s\nERRORS: %s\n\n" % (shows_stats["ok"], shows_stats["err"])
-    msg = msg + "CONTACTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (contacts_stats["ok"], contacts_stats["err"])
-    msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
-    msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
+    # Send the report email out
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()
