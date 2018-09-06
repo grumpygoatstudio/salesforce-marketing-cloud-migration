@@ -118,8 +118,13 @@ def update_data(url, auth_header, data, configs, connection, obj_type):
                     return lookup_customer_crm_id(data[obj_type]['email'],
                                 url, auth_header, connection)
                 else:
-                    return None
-                    # We have an order that's a duplicate in the system.
+                    # We have an order that's alreadty in the AC system.
+                    # As we have no way to reliably update orders in the
+                    # AC system...yet, we have to let it pass as OK.
+                    return 'success'
+
+                    # Once we DO have a way to update AC Orders...
+                    # Here's how we might handle it:
                     # We should try to PUT update its data.
                     # r = push_data_to_api(url, auth_header, data, 'update')
                     # status = check_api_response(r, obj_type)
@@ -128,6 +133,7 @@ def update_data(url, auth_header, data, configs, connection, obj_type):
                     # else:
                     #     # We have an error with the PUT
                     #     return "err-update"
+
             else:
                 # another kind of error occured :(
                 # we know the data was not updated
@@ -140,7 +146,7 @@ def update_data(url, auth_header, data, configs, connection, obj_type):
                 except KeyError:
                     # catch any sneaky API / JSON errors that
                     # might manifest here and return None
-                    return None
+                    return "err-other"
             else:
                 return "success"
     except UnicodeDecodeError:
@@ -159,7 +165,6 @@ def active_campaign_sync():
     customers_url = configs['Api-Url'] + 'ecomCustomers'
     venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
               (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
-    new_venues = []
 
     # setup a completion email notifying Jason that a Month of Venue pushes has finished
     sender = "kevin@matsongroup.com"
@@ -177,14 +182,9 @@ def active_campaign_sync():
                             port=configs['db_port'],
                             host=configs['db_host'],
                             db=configs['db_name'])
-        if venue_id in new_venues:
-            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != ''""" % (
-                str(venue_id), last_crm_sync.replace('T', ' ')
-            )
-        else:
-            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''""" % (
-                str(venue_id), last_crm_sync.replace('T', ' ')
-            )
+        sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''""" % (
+            str(venue_id), last_crm_sync.replace('T', ' ')
+        )
         db.query(sql)
         r = db.store_result()
         # group the orderlines into orders
