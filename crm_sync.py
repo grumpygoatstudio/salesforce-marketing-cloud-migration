@@ -178,11 +178,11 @@ def active_campaign_sync():
                             host=configs['db_host'],
                             db=configs['db_name'])
         if venue_id in new_venues:
-            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != '' AND customerid != 'None'""" % (
+            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date > \'%s\') AND email != ''""" % (
                 str(venue_id), last_crm_sync.replace('T', ' ')
             )
         else:
-            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''AND customerid != 'None'""" % (
+            sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''""" % (
                 str(venue_id), last_crm_sync.replace('T', ' ')
             )
         db.query(sql)

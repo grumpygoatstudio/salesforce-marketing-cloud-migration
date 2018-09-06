@@ -170,12 +170,14 @@ def active_campaign_sync(postprocess=False):
                         host=configs['db_host'],
                         db=configs['db_name'])
     if postprocess:
+        print("~~~~~ POST-PROCESSING CONTACTS ~~~~~")
         # d360 = (datetime.now() - timedelta(days=360)).strftime("%Y-%m-%dT%H:%M:%S").replace('T', ' ')
         # d90 = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%dT%H:%M:%S").replace('T', ' ')
         db.query(
         """SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE orderproduct_category IN (SELECT id FROM shows_processed WHERE start_date_formatted BETWEEN \'%s\' AND NOW()));""" #OR orderDate BETWEEN \'%s\' AND \'%s\');"""
         % (last_crm_contacts_sync.replace('T', ' ')))#, d360, d90))
     else:
+        print("~~~~~ PROCESSING CONTACTS ~~~~~")
         db.query(
         """SELECT * FROM contacts_mv WHERE email_address != '' AND email_address in (SELECT DISTINCT email FROM orders_mv WHERE email != '' AND orderDate BETWEEN \'%s\' AND NOW())"""
         % (last_crm_contacts_sync.replace('T', ' ')))
@@ -239,7 +241,7 @@ def active_campaign_sync(postprocess=False):
         server.sendmail(sender, recipients, msg)
         server.quit()
     else:
-        print("CRM Post-Attendees Contacts Sync Completed")
+        print("CRM Post-Attendees Contacts Sync Completed - " + configs['last_crm_contacts_sync'])
 
 
 if __name__ == '__main__':
