@@ -6,12 +6,6 @@ import collections
 import _mysql
 import smtplib
 
-from datetime import datetime
-from optparse import OptionParser
-
-parser = OptionParser()
-parser.add_option("-p", "--postprocess", dest="postprocess", type="string",
-                  help="Run only postprocessing scripts for show attendees in last 24 hours", metavar="postprocess")
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -79,10 +73,6 @@ def build_contact_data(data, api_key, last_venue, list_mappings):
     d["field[%AVERAGE_NUMBER_OF_DAYS_BETWEEN_PURCHASE_AND_EVENT_DATES%,0]"] = str(data['contacts_mv.avg_purchase_to_show_days'])
     d["field[%AVERAGE_TICKETS_PER_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_order'])
 
-    if last_venue not in ["None", ""]:
-        list_id = list_mappings[last_venue]
-        field = "p[%s]" % list_id
-        d[field] = list_id
     return d
 
 
@@ -136,16 +126,16 @@ def update_contact_in_crm(url, auth_header, data, configs, last_venue):
                 print("ERROR: Creating contact via API failed.", data['email'])
                 return "err_add"
     else:
-        print("ERROR: Missing list. Create contact via API failed.", data['email'])
+        print("ERROR: Missing list. Create contact via API failed.",
+              data['email'])
         return "err_list"
     return crm_id
 
 
-def active_campaign_sync(postprocess=False):
+def active_campaign_sync():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
-    last_crm_contacts_sync = configs["last_crm_contacts_sync"]
     url = "https://heliumcomedy.api-us1.com/admin/api.php"
     list_mappings = fetch_crm_list_mapping(configs)
     db = _mysql.connect(user=configs['db_user'],
@@ -153,18 +143,14 @@ def active_campaign_sync(postprocess=False):
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
-    if postprocess:
-        db.query(
-        """SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE orderproduct_category IN (SELECT id FROM shows_processed WHERE start_date_formatted BETWEEN \'%s\' AND NOW()));"""
-        % (last_crm_contacts_sync.replace('T', ' ')))
-    else:
-        db.query(
-        """SELECT * FROM contacts_mv WHERE email_address != '' AND email_address in (SELECT DISTINCT email FROM orders_mv WHERE email != '' AND orderDate BETWEEN \'%s\' AND NOW())"""
-        % (last_crm_contacts_sync.replace('T', ' ')))
+    venue_target = ("\'1, \'5,\' \'6,\' \'7,\' \'21\', \'23\', \'53\', \'63\', \'131\', \'133\', \'297\'")
+    db.query("""SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE venue_id in (%s));"""
+    % venue_target)
     r = db.store_result()
     more_rows = True
-    contact_err = {"list":0, "add":0, "update":0, "other":0}
+    contact_err = {"list": 0, "add": 0, "update": 0, "other": 0}
     contact_count = 0
+
     while more_rows:
         try:
             contact_info = r.fetch_row(how=2)[0]
@@ -177,7 +163,8 @@ def active_campaign_sync(postprocess=False):
             else:
                 home_venue = ""
 
-            contact_data = build_contact_data(contact_info, configs["Api-Token"], home_venue, list_mappings)
+            contact_data = build_contact_data(
+                contact_info, configs["Api-Token"], home_venue, list_mappings)
             if contact_data:
                 updated = update_contact_in_crm(
                     url, auth_header, contact_data, configs, home_venue)
@@ -194,39 +181,24 @@ def active_campaign_sync(postprocess=False):
                         contact_err['other'] += 1
             else:
                 contact_err['other'] += 1
-                print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
+                print("BUILD CONTACT DATA FAILED!", str(
+                    contact_info["contacts_mv.email_address"]))
         except IndexError:
             more_rows = False
-
-    if not postprocess:
-        # WRITE NEW DATETIME FOR LAST CRM SYNC
-        d = datetime.now()
-        configs['last_crm_contacts_sync'] = d.strftime("%Y-%m-%dT%H:%M:%S")
-        write_config(configs, dir_path)
-        print("CRM Contacts Sync Completed - " + configs['last_crm_contacts_sync'])
-
-        # setup a completion email notifying Jason that a Month of Venue pushes has finished
-        sender = "kevin@matsongroup.com"
-        recipients = ["jason@matsongroup.com"]
-        header = 'From: %s\n' % sender
-        header += 'To: %s\n' % ", ".join(recipients)
-        header += 'Subject: Completed DAILY Contacts Push - SeatEngine AWS\n'
-        msg = header + \
-            "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM Contact syncs have completed:\nSUCCESS: %s\n\nERRORS:\nAdd Errors:%s\nUpdate Errors:%s\nList Errors:%s\nOther Errors:%s\n\n" % (
-                contact_count, contact_err['add'], contact_err['update'], contact_err['list'], contact_err['other'])
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.ehlo()
-        server.starttls()
-        server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
-        server.sendmail(sender, recipients, msg)
-        server.quit()
-    else:
-        print("CRM Post-Attendees Contacts Sync Completed")
+    # setup a completion email notifying Jason that a Month of Venue pushes has finished
+    sender = "kevin@matsongroup.com"
+    recipients = ["jason@matsongroup.com", 'flygeneticist@gmail.com']
+    header = 'From: %s\n' % sender
+    header += 'To: %s\n' % ", ".join(recipients)
+    header += 'Subject: Completed a MASSIVE UPDATE of Contacts - SeatEngine AWS\n'
+    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that a push to REDO Contact syncs have completed:\n\nTARGET VENUE: %s\n\nContacts pushed (SUCCESS qty: %s, ERROR qty: %s)\n" % (venue_target, contact_count, contact_err)
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
+    server.sendmail(sender, recipients, msg)
+    server.quit()
 
 
 if __name__ == '__main__':
-    (options, args) = parser.parse_args()
-    if options.postprocess:
-        active_campaign_sync(True)
-    else:
-        active_campaign_sync()
+    active_campaign_sync()
