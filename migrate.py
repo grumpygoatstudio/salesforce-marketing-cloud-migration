@@ -296,7 +296,7 @@ def main():
 
     # setup a completion email
     sender = "kevin@matsongroup.com"
-    recipients = ["flygeneticist@gmail.com"] #"jason@matsongroup.com"
+    recipients = ["flygeneticist@gmail.com", "jason@matsongroup.com"]
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed DAILY SeatEngine PULL - SeatEngine AWS\n'

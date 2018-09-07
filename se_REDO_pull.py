@@ -352,8 +352,6 @@ def main():
         msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
 
     # WRITE NEW DATETIME FOR LAST PULLED TIME
-    configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-    write_config(configs, dir_path)
     print("Data Pull Completed - " + configs['last_pull'])
 
     # TRIGGER POST-PROCESSING FOR SQL TABLES

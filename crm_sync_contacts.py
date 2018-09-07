@@ -180,7 +180,7 @@ def active_campaign_sync(postprocess=False):
         print("~~~~~ PROCESSING CONTACTS ~~~~~")
         db.query(
         """SELECT * FROM contacts_mv WHERE email_address != '' AND email_address in (SELECT DISTINCT email FROM orders_mv WHERE orderDate BETWEEN \'%s\' AND NOW() OR orderproduct_category IN (SELECT id FROM shows_processed WHERE start_date_formatted BETWEEN \'%s\' AND NOW()));"""
-        % (last_crm_contacts_sync.replace('T', ' ')))
+        % (last_crm_contacts_sync.replace('T', ' '), last_crm_contacts_sync.replace('T', ' ')))
     r = db.store_result()
     more_rows = True
     contact_err = {"list":0, "add":0, "update":0, "other":0}
