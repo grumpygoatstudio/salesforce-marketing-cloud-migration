@@ -38,7 +38,7 @@ def get_venue_events_and_shows(venue_id, pull_limit, header):
             temp_event['logo_url'] = event['image_url']
             events.append(temp_event)
             for show in event['shows']:
-                if parse(show['start_date_time'], ignoretz=True) > pull_limit:
+                if parse(show['start_date_time'], ignoretz=True) > pull_limit - timedelta(days=2):
                     shows.append(show['id'])
         return (events, shows)
     else:

@@ -38,7 +38,7 @@ def get_venue_events_and_shows(venue_id, pull_limit, header):
             temp_event['logo_url'] = event['image_url']
             events.append(temp_event)
             for show in event['shows']:
-                if parse(show['start_date_time'], ignoretz=True) > pull_limit:
+                if parse(show['start_date_time'], ignoretz=True) >= (pull_limit - timedelta(days=2)):
                     shows.append(show['id'])
         return (events, shows)
     else:
@@ -76,15 +76,16 @@ def create_objects_from_orders(orders, show_id):
     orders_info = []
     orderlines_info = []
     sys_entry_time = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-
+    print("SHOW JSON HAS " + str(len(orders)) + " ORDERS.")  
     for order in orders:
+        print("~~ JSON Order: " + str(order))
         temp_cust = {}
         # temp_cust['subscriber_key'] = str(order['customer']['id'])
         temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
         temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
         try:
-            temp_cust['name_first'] = str(order["delivery_data"]["first_name"]).replace("\"", "").replace(",", " ").replace('\'','`').strip()
-            temp_cust['name_last'] = str(order["delivery_data"]["last_name"]).replace("\"", "").replace(",", " ").replace('\'','`').strip()
+            temp_cust['name_first'] = str(order["delivery_data"]["first_name"]).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
+            temp_cust['name_last'] = str(order["delivery_data"]["last_name"]).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
         except Exception:
             try:
                 names = str(order['customer']['name']).strip().split(", ")
@@ -133,6 +134,8 @@ def create_objects_from_orders(orders, show_id):
                 except Exception:
                     pass
                 c += 1
+        print("~~ Processed Order: " + str(temp_order))
+        print("~~ Processed Cust: " + str(temp_cust))
         orders_info += [temp_order]
         customers_info += [temp_cust]
 
@@ -292,11 +295,11 @@ def main():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
-    pull_limit = parse('2018-06-01T00:00:01', ignoretz=True)
+    pull_limit = parse("2018-09-01T00:00:01", ignoretz=True)
 
     # setup a completion email
     sender = "kevin@matsongroup.com"
-    recipients = ["flygeneticist@gmail.com"] #"jason@matsongroup.com"
+    recipients = ["flygeneticist@gmail.com"] #, "jason@matsongroup.com"]
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed DAILY SeatEngine PULL - SeatEngine AWS\n'
@@ -312,7 +315,7 @@ def main():
     db.autocommit(True)
 
     # COLLECT AND PROCESS ALL DATA FROM API SOURCE
-    venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
+    venues = [297] #, 1, 5, 6, 7, 21, 23, 53, 63, 131, 133]
     for venue_id in venues:
         print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
         data = {
@@ -324,18 +327,27 @@ def main():
         }
         events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
         data['events'] += events_and_shows[0]
+        print("Events pulled from API: " + str(len(data['events'])))
         shows = events_and_shows[1]
+        print("Shows pulled from API: " + str(len(data['shows'])))
         for show_id in shows:
-            show_info = get_show_information(venue_id, show_id, auth_header)
-            if show_info:
-                data['shows'] += [show_info]
-            show_orders = get_show_orders(venue_id, show_id, auth_header)
-            if show_orders:
-                order_info_objs = create_objects_from_orders(show_orders, show_id)
-                data['orders'] += order_info_objs[0]
-                data['orderlines'] += order_info_objs[1]
-                data['contacts'] += order_info_objs[2]
-
+            print("wrong - " + str(show_id))
+            if show_id in [80738, 77775]:
+                print("FOUND SHOW ID! - "+  show_id)
+                show_info = get_show_information(venue_id, show_id, auth_header)
+                if show_info:
+                    data['shows'] += [show_info]
+                show_orders = get_show_orders(venue_id, show_id, auth_header)
+                print("JSON ORDERS LEN: " + len(show_orders))
+                if show_orders:
+                    order_info_objs = create_objects_from_orders(show_orders, show_id)
+                    data['orders'] += order_info_objs[0]
+                    data['orderlines'] += order_info_objs[1]
+                    data['contacts'] += order_info_objs[2]
+            
+        print('FINAL ORDER COUNT: ' + str(len(data['orders'])))
+        print('FINAL CUST COUNT: ' + str(len(data['contacts'])))
+            
         # UPLOAD ALL DATA TO AWS RDS SERVER
         events_stats = sql_insert_events(db, data["events"])
         shows_stats = sql_insert_shows(db, data["shows"])
@@ -352,18 +364,20 @@ def main():
         msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
 
     # WRITE NEW DATETIME FOR LAST PULLED TIME
+    #configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
+    #write_config(configs, dir_path)
     print("Data Pull Completed - " + configs['last_pull'])
 
     # TRIGGER POST-PROCESSING FOR SQL TABLES
-    sql_post_processing()
+    #sql_post_processing()
 
     # Send the report email out
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.ehlo()
-    server.starttls()
-    server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
-    server.sendmail(sender, recipients, msg)
-    server.quit()
+    #server = smtplib.SMTP('smtp.gmail.com', 587)
+    #server.ehlo()
+    #server.starttls()
+    #server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
+    #server.sendmail(sender, recipients, msg)
+    #server.quit()
 
 
 def sql_post_processing():
