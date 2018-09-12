@@ -30,6 +30,7 @@ def write_config(config, dir_path):
 
 
 def get_venue_events_and_shows(venue_id, pull_limit, header):
+    pull_limit = parse(pull_limit, ignoretz=True) - timedelta(days=2)
     url = "https://api-2.seatengine.com/api/venues/%s/events" % venue_id
     res = requests.get(url, headers=header)
     if res.status_code == 200:
@@ -44,7 +45,7 @@ def get_venue_events_and_shows(venue_id, pull_limit, header):
             temp_event['logo_url'] = event['image_url']
             events.append(temp_event)
             for show in event['shows']:
-                if parse(show['start_date_time'], ignoretz=True) > pull_limit - timedelta(days=2):
+                if parse(show['start_date_time'], ignoretz=True) > pull_limit:
                     shows.append(show['id'])
         return (events, shows)
     else:
@@ -295,10 +296,10 @@ def sql_insert_orderlines(db, orderlines):
 
 
 def get_shows_from_db(db, venue_id, pull_limit):
-    query = '''SELECT * FROM shows
-                WHERE event_id IN (SELECT id FROM events WHERE venue_id = 297)
+    query = """SELECT * FROM shows
+                WHERE event_id IN (SELECT id FROM events WHERE venue_id = \'%s\'')
                 AND start_date_time >= \'%s\' - INTERVAL 2 DAY;
-            ''' % pull_limit.replace('T', ' ')
+            """ % (venue_id, pull_limit.replace('T', ' '))
     db.query(query)
     return db.store_result()
 
@@ -307,7 +308,7 @@ def main(shows_pull=None):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
-    pull_limit = parse(configs['last_pull'], ignoretz=True) - timedelta(days=2)
+    pull_limit = configs['last_pull']
 
     # setup a completion email
     sender = "kevin@matsongroup.com"
