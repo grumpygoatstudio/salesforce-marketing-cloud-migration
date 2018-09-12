@@ -11,7 +11,7 @@ from optparse import OptionParser
 
 
 parser = OptionParser()
-parser.add_option("-s", "--shows", dest="show-pull", type="string",
+parser.add_option("-s", "--shows_pull", dest="shows_pull", type="string",
                   help="Run only script portion for fetching shows", metavar="shows")
 
 
