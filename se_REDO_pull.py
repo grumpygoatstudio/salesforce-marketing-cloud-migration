@@ -339,6 +339,10 @@ def main(shows_pull=None):
 
     if shows_pull:
         for venue_id in venues:
+            # reset the venue data info
+            data['events'] = []
+            data['shows'] = []
+
             print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
             events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
             data['events'] += events_and_shows[0]
@@ -358,6 +362,11 @@ def main(shows_pull=None):
             msg = msg + "SHOWS:\nSUCCESS: %s\nERRORS: %s\n\n" % (shows_stats["ok"], shows_stats["err"])
     else:
         for venue_id in venues:
+            # reset the venue data info
+            data['orders'] = []
+            data['orderlines'] = []
+            data['contacts'] = []
+
             print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
             r = get_shows_from_db(db, venue_id, pull_limit)
             more_rows = True

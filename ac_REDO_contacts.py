@@ -144,8 +144,9 @@ def active_campaign_sync():
                         host=configs['db_host'],
                         db=configs['db_name'])
     venue_target = ("\'1, \'5,\' \'6,\' \'7,\' \'21\', \'23\', \'53\', \'63\', \'131\', \'133\', \'297\'")
-    db.query("""SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE venue_id in (%s));"""
-    % venue_target)
+    db.query("""SELECT  * FROM contacts_mv WHERE sys_entry_date > '2018-09-10';""")
+    # db.query("""SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE venue_id in (%s));"""
+    # % venue_target)
     r = db.store_result()
     more_rows = True
     contact_err = {"list": 0, "add": 0, "update": 0, "other": 0}
