@@ -336,7 +336,7 @@ def main(shows_pull=None):
         "contacts": []
     }
 
-    if show_pull:
+    if shows_pull:
         for venue_id in venues:
             print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
             events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
