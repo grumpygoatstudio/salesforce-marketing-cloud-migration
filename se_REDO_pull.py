@@ -363,7 +363,8 @@ def main(shows_pull=None):
             while more_rows:
                 try:
                     show = r.fetch_row(how=2)[0]
-                    show_orders = get_show_orders(venue_id, show['shows.id'], auth_header)
+                    show_id = show['shows.id']
+                    show_orders = get_show_orders(venue_id, show_id, auth_header)
                     if show_orders:
                         order_info_objs = create_objects_from_orders(show_orders, show_id)
                         data['orders'] += order_info_objs[0]
