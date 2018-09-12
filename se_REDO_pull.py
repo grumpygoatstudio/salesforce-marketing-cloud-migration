@@ -358,7 +358,7 @@ def main(shows_pull=None):
     else:
         for venue_id in venues:
             print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
-            shows = get_shows_from_db(venue_id, pull_limit)
+            shows = get_shows_from_db(db, venue_id, pull_limit)
             for show in shows:
                 show_id = show['shows.id']
                 show_orders = get_show_orders(venue_id, show_id, auth_header)
