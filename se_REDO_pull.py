@@ -328,7 +328,6 @@ def main(shows_pull=None):
 
     # COLLECT AND PROCESS ALL DATA FROM API SOURCE
     venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
-    print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
     data = {
         "events": [],
         "shows": [],
@@ -339,6 +338,7 @@ def main(shows_pull=None):
 
     if show_pull:
         for venue_id in venues:
+            print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
             events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
             data['events'] += events_and_shows[0]
             shows = events_and_shows[1]
@@ -357,6 +357,7 @@ def main(shows_pull=None):
             msg = msg + "SHOWS:\nSUCCESS: %s\nERRORS: %s\n\n" % (shows_stats["ok"], shows_stats["err"])
     else:
         for venue_id in venues:
+            print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
             shows = get_shows_from_db(venue_id, pull_limit)
             for show_id in shows:
                 show_orders = get_show_orders(venue_id, show_id, auth_header)
