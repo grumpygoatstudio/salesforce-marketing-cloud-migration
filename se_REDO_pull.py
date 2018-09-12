@@ -380,7 +380,7 @@ def main(shows_pull=None):
             orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
 
             # add details about venue pull to report email
-            msg = msg + "-- VENUE %s -- " % (venue_id)
+            msg = msg + "-- VENUE %s -- \n" % (venue_id)
             msg = msg + "CONTACTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (contacts_stats["ok"], contacts_stats["err"])
             msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
             msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
