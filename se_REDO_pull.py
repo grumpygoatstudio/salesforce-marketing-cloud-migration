@@ -303,7 +303,7 @@ def get_shows_from_db(db, venue_id, pull_limit):
     return db.store_result()
 
 
-def main(show_pull=None):
+def main(shows_pull=None):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
@@ -411,7 +411,7 @@ def sql_post_processing():
 
 if __name__ == '__main__':
     (options, args) = parser.parse_args()
-    if options.postprocess:
-        main(show_pull=True)
+    if options.shows_pull:
+        main(shows_pull=True)
     else:
         main()
