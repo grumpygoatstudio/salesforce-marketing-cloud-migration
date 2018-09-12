@@ -7,6 +7,12 @@ import smtplib
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+from optparse import OptionParser
+
+
+parser = OptionParser()
+parser.add_option("-s", "--shows", dest="show-pull", type="string",
+                  help="Run only script portion for fetching shows", metavar="shows")
 
 
 reload(sys)
@@ -38,7 +44,7 @@ def get_venue_events_and_shows(venue_id, pull_limit, header):
             temp_event['logo_url'] = event['image_url']
             events.append(temp_event)
             for show in event['shows']:
-                if parse(show['start_date_time'], ignoretz=True) >= (pull_limit - timedelta(days=2)):
+                if parse(show['start_date_time'], ignoretz=True) > pull_limit - timedelta(days=2):
                     shows.append(show['id'])
         return (events, shows)
     else:
@@ -76,9 +82,8 @@ def create_objects_from_orders(orders, show_id):
     orders_info = []
     orderlines_info = []
     sys_entry_time = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-    print("SHOW JSON HAS " + str(len(orders)) + " ORDERS.")  
+
     for order in orders:
-        print("~~ JSON Order: " + str(order))
         temp_cust = {}
         # temp_cust['subscriber_key'] = str(order['customer']['id'])
         temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
@@ -134,8 +139,6 @@ def create_objects_from_orders(orders, show_id):
                 except Exception:
                     pass
                 c += 1
-        print("~~ Processed Order: " + str(temp_order))
-        print("~~ Processed Cust: " + str(temp_cust))
         orders_info += [temp_order]
         customers_info += [temp_cust]
 
@@ -291,11 +294,20 @@ def sql_insert_orderlines(db, orderlines):
     return stats
 
 
-def main():
+def get_shows_from_db(db, venue_id, pull_limit):
+    query = '''SELECT * FROM shows
+                WHERE event_id IN (SELECT id FROM events WHERE venue_id = 297)
+                AND start_date_time > NOW() - INTERVAL 90 DAY;
+            '''
+    db.query(query)
+    return db.store_result()
+
+
+def main(show_pull=None):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
-    pull_limit = parse("2018-09-01T00:00:01", ignoretz=True)
+    pull_limit = parse(configs['last_pull'], ignoretz=True) - timedelta(days=2)
 
     # setup a completion email
     sender = "kevin@matsongroup.com"
@@ -315,69 +327,71 @@ def main():
     db.autocommit(True)
 
     # COLLECT AND PROCESS ALL DATA FROM API SOURCE
-    venues = [297] #, 1, 5, 6, 7, 21, 23, 53, 63, 131, 133]
-    for venue_id in venues:
-        print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
-        data = {
-            "events": [],
-            "shows": [],
-            "orderlines": [],
-            "orders": [],
-            "contacts": []
-        }
-        events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
-        data['events'] += events_and_shows[0]
-        print("Events pulled from API: " + str(len(data['events'])))
-        shows = events_and_shows[1]
-        print("Shows pulled from API: " + str(len(data['shows'])))
-        for show_id in shows:
-            print("wrong - " + str(show_id))
-            if show_id in [80738, 77775]:
-                print("FOUND SHOW ID! - "+  show_id)
+    venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
+    print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
+    data = {
+        "events": [],
+        "shows": [],
+        "orderlines": [],
+        "orders": [],
+        "contacts": []
+    }
+
+    if show_pull:
+        for venue_id in venues:
+            events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
+            data['events'] += events_and_shows[0]
+            shows = events_and_shows[1]
+            for show_id in shows:
                 show_info = get_show_information(venue_id, show_id, auth_header)
                 if show_info:
                     data['shows'] += [show_info]
+
+            # UPLOAD ALL DATA TO AWS RDS SERVER
+            events_stats = sql_insert_events(db, data["events"])
+            shows_stats = sql_insert_shows(db, data["shows"])
+
+            # add details about venue SHOW pull to report email
+            msg = msg + "-- VENUE %s -- " % (venue_id)
+            msg = msg + "EVENTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (events_stats["ok"], events_stats["err"])
+            msg = msg + "SHOWS:\nSUCCESS: %s\nERRORS: %s\n\n" % (shows_stats["ok"], shows_stats["err"])
+    else:
+        for venue_id in venues:
+            shows = get_shows_from_db(venue_id, pull_limit)
+            for show_id in shows:
                 show_orders = get_show_orders(venue_id, show_id, auth_header)
-                print("JSON ORDERS LEN: " + len(show_orders))
                 if show_orders:
                     order_info_objs = create_objects_from_orders(show_orders, show_id)
                     data['orders'] += order_info_objs[0]
                     data['orderlines'] += order_info_objs[1]
                     data['contacts'] += order_info_objs[2]
-            
-        print('FINAL ORDER COUNT: ' + str(len(data['orders'])))
-        print('FINAL CUST COUNT: ' + str(len(data['contacts'])))
-            
-        # UPLOAD ALL DATA TO AWS RDS SERVER
-        events_stats = sql_insert_events(db, data["events"])
-        shows_stats = sql_insert_shows(db, data["shows"])
-        contacts_stats = sql_insert_contacts(db, data["contacts"])
-        orders_stats = sql_insert_orders(db, data["orders"])
-        orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
 
-        # add details about venue pull to report email
-        msg = msg + "-- VENUE %s -- " % (venue_id)
-        msg = msg + "EVENTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (events_stats["ok"], events_stats["err"])
-        msg = msg + "SHOWS:\nSUCCESS: %s\nERRORS: %s\n\n" % (shows_stats["ok"], shows_stats["err"])
-        msg = msg + "CONTACTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (contacts_stats["ok"], contacts_stats["err"])
-        msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
-        msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
+            # UPLOAD ALL DATA TO AWS RDS SERVER
+            contacts_stats = sql_insert_contacts(db, data["contacts"])
+            orders_stats = sql_insert_orders(db, data["orders"])
+            orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
 
-    # WRITE NEW DATETIME FOR LAST PULLED TIME
-    #configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-    #write_config(configs, dir_path)
-    print("Data Pull Completed - " + configs['last_pull'])
+            # add details about venue pull to report email
+            msg = msg + "-- VENUE %s -- " % (venue_id)
+            msg = msg + "CONTACTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (contacts_stats["ok"], contacts_stats["err"])
+            msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
+            msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
 
-    # TRIGGER POST-PROCESSING FOR SQL TABLES
-    #sql_post_processing()
+            # WRITE NEW DATETIME FOR LAST PULLED TIME
+            configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
+            write_config(configs, dir_path)
+            print("Data Pull Completed - " + configs['last_pull'])
+
+            # TRIGGER POST-PROCESSING FOR SQL TABLES
+            sql_post_processing()
 
     # Send the report email out
-    #server = smtplib.SMTP('smtp.gmail.com', 587)
-    #server.ehlo()
-    #server.starttls()
-    #server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
-    #server.sendmail(sender, recipients, msg)
-    #server.quit()
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
+    server.sendmail(sender, recipients, msg)
+    server.quit()
 
 
 def sql_post_processing():
@@ -396,4 +410,8 @@ def sql_post_processing():
 
 
 if __name__ == '__main__':
-    main()
+    (options, args) = parser.parse_args()
+    if options.postprocess:
+        main(show_pull=True)
+    else:
+        main()

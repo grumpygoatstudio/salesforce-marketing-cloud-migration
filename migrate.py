@@ -7,6 +7,12 @@ import smtplib
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+from optparse import OptionParser
+
+
+parser = OptionParser()
+parser.add_option("-s", "--shows", dest="show-pull", type="string",
+                  help="Run only script portion for fetching shows", metavar="shows")
 
 
 reload(sys)
@@ -288,7 +294,16 @@ def sql_insert_orderlines(db, orderlines):
     return stats
 
 
-def main():
+def get_shows_from_db(db, venue_id, pull_limit):
+    query = '''SELECT * FROM shows
+                WHERE event_id IN (SELECT id FROM events WHERE venue_id = 297)
+                AND start_date_time > NOW() - INTERVAL 2 DAY;
+            '''
+    db.query(query)
+    return db.store_result()
+
+
+def main(show_pull=None):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
@@ -313,51 +328,62 @@ def main():
 
     # COLLECT AND PROCESS ALL DATA FROM API SOURCE
     venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
-    for venue_id in venues:
-        print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
-        data = {
-            "events": [],
-            "shows": [],
-            "orderlines": [],
-            "orders": [],
-            "contacts": []
-        }
-        events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
-        data['events'] += events_and_shows[0]
-        shows = events_and_shows[1]
-        for show_id in shows:
-            show_info = get_show_information(venue_id, show_id, auth_header)
-            if show_info:
-                data['shows'] += [show_info]
-            show_orders = get_show_orders(venue_id, show_id, auth_header)
-            if show_orders:
-                order_info_objs = create_objects_from_orders(show_orders, show_id)
-                data['orders'] += order_info_objs[0]
-                data['orderlines'] += order_info_objs[1]
-                data['contacts'] += order_info_objs[2]
+    print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
+    data = {
+        "events": [],
+        "shows": [],
+        "orderlines": [],
+        "orders": [],
+        "contacts": []
+    }
 
-        # UPLOAD ALL DATA TO AWS RDS SERVER
-        events_stats = sql_insert_events(db, data["events"])
-        shows_stats = sql_insert_shows(db, data["shows"])
-        contacts_stats = sql_insert_contacts(db, data["contacts"])
-        orders_stats = sql_insert_orders(db, data["orders"])
-        orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
+    if show_pull:
+        for venue_id in venues:
+            events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
+            data['events'] += events_and_shows[0]
+            shows = events_and_shows[1]
+            for show_id in shows:
+                show_info = get_show_information(venue_id, show_id, auth_header)
+                if show_info:
+                    data['shows'] += [show_info]
 
-        # add details about venue pull to report email
-        msg = msg + "-- VENUE %s -- " % (venue_id)
-        msg = msg + "EVENTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (events_stats["ok"], events_stats["err"])
-        msg = msg + "SHOWS:\nSUCCESS: %s\nERRORS: %s\n\n" % (shows_stats["ok"], shows_stats["err"])
-        msg = msg + "CONTACTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (contacts_stats["ok"], contacts_stats["err"])
-        msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
-        msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
+            # UPLOAD ALL DATA TO AWS RDS SERVER
+            events_stats = sql_insert_events(db, data["events"])
+            shows_stats = sql_insert_shows(db, data["shows"])
 
-    # WRITE NEW DATETIME FOR LAST PULLED TIME
-    configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-    write_config(configs, dir_path)
-    print("Data Pull Completed - " + configs['last_pull'])
+            # add details about venue SHOW pull to report email
+            msg = msg + "-- VENUE %s -- " % (venue_id)
+            msg = msg + "EVENTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (events_stats["ok"], events_stats["err"])
+            msg = msg + "SHOWS:\nSUCCESS: %s\nERRORS: %s\n\n" % (shows_stats["ok"], shows_stats["err"])
+    else:
+        for venue_id in venues:
+            shows = get_shows_from_db(venue_id, pull_limit)
+            for show_id in shows:
+                show_orders = get_show_orders(venue_id, show_id, auth_header)
+                if show_orders:
+                    order_info_objs = create_objects_from_orders(show_orders, show_id)
+                    data['orders'] += order_info_objs[0]
+                    data['orderlines'] += order_info_objs[1]
+                    data['contacts'] += order_info_objs[2]
 
-    # TRIGGER POST-PROCESSING FOR SQL TABLES
-    sql_post_processing()
+            # UPLOAD ALL DATA TO AWS RDS SERVER
+            contacts_stats = sql_insert_contacts(db, data["contacts"])
+            orders_stats = sql_insert_orders(db, data["orders"])
+            orderlines_stats = sql_insert_orderlines(db, data["orderlines"])
+
+            # add details about venue pull to report email
+            msg = msg + "-- VENUE %s -- " % (venue_id)
+            msg = msg + "CONTACTS:\nSUCCESS: %s\nERRORS: %s\n\n" % (contacts_stats["ok"], contacts_stats["err"])
+            msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
+            msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
+
+            # WRITE NEW DATETIME FOR LAST PULLED TIME
+            configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
+            write_config(configs, dir_path)
+            print("Data Pull Completed - " + configs['last_pull'])
+
+            # TRIGGER POST-PROCESSING FOR SQL TABLES
+            sql_post_processing()
 
     # Send the report email out
     server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -384,4 +410,8 @@ def sql_post_processing():
 
 
 if __name__ == '__main__':
-    main()
+    (options, args) = parser.parse_args()
+    if options.postprocess:
+        main(show_pull=True)
+    else:
+        main()
