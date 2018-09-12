@@ -297,8 +297,8 @@ def sql_insert_orderlines(db, orderlines):
 def get_shows_from_db(db, venue_id, pull_limit):
     query = '''SELECT * FROM shows
                 WHERE event_id IN (SELECT id FROM events WHERE venue_id = 297)
-                AND start_date_time > NOW() - INTERVAL 90 DAY;
-            '''
+                AND start_date_time >= \'%s\' - INTERVAL 90 DAY;
+            ''' % pull_limit.replace('T', ' ')
     db.query(query)
     return db.store_result()
 
@@ -384,13 +384,13 @@ def main(shows_pull=None):
             msg = msg + "ORDERS:\nSUCCESS: %s\nERRORS: %s\n\n" % (orders_stats["ok"], orders_stats["err"])
             msg = msg + "ORDERLINES:\nSUCCESS: %s\nERRORS: %s\n\n\n" % (orderlines_stats["ok"], orderlines_stats["err"])
 
-            # WRITE NEW DATETIME FOR LAST PULLED TIME
-            configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
-            write_config(configs, dir_path)
-            print("Data Pull Completed - " + configs['last_pull'])
+        # WRITE NEW DATETIME FOR LAST PULLED TIME
+        configs['last_pull'] = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
+        # write_config(configs, dir_path)
+        print("Data Pull Completed - " + configs['last_pull'])
 
-            # TRIGGER POST-PROCESSING FOR SQL TABLES
-            sql_post_processing()
+        # TRIGGER POST-PROCESSING FOR SQL TABLES
+        sql_post_processing()
 
     # Send the report email out
     server = smtplib.SMTP('smtp.gmail.com', 587)
