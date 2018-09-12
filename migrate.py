@@ -359,15 +359,19 @@ def main(shows_pull=None):
     else:
         for venue_id in venues:
             print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
-            shows = get_shows_from_db(db, venue_id, pull_limit)
-            for show in shows:
-                show_id = show['shows.id']
-                show_orders = get_show_orders(venue_id, show_id, auth_header)
-                if show_orders:
-                    order_info_objs = create_objects_from_orders(show_orders, show_id)
-                    data['orders'] += order_info_objs[0]
-                    data['orderlines'] += order_info_objs[1]
-                    data['contacts'] += order_info_objs[2]
+            r = get_shows_from_db(db, venue_id, pull_limit)
+            more_rows = True
+            while more_rows:
+                try:
+                    show = r.fetch_row(how=2)[0]
+                    show_orders = get_show_orders(venue_id, show['shows.id'], auth_header)
+                    if show_orders:
+                        order_info_objs = create_objects_from_orders(show_orders, show_id)
+                        data['orders'] += order_info_objs[0]
+                        data['orderlines'] += order_info_objs[1]
+                        data['contacts'] += order_info_objs[2]
+                except IndexError:
+                    more_rows = False
 
             # UPLOAD ALL DATA TO AWS RDS SERVER
             contacts_stats = sql_insert_contacts(db, data["contacts"])
