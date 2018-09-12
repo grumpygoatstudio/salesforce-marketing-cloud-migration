@@ -359,7 +359,8 @@ def main(shows_pull=None):
         for venue_id in venues:
             print("~~~~ UPDATING VENUE %s ~~~~" % venue_id)
             shows = get_shows_from_db(venue_id, pull_limit)
-            for show_id in shows:
+            for show in shows:
+                show_id = show['shows.id']
                 show_orders = get_show_orders(venue_id, show_id, auth_header)
                 if show_orders:
                     order_info_objs = create_objects_from_orders(show_orders, show_id)

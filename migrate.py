@@ -342,7 +342,8 @@ def main(shows_pull=None):
             events_and_shows = get_venue_events_and_shows(venue_id, pull_limit, auth_header)
             data['events'] += events_and_shows[0]
             shows = events_and_shows[1]
-            for show_id in shows:
+            for show in shows:
+                show_id = show['shows.id']
                 show_info = get_show_information(venue_id, show_id, auth_header)
                 if show_info:
                     data['shows'] += [show_info]
