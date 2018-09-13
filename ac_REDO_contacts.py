@@ -6,6 +6,8 @@ import collections
 import _mysql
 import smtplib
 
+from time import sleep
+
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
