@@ -149,9 +149,10 @@ def active_campaign_sync():
     # % venue_target)
     r = db.store_result()
     more_rows = True
-    contact_err = {"list": 0, "add": 0, "update": 0, "other": 0}
     contact_count = 0
-
+    contact_err = {"list": 0, "add": 0, "update": 0, "other": 0}
+    chunk_size = 5000
+    chunk_num = 0
     while more_rows:
         try:
             contact_info = r.fetch_row(how=2)[0]
@@ -184,8 +185,14 @@ def active_campaign_sync():
                 contact_err['other'] += 1
                 print("BUILD CONTACT DATA FAILED!", str(
                     contact_info["contacts_mv.email_address"]))
+
+            if contact_count % chunk_size == 0:
+                chunk_num += 1
+                print("Done chunk(#%s)! Sleeping for 60 min to avoid SSL issues..." % chunk_num)
+                sleep(3600) # sleep for 60 min to avoid SSL Errors
         except IndexError:
             more_rows = False
+
     # setup a completion email notifying Jason that a Month of Venue pushes has finished
     sender = "kevin@matsongroup.com"
     recipients = ["jason@matsongroup.com", 'flygeneticist@gmail.com']
