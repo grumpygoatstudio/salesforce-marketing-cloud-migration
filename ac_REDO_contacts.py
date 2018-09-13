@@ -151,49 +151,58 @@ def active_campaign_sync():
     # % venue_target)
     r = db.store_result()
     more_rows = True
+    contacts = []
+
     contact_count = 0
     contact_err = {"list": 0, "add": 0, "update": 0, "other": 0}
     chunk_size = 5000
     chunk_num = 0
+
     while more_rows:
         try:
-            contact_info = r.fetch_row(how=2)[0]
-            last_venue = str(contact_info['contacts_mv.last_event_venue'])
-            next_venue = str(contact_info['contacts_mv.next_event_venue'])
-            if next_venue != "None":
-                home_venue = next_venue
-            elif last_venue != "None":
-                home_venue = last_venue
-            else:
-                home_venue = ""
-
-            contact_data = build_contact_data(
-                contact_info, configs["Api-Token"], home_venue, list_mappings)
-            if contact_data:
-                updated = update_contact_in_crm(
-                    url, auth_header, contact_data, configs, home_venue)
-                if updated == 'success':
-                    contact_count += 1
-                else:
-                    if updated == 'err_list':
-                        contact_err['list'] += 1
-                    elif updated == 'err_add':
-                        contact_err['add'] += 1
-                    elif updated == 'err_update':
-                        contact_err['update'] += 1
-                    else:
-                        contact_err['other'] += 1
-            else:
-                contact_err['other'] += 1
-                print("BUILD CONTACT DATA FAILED!", str(
-                    contact_info["contacts_mv.email_address"]))
-
-            if contact_count % chunk_size == 0:
-                chunk_num += 1
-                print("Done chunk(#%s)! Sleeping for 60 min to avoid SSL issues..." % chunk_num)
-                sleep(3600) # sleep for 60 min to avoid SSL Errors
+            contacts.append(r.fetch_row(how=2)[0])
         except IndexError:
             more_rows = False
+    db.close()
+
+    for contact_info in contacts:
+        last_venue = str(contact_info['contacts_mv.last_event_venue'])
+        next_venue = str(contact_info['contacts_mv.next_event_venue'])
+        if next_venue != "None":
+            home_venue = next_venue
+        elif last_venue != "None":
+            home_venue = last_venue
+        else:
+            home_venue = ""
+
+        contact_data = build_contact_data(
+            contact_info, configs["Api-Token"], home_venue, list_mappings)
+        if contact_data:
+            updated = update_contact_in_crm(
+                url, auth_header, contact_data, configs, home_venue)
+            if updated == 'success':
+                contact_count += 1
+            else:
+                if updated == 'err_list':
+                    contact_err['list'] += 1
+                elif updated == 'err_add':
+                    contact_err['add'] += 1
+                elif updated == 'err_update':
+                    contact_err['update'] += 1
+                else:
+                    contact_err['other'] += 1
+        else:
+            contact_err['other'] += 1
+            print("BUILD CONTACT DATA FAILED!", str(
+                contact_info["contacts_mv.email_address"]))
+
+        if contact_count % 500 == 0:
+            print('Check in - #%s' % contact_count)
+
+        if contact_count % chunk_size == 0:
+            chunk_num += 1
+            print("Done chunk(#%s)! Sleeping for 60 min to avoid SSL issues..." % chunk_num)
+            sleep(3600) # sleep for 60 min to avoid SSL Errors
 
     # setup a completion email notifying Jason that a Month of Venue pushes has finished
     sender = "kevin@matsongroup.com"
