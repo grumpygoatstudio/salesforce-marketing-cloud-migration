@@ -45,7 +45,7 @@ def get_venue_events_and_shows(venue_id, pull_limit, header):
             temp_event['logo_url'] = event['image_url']
             events.append(temp_event)
             for show in event['shows']:
-                if parse(show['start_date_time'], ignoretz=True) > pull_limit:
+                if parse(show['start_date_time'], ignoretz=True) > pull_limit - timedelta(days=2):
                     shows.append(show['id'])
         return (events, shows)
     else:
@@ -297,8 +297,8 @@ def sql_insert_orderlines(db, orderlines):
 
 def get_shows_from_db(db, venue_id, pull_limit):
     query = """SELECT * FROM shows
-                WHERE event_id IN (SELECT id FROM events WHERE venue_id = \'%s\'')
-                AND start_date_time >= \'%s\' - INTERVAL 2 DAY;
+                WHERE event_id IN (SELECT id FROM events WHERE venue_id = \'%s\')
+                AND start_date_time > \'%s\' - INTERVAL 3 DAY;
             """ % (venue_id, pull_limit.replace('T', ' '))
     db.query(query)
     return db.store_result()
@@ -348,8 +348,7 @@ def main(shows_pull=None):
             data['events'] += events_and_shows[0]
             shows = events_and_shows[1]
             for show in shows:
-                show_id = show['shows.id']
-                show_info = get_show_information(venue_id, show_id, auth_header)
+                show_info = get_show_information(venue_id, show, auth_header)
                 if show_info:
                     data['shows'] += [show_info]
 
