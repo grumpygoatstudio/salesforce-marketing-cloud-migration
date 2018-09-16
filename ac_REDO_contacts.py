@@ -156,7 +156,7 @@ def active_campaign_sync():
     contacts = []
 
     contact_count = 0
-    contact_err = {"list": [], "add": [], "update": [], "other": []}
+    contact_err = {"list": [], "add": [], "update": [], "ssl": [], "other": []}
     chunk_size = 5000
     chunk_num = 0
 
@@ -177,26 +177,28 @@ def active_campaign_sync():
         else:
             home_venue = ""
 
-        contact_data = build_contact_data(
-            contact_info, configs["Api-Token"], home_venue, list_mappings)
-        if contact_data:
-            updated = update_contact_in_crm(
-                url, auth_header, contact_data, configs, home_venue)
-            if updated == 'success':
-                contact_count += 1
-            else:
-                if updated == 'err_list':
-                    contact_err['list'].append(str(contact_info['contacts_mv.email_address']))
-                elif updated == 'err_add':
-                    contact_err['add'].append(str(contact_info['contacts_mv.email_address']))
-                elif updated == 'err_update':
-                    contact_err['update'].append(str(contact_info['contacts_mv.email_address']))
+        try:
+            contact_data = build_contact_data(
+                contact_info, configs["Api-Token"], home_venue, list_mappings)
+            if contact_data:
+                updated = update_contact_in_crm(
+                    url, auth_header, contact_data, configs, home_venue)
+                if updated == 'success':
+                    contact_count += 1
                 else:
-                    contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
-        else:
+                    if updated == 'err_list':
+                        contact_err['list'].append(str(contact_info['contacts_mv.email_address']))
+                    elif updated == 'err_add':
+                        contact_err['add'].append(str(contact_info['contacts_mv.email_address']))
+                    elif updated == 'err_update':
+                        contact_err['update'].append(str(contact_info['contacts_mv.email_address']))
+                    else:
+                        contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
+        except requests.exceptions.SSLError:
+            contact_err["ssl"].append(str(contact_info['contacts_mv.email_address']))
+        except Exception:
             contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
-            print("BUILD CONTACT DATA FAILED!", str(
-                contact_info["contacts_mv.email_address"]))
+            print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
 
         if contact_count % 500 == 0:
             print('Check in - #%s' % contact_count)
@@ -213,8 +215,8 @@ def active_campaign_sync():
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Contacts RESYNC to AC - SeatEngine AWS\n'
     msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that a push to REDO Contact syncs have completed:\n\nTARGET VENUE: %s\n\nContacts pushed (SUCCESS qty: %s, ERROR qty: %s)\n" % (venue_target, contact_count, contact_err)
-    msg += "\n\n----- ERROR DETAILS -----\nContacts:\nAdd: %s\nUpdate: %s\nList: %s\nOther: %s\n" % (
-        str(contact_err['add']), str(contact_err['update']), str(contact_err['list']), str(contact_err['other']))
+    msg += "\n\n----- ERROR DETAILS -----\nContacts:\nAdd: %s\nUpdate: %s\nList: %s\nSSL: %s\nOther: %s\n" % (
+        str(contact_err['add']), str(contact_err['update']), str(contact_err['list']), str(contact_err['ssl']), str(contact_err['other']))
     msg += "\n\n----- END OF REPORT -----"
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
