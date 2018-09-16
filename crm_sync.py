@@ -202,28 +202,31 @@ def active_campaign_sync():
         print("~~ POSTING CUSTOMERS ~~")
         print("TOTAL ORDERS TO PUSH: %s" % len(orders))
         crm_postings = []
-        cust_err = {'build':0, 'push':0, 'unicode':0}
+        cust_err = {'build': [], 'push': [], 'unicode': [], 'ssl': []}
         for o in orders:
             ols = orders[o]
             # build order and customer JSON and POST the JSON objects to AC server
             customer_json = build_customer_json(connection, ols)
-            if customer_json:
-                crm_id = update_data(
-                    customers_url, auth_header, customer_json, configs, connection, 'ecomCustomer')
-                if crm_id == 'err-unicode':
-                    cust_err["unicode"] += 1
-                elif crm_id:
-                    crm_postings.append([crm_id, ols])
+            try:
+                if customer_json:
+                    crm_id = update_data(
+                        customers_url, auth_header, customer_json, configs, connection, 'ecomCustomer')
+                    if crm_id == 'err-unicode':
+                        cust_err["unicode"].append(str(ols[0]["orders_mv.email"]))
+                    elif crm_id:
+                        crm_postings.append([crm_id, ols])
+                    else:
+                        cust_err['push'].append(str(ols[0]["orders_mv.email"]))
                 else:
-                    cust_err['push'] += 1
-            else:
-                print("BUILD CUSTOMER JSON FAILED!", str(ols))
-                cust_err['build'] += 1
+                    print("BUILD CUSTOMER JSON FAILED!", str(ols))
+                    cust_err['build'].append(str(ols[0]["orders_mv.email"]))
+            except requests.exceptions.SSLError:
+                cust_err["ssl"].append(str(ols[0]["orders_mv.email"]))
 
         print("~~ POSTING ORDERS PAYLOAD ~~")
         print("TOTAL ORDERS TO PUSH: %s" % len(crm_postings))
         order_count = 0
-        order_err = {'build':0, 'update':0, 'unicode':0, 'other':0}
+        order_err = {'build': [], 'update': [], 'unicode': [], 'other': [], 'ssl': []}
         for i in crm_postings:
             try:
                 crm_order = build_order_json(connection, str(i[0]), i[1])
@@ -231,17 +234,42 @@ def active_campaign_sync():
                 if updated == "success":
                     order_count += 1
                 elif updated == 'err-update':
-                    order_err["update"] += 1
+                    order_err["update"].append(
+                        str(i[1][0]["orders_mv.externalid"]) + "(SE ID) | " +
+                        str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
+                        str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
+                    )
                 elif updated == 'err-unicode':
-                    order_err["unicode"] += 1
+                    order_err["unicode"].append(
+                        str(i[1][0]["orders_mv.externalid"]) + "(SE ID) | " +
+                        str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
+                        str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
+                    )
                 elif updated == 'err-other':
-                    order_err["other"] += 1
-            except:
+                    order_err["other"].append(
+                        str(i[1][0]["orders_mv.externalid"]) + "(SE ID) | " +
+                        str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
+                        str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
+                    )
+            except requests.exceptions.SSLError:
+                order_err["ssl"].append(
+                    str(i[1][0]["orders_mv.externalid"]) + "(SE ID) | " +
+                    str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
+                    str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
+                )
+            except Exception:
                 print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
-                order_err['build'] += 1
+                order_err['build'].append(
+                    str(i[1][0]["orders_mv.externalid"]) + "(SE ID) | " +
+                    str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
+                    str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
+                )
         # add venue details for the month running to the final email msg
-        msg += "~~~~~ VENUE #%s ~~~~~\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\n" % (
-            venue_id, len(crm_postings), cust_err['build'], cust_err['push'], cust_err['unicode'], order_count, order_err['build'], order_err['update'], order_err['unicode'], order_err['other'])
+        msg += "----- VENUE #%s -----\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
+            venue_id, len(crm_postings), len(cust_err['build']), len(cust_err['push']), len(cust_err['unicode']), len(cust_err['ssl']), order_count, len(order_err['build']), len(order_err['update']), len(order_err['unicode']), len(order_err['other']), len(order_err['ssl']))
+        msg += "----- ERROR DETAILS FOR VENUE #%s -----\nCustomers\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
+            str(cust_err['build']), str(cust_err['push']), str(cust_err['unicode']), str(cust_err['ssl']), str(order_err['build']), str(order_err['update']), str(order_err['unicode']), str(order_err['other']), str(order_err['ssl']))
+        msg += "\n\n----- END OF VENUE REPORT -----"
 
     # send a completion email notifying Jason that daily updates have finished
     server = smtplib.SMTP('smtp.gmail.com', 587)

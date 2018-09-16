@@ -8,6 +8,7 @@ import smtplib
 
 from datetime import datetime, timedelta
 from optparse import OptionParser
+from time import sleep
 
 parser = OptionParser()
 parser.add_option("-p", "--postprocess", dest="postprocess", type="string",
@@ -169,6 +170,7 @@ def active_campaign_sync(postprocess=False):
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
+
     if postprocess:
         print("~~~~~ POST-PROCESSING CONTACTS ~~~~~")
         d360 = (datetime.now() - timedelta(days=360)).strftime("%Y-%m-%dT%H:%M:%S").replace('T', ' ')
@@ -186,22 +188,29 @@ def active_campaign_sync(postprocess=False):
                 WHERE start_date_formatted BETWEEN \'%s\' AND NOW()
             )));"""
         % (last_crm_contacts_sync.replace('T', ' '), last_crm_contacts_sync.replace('T', ' ')))
-    r = db.store_result()
-    more_rows = True
-    contact_err = {"list":0, "add":0, "update":0, "other":0}
+
     contact_count = 0
+    contact_err = {"list": [], "add": [], "update": [], "ssl": [], "other": []}
+    chunk_size = 5000
+    chunk_num = 0
+
     while more_rows:
         try:
-            contact_info = r.fetch_row(how=2)[0]
-            last_venue = str(contact_info['contacts_mv.last_event_venue'])
-            next_venue = str(contact_info['contacts_mv.next_event_venue'])
-            if next_venue != "None":
-                home_venue = next_venue
-            elif last_venue != "None":
-                home_venue = last_venue
-            else:
-                home_venue = ""
+            contacts.append(r.fetch_row(how=2)[0])
+        except IndexError:
+            more_rows = False
+    db.close()
 
+    for contact_info in contacts:
+        last_venue = str(contact_info['contacts_mv.last_event_venue'])
+        next_venue = str(contact_info['contacts_mv.next_event_venue'])
+        if next_venue != "None":
+            home_venue = next_venue
+        elif last_venue != "None":
+            home_venue = last_venue
+        else:
+            home_venue = ""
+        try:
             contact_data = build_contact_data(contact_info, configs["Api-Token"], home_venue, list_mappings)
             if contact_data:
                 updated = update_contact_in_crm(
@@ -210,18 +219,26 @@ def active_campaign_sync(postprocess=False):
                     contact_count += 1
                 else:
                     if updated == 'err_list':
-                        contact_err['list'] += 1
+                        contact_err['list'].append(str(contact_info['contacts_mv.email_address']))
                     elif updated == 'err_add':
-                        contact_err['add'] += 1
+                        contact_err['add'].append(str(contact_info['contacts_mv.email_address']))
                     elif updated == 'err_update':
-                        contact_err['update'] += 1
+                        contact_err['update'].append(str(contact_info['contacts_mv.email_address']))
                     else:
-                        contact_err['other'] += 1
-            else:
-                contact_err['other'] += 1
-                print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
-        except IndexError:
-            more_rows = False
+                        contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
+        except requests.exceptions.SSLError:
+            contact_err["ssl"].append(str(contact_info['contacts_mv.email_address']))
+        except Exception:
+            contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
+            print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
+
+        if contact_count % 500 == 0:
+            print('Check in - #%s' % contact_count)
+
+        if contact_count % chunk_size == 0:
+            chunk_num += 1
+            print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
+            sleep(1800) # sleep for 30 min to avoid SSL Errors
 
     if not postprocess:
         # WRITE NEW DATETIME FOR LAST CRM SYNC
@@ -237,8 +254,11 @@ def active_campaign_sync(postprocess=False):
         header += 'To: %s\n' % ", ".join(recipients)
         header += 'Subject: Completed DAILY Contacts Push - SeatEngine AWS\n'
         msg = header + \
-            "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM Contact syncs have completed:\nSUCCESS: %s\n\nERRORS:\nAdd Errors:%s\nUpdate Errors:%s\nList Errors:%s\nOther Errors:%s\n\n" % (
-                contact_count, contact_err['add'], contact_err['update'], contact_err['list'], contact_err['other'])
+            "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM Contact syncs have completed:\nSUCCESS: %s\n\nERRORS:\nAdd Errors:%s\nUpdate Errors:%s\nList Errors:%s\nSSL Errors:%s\nOther Errors:%s\n\n" % (
+                contact_count, len(contact_err['add']), len(contact_err['update']), len(contact_err['list']), len(contact_err['ssl']), len(contact_err['other']))
+        msg += "\n\n----- ERROR DETAILS -----\nContacts:\nAdd: %s\nUpdate: %s\nList: %s\nSSL: %s\nOther: %s\n" % (
+            str(contact_err['add']), str(contact_err['update']), str(contact_err['list']), str(contact_err['ssl']), str(contact_err['other']))
+        msg += "\n\n----- END OF REPORT -----"
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.ehlo()
         server.starttls()
