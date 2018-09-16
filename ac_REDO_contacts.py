@@ -145,16 +145,18 @@ def active_campaign_sync():
                         port=configs['db_port'],
                         host=configs['db_host'],
                         db=configs['db_name'])
+
     venue_target = ("\'1, \'5,\' \'6,\' \'7,\' \'21\', \'23\', \'53\', \'63\', \'131\', \'133\', \'297\'")
-    db.query("""SELECT  * FROM contacts_mv WHERE sys_entry_date > '2018-09-10';""")
+    db.query("""SELECT  * FROM contacts_mv WHERE sys_entry_date > '2018-09-16';""")
     # db.query("""SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE venue_id in (%s));"""
     # % venue_target)
+
     r = db.store_result()
     more_rows = True
     contacts = []
 
     contact_count = 0
-    contact_err = {"list": 0, "add": 0, "update": 0, "other": 0}
+    contact_err = {"list": [], "add": [], "update": [], "other": []}
     chunk_size = 5000
     chunk_num = 0
 
@@ -184,15 +186,15 @@ def active_campaign_sync():
                 contact_count += 1
             else:
                 if updated == 'err_list':
-                    contact_err['list'] += 1
+                    contact_err['list'].append(str(contact_info['contacts_mv.email_address']))
                 elif updated == 'err_add':
-                    contact_err['add'] += 1
+                    contact_err['add'].append(str(contact_info['contacts_mv.email_address']))
                 elif updated == 'err_update':
-                    contact_err['update'] += 1
+                    contact_err['update'].append(str(contact_info['contacts_mv.email_address']))
                 else:
-                    contact_err['other'] += 1
+                    contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
         else:
-            contact_err['other'] += 1
+            contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
             print("BUILD CONTACT DATA FAILED!", str(
                 contact_info["contacts_mv.email_address"]))
 
@@ -204,13 +206,16 @@ def active_campaign_sync():
             print("Done chunk(#%s)! Sleeping for 60 min to avoid SSL issues..." % chunk_num)
             sleep(3600) # sleep for 60 min to avoid SSL Errors
 
-    # setup a completion email notifying Jason that a Month of Venue pushes has finished
+    # setup a completion email notifying that a push has finished
     sender = "kevin@matsongroup.com"
-    recipients = ["jason@matsongroup.com", 'flygeneticist@gmail.com']
+    recipients = ['flygeneticist@gmail.com'] # "jason@matsongroup.com"
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Completed a MASSIVE UPDATE of Contacts - SeatEngine AWS\n'
     msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that a push to REDO Contact syncs have completed:\n\nTARGET VENUE: %s\n\nContacts pushed (SUCCESS qty: %s, ERROR qty: %s)\n" % (venue_target, contact_count, contact_err)
+    msg += "\n\n----- ERROR DETAILS -----\nContacts:\nAdd: %s\nUpdate: %s\nList: %s\nOther: %s\n" % (
+        str(contact_err['add']), str(contact_err['update']), str(contact_err['list']), str(contact_err['other']))
+    msg += "\n\n----- END OF REPORT -----"
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()

@@ -182,7 +182,7 @@ def active_campaign_sync():
         header += 'To: %s\n' % ", ".join(recipients)
         header += 'Subject: Big Orders RESYNC - Venue %s - SeatEngine AWS\n' % venue_id
 
-        print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
+        print("----- PROCESSING ORDERS FOR VENUE #%s -----" % venue_id )
         # download CSV file from MySQL DB
         db = _mysql.connect(user=configs['db_user'],
                             passwd=configs['db_password'],
@@ -190,7 +190,7 @@ def active_campaign_sync():
                             host=configs['db_host'],
                             db=configs['db_name'])
 
-        sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND(sys_entry_date = '0000-00-00 00:00:00' OR sys_entry_date < NOW()) AND email != ''""" % (
+        sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > '2018-09-16' AND email != '';""" % (
             str(venue_id)
         )
         db.query(sql)
@@ -208,9 +208,9 @@ def active_campaign_sync():
         db.close()
 
         cust_count = 0
-        cust_err = {'build': 0, 'push': 0, 'unicode': 0, 'ssl': 0}
+        cust_err = {'build': [], 'push': [], 'unicode': [], 'ssl': []}
         order_count = 0
-        order_err = {'build': 0, 'update': 0, 'unicode': 0, 'other': 0, 'ssl': 0}
+        order_err = {'build': [], 'update': [], 'unicode': [], 'other': [], 'ssl': []}
         print("TOTAL ORDERS TO PUSH: %s" % len(orders))
         chunk_size = 5000
         total_chunks = len(orders) / chunk_size
@@ -230,16 +230,16 @@ def active_campaign_sync():
                         crm_id = update_data(
                             customers_url, auth_header, customer_json, configs, connection, 'ecomCustomer')
                         if crm_id == 'err-unicode':
-                            cust_err["unicode"] += 1
+                            cust_err["unicode"].append(str(ols[0]["orders_mv.email"]))
                         elif crm_id:
                             crm_postings.append([crm_id, ols])
                         else:
-                            cust_err['push'] += 1
+                            cust_err['push'].append(str(ols[0]["orders_mv.email"]))
                     else:
                         print("BUILD CUSTOMER JSON FAILED!", str(ols))
-                        cust_err['build'] += 1
-                except requests.exceptions.SSLError as e:
-                    cust_err["ssl"] += 1
+                        cust_err['build'].append(str(ols[0]["orders_mv.email"]))
+                except requests.exceptions.SSLError:
+                    cust_err["ssl"].append(str(ols[0]["orders_mv.email"]))
 
             print("~~ POSTING ORDERS ~~")
             print("ORDERS TO PUSH: %s" % len(crm_postings))
@@ -251,21 +251,43 @@ def active_campaign_sync():
                     if updated == "success":
                         order_count += 1
                     elif updated == 'err-update':
-                        order_err["update"] += 1
+                        order_err["update"].append(
+                            str(i[1][0]["orders_mv.externalid"]) + "(SE ID) | " +
+                            str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
+                            str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
+                        )
                     elif updated == 'err-unicode':
-                        order_err["unicode"] += 1
+                        order_err["unicode"].append(
+                            str(i[1][0]["orders_mv.externalid"]) + "(SE ID) | " +
+                            str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
+                            str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
+                        )
                     elif updated == 'err-other':
-                        order_err["other"] += 1
+                        order_err["other"].append(
+                            str(i[1][0]["orders_mv.externalid"]) + "(SE ID) | " +
+                            str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
+                            str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
+                        )
                 except requests.exceptions.SSLError:
-                    order_err["ssl"] += 1
+                    order_err["ssl"].append(
+                        str(i[1][0]["orders_mv.externalid"]) + "(SE ID) | " +
+                        str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
+                        str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
+                    )
                 except Exception:
                     print("BUILD ORDER JSON FAILED!", str(i[1][0]["orders_mv.orderNumber"]))
-                    order_err['build'] += 1
+                    order_err['build'].append(
+                        str(i[1][0]["orders_mv.externalid"]) + "(SE ID) | " +
+                        str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
+                        str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
+                    )
             print("Done a chunk! Sleeping for 60 min to avoid SSL issues...")
 
             # send a post chunk completion email to keep us in loop
-            msg += "~~~~~ Chunk %s of %s (chunk size: %s) ~~~~~\n\nCustomers pushed\nSUCCESS Qty: %s\n\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\n\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
-                chunk_num, total_chunks, chunk_size, cust_count, cust_err['build'], cust_err['push'], cust_err['unicode'], cust_err['ssl'], order_count, order_err['build'], order_err['update'], order_err['unicode'], order_err['other'], order_err['ssl'])
+            msg += "----- Chunk %s of %s (chunk size: %s) -----\n\nCustomers pushed\nSUCCESS Qty: %s\n\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\n\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
+                chunk_num, total_chunks, chunk_size, cust_count, len(cust_err['build']), len(cust_err['push']), len(cust_err['unicode']), len(cust_err['ssl']), order_count, len(order_err['build']), len(order_err['update']), len(order_err['unicode']), len(order_err['other']), len(order_err['ssl']))
+            msg += "----- ERROR DETAILS FOR VENUE #%s -----\nCustomers\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
+            str(cust_err['build']), str(cust_err['push']), str(cust_err['unicode']), str(cust_err['ssl']), str(order_err['build']), str(order_err['update']), str(order_err['unicode']), str(order_err['other']), str(order_err['ssl']))
             msg += "\nSleeping for 1 hour to avoid SSL issues..."
             # send a completion email notifying Jason that daily updates have finished
             server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -280,14 +302,16 @@ def active_campaign_sync():
 
         # setup a completion email notifying that a Venue push has finished
         sender = "kevin@matsongroup.com"
-        recipients = ["jason@gmatsongroup.com", 'flygeneticist@gmail.com']
+        recipients = ['flygeneticist@gmail.com'] # "jason@gmatsongroup.com",
         header = 'From: %s\n' % sender
         header += 'To: %s\n' % ", ".join(recipients)
-        header += 'Subject: Big Orders RESYNC - Venue %s - SeatEngine AWS\n' % venue_id
+        header += 'Subject: Orders RESYNC - Venue %s - SeatEngine AWS\n' % venue_id
         msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly update on the RESYNC progress for venue #%s.\n" % venue_id
-        msg += "~~~~~ VENUE #%s ~~~~~\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
-            venue_id, cust_count, cust_err['build'], cust_err['push'], cust_err['unicode'], cust_err['ssl'], order_count, order_err['build'], order_err['update'], order_err['unicode'], order_err['other'], order_err['ssl'])
-        msg += "\n\nVENUE PUSH COMPLETED!!!"
+        msg += "----- VENUE #%s -----\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
+            venue_id, cust_count, len(cust_err['build']), len(cust_err['push']), len(cust_err['unicode']), len(cust_err['ssl']), order_count, len(order_err['build']), len(order_err['update']), len(order_err['unicode']), len(order_err['other']), len(order_err['ssl']))
+        msg += "----- ERROR DETAILS FOR VENUE #%s -----\nCustomers\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
+            str(cust_err['build']), str(cust_err['push']), str(cust_err['unicode']), str(cust_err['ssl']), str(order_err['build']), str(order_err['update']), str(order_err['unicode']), str(order_err['other']), str(order_err['ssl']))
+        msg += "\n\n----- END OF VENUE REPORT -----"
         # send a completion email notifying Kevin and Jason that daily updates have finished
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.ehlo()
