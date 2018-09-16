@@ -194,6 +194,7 @@ def active_campaign_sync(postprocess=False):
     chunk_size = 5000
     chunk_num = 0
 
+    more_rows = True
     while more_rows:
         try:
             contacts.append(r.fetch_row(how=2)[0])
