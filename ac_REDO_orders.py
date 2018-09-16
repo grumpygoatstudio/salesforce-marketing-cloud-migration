@@ -305,7 +305,7 @@ def active_campaign_sync():
         recipients = ['flygeneticist@gmail.com'] # "jason@gmatsongroup.com",
         header = 'From: %s\n' % sender
         header += 'To: %s\n' % ", ".join(recipients)
-        header += 'Subject: Orders RESYNC - Venue %s - SeatEngine AWS\n' % venue_id
+        header += 'Subject: Orders RESYNC to AC - Venue %s - SeatEngine AWS\n' % venue_id
         msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly update on the RESYNC progress for venue #%s.\n" % venue_id
         msg += "----- VENUE #%s -----\nCustomers pushed\nSUCCESS Qty: %s\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
             venue_id, cust_count, len(cust_err['build']), len(cust_err['push']), len(cust_err['unicode']), len(cust_err['ssl']), order_count, len(order_err['build']), len(order_err['update']), len(order_err['unicode']), len(order_err['other']), len(order_err['ssl']))
