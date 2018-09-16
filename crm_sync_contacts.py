@@ -189,6 +189,7 @@ def active_campaign_sync(postprocess=False):
             )));"""
         % (last_crm_contacts_sync.replace('T', ' '), last_crm_contacts_sync.replace('T', ' ')))
 
+    r = db.store_result()
     contacts = []
     contact_count = 0
     contact_err = {"list": [], "add": [], "update": [], "ssl": [], "other": []}
