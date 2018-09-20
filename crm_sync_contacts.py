@@ -13,6 +13,8 @@ from time import sleep
 parser = OptionParser()
 parser.add_option("-p", "--postprocess", dest="postprocess", type="string",
                   help="Run only postprocessing scripts for show attendees in last 24 hours", metavar="postprocess")
+parser.add_option("-e", "--extrapush", dest="extrapush", type="string",
+                  help="push the contacts to AC again, don't update last_sync date", metavar="extrapush")
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -158,7 +160,7 @@ def update_contact_in_crm(url, auth_header, data, configs, last_venue):
     return crm_id
 
 
-def active_campaign_sync(postprocess=False):
+def active_campaign_sync(postprocess=False, extrapush=False):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -244,10 +246,13 @@ def active_campaign_sync(postprocess=False):
             sleep(1800) # sleep for 30 min to avoid SSL Errors
 
     if not postprocess:
-        # WRITE NEW DATETIME FOR LAST CRM SYNC
         d = datetime.now()
         configs['last_crm_contacts_sync'] = d.strftime("%Y-%m-%dT%H:%M:%S")
-        write_config(configs, dir_path)
+
+        if not extrapush:
+            # WRITE NEW DATETIME FOR LAST CRM SYNC
+            write_config(configs, dir_path)
+
         print("CRM Contacts Sync Completed - " + configs['last_crm_contacts_sync'] + '\n')
 
         # setup a completion email notifying Jason that a Month of Venue pushes has finished
@@ -275,6 +280,8 @@ def active_campaign_sync(postprocess=False):
 if __name__ == '__main__':
     (options, args) = parser.parse_args()
     if options.postprocess:
-        active_campaign_sync(True)
+        active_campaign_sync(postprocess=True)
+    if options.extrapush:
+        active_campaign_sync(extrapush=True)
     else:
         active_campaign_sync()

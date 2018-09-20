@@ -171,8 +171,8 @@ def active_campaign_sync():
     last_crm_sync = configs["last_crm_contacts_sync"]
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
-    venues = [(297, '2'), (1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
-              (53, '11'), (63, '12'), (131, '9'), (133, '8')]
+    venues = [(297, '2')] #, (1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
+              #(53, '11'), (63, '12'), (131, '9'), (133, '8')]
 
     for venue_id, connection in venues:
         # setup a completion email notifying that a Month of Venue pushes has finished
@@ -190,7 +190,7 @@ def active_campaign_sync():
                             host=configs['db_host'],
                             db=configs['db_name'])
 
-        sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > '2018-09-16' AND email != '';""" % (
+        sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND (sys_entry_date < '2018-09-20' OR sys_entry_date = '0000-00-00 00:00:00') AND email != '' AND email != 'none';""" % (
             str(venue_id)
         )
         db.query(sql)
@@ -302,7 +302,7 @@ def active_campaign_sync():
 
         # setup a completion email notifying that a Venue push has finished
         sender = "kevin@matsongroup.com"
-        recipients = ['flygeneticist@gmail.com'] # "jason@gmatsongroup.com",
+        recipients = ['flygeneticist@gmail.com',"jason@matsongroup.com"]
         header = 'From: %s\n' % sender
         header += 'To: %s\n' % ", ".join(recipients)
         header += 'Subject: Orders RESYNC to AC - Venue %s - SeatEngine AWS\n' % venue_id
