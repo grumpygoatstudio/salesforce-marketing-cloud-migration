@@ -287,7 +287,7 @@ def active_campaign_sync():
             msg += "----- Chunk %s of %s (chunk size: %s) -----\n\nCustomers pushed\nSUCCESS Qty: %s\n\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\n\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
                 chunk_num, total_chunks, chunk_size, cust_count, len(cust_err['build']), len(cust_err['push']), len(cust_err['unicode']), len(cust_err['ssl']), order_count, len(order_err['build']), len(order_err['update']), len(order_err['unicode']), len(order_err['other']), len(order_err['ssl']))
             msg += "----- ERROR DETAILS FOR VENUE #%s -----\nCustomers\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
-            str(cust_err['build']), str(cust_err['push']), str(cust_err['unicode']), str(cust_err['ssl']), str(order_err['build']), str(order_err['update']), str(order_err['unicode']), str(order_err['other']), str(order_err['ssl']))
+                venue_id, str(cust_err['build']), str(cust_err['push']), str(cust_err['unicode']), str(cust_err['ssl']), str(order_err['build']), str(order_err['update']), str(order_err['unicode']), str(order_err['other']), str(order_err['ssl']))
             msg += "\nSleeping for 1 hour to avoid SSL issues..."
             # send a completion email notifying Jason that daily updates have finished
             server = smtplib.SMTP('smtp.gmail.com', 587)
