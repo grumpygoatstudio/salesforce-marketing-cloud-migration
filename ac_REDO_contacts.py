@@ -151,9 +151,9 @@ def active_campaign_sync():
                         host=configs['db_host'],
                         db=configs['db_name'])
 
-    venue_target = ("\'1, \'5,\' \'6,\' \'7,\' \'21\', \'23\', \'53\', \'63\', \'131\', \'133\', \'297\'")
-    db.query("""SELECT  * FROM contacts_mv WHERE sys_entry_date > '2018-09-16';""")
-    # db.query("""SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE venue_id in (%s));"""
+    # venue_target = ("\'1, \'5,\' \'6,\' \'7,\' \'21\', \'23\', \'53\', \'63\', \'131\', \'133\', \'297\'")
+    # db.query("""SELECT  * FROM contacts_mv WHERE sys_entry_date > '2018-09-16';""")
+    db.query("""SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address != 'none' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE venue_id = '297');""")
     # % venue_target)
 
     r = db.store_result()
@@ -215,7 +215,7 @@ def active_campaign_sync():
 
     # setup a completion email notifying that a push has finished
     sender = "kevin@matsongroup.com"
-    recipients = ['flygeneticist@gmail.com'] # "jason@matsongroup.com"
+    recipients = ['flygeneticist@gmail.com', "jason@matsongroup.com"]
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Contacts RESYNC to AC - SeatEngine AWS\n'
