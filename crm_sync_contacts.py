@@ -167,7 +167,7 @@ def active_campaign_sync(postprocess=False, extrapush=False):
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
     last_crm_contacts_sync = configs["last_crm_contacts_sync"]
     if extrapush:
-        last_crm_contacts_sync = (last_crm_contacts_sync - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S")
+        last_crm_contacts_sync = (parse(last_crm_contacts_sync, ignoretz=True) - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S")
     url = "https://heliumcomedy.api-us1.com/admin/api.php"
     list_mappings = fetch_crm_list_mapping(configs)
     db = _mysql.connect(user=configs['db_user'],
