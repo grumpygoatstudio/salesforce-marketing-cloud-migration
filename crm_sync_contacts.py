@@ -294,7 +294,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
     if options.postprocess:
         active_campaign_sync(postprocess=True)
-    if options.extrapush:
+    elif options.extrapush:
         active_campaign_sync(extrapush=True)
     else:
         active_campaign_sync()
