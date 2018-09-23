@@ -5,11 +5,13 @@ import json
 import collections
 import _mysql
 import smtplib
+import sentry_sdk
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 from optparse import OptionParser
 from time import sleep
+
 
 parser = OptionParser()
 parser.add_option("-p", "--postprocess", dest="postprocess", type="string",
@@ -19,6 +21,7 @@ parser.add_option("-e", "--extrapush", dest="extrapush", type="string",
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
+sentry_sdk.init("https://15a91352bfba4835bd4b1515cee2ab34@sentry.io/195762")
 
 
 def load_config(dir_path):
@@ -184,7 +187,7 @@ def active_campaign_sync(postprocess=False, extrapush=False):
         d89 = (datetime.now() - timedelta(days=89)).strftime("%Y-%m-%dT%H:%M:%S").replace('T', ' ')
         db.query(
         """SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE orderDate BETWEEN \'%s\' AND \'%s\' OR orderDate BETWEEN \'%s\' AND \'%s\');"""
-        % (last_crm_contacts_sync.replace('T', ' '), d361, d359, d91, d89))
+        % (d361, d359, d91, d89))
     else:
         print("~~~~~ PROCESSING CONTACTS ~~~~~")
         db.query(
