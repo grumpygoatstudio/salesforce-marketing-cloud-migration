@@ -253,9 +253,9 @@ def active_campaign_sync(postprocess=False, extrapush=False):
             print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
             sleep(1800) # sleep for 30 min to avoid SSL Errors
 
-    if not postprocess:
-        d = datetime.now()
-        configs['last_crm_contacts_sync'] = d.strftime("%Y-%m-%dT%H:%M:%S")
+    d = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    if not postprocess and not extrapush:
+        configs['last_crm_contacts_sync'] = d
 
         if not extrapush:
             # WRITE NEW DATETIME FOR LAST CRM SYNC
@@ -281,8 +281,10 @@ def active_campaign_sync(postprocess=False, extrapush=False):
         server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
         server.sendmail(sender, recipients, msg)
         server.quit()
-    else:
-        print("CRM Post-Attendees Contacts Sync Completed - " + configs['last_crm_contacts_sync'] + '\n')
+    elif postprocess:
+        print("CRM Post-Attendees Contacts Sync Completed - " + d + '\n')
+    elif extrapush:
+        print("CRM Extrapush Contacts Sync Completed - " + d + '\n')
 
 
 if __name__ == '__main__':
