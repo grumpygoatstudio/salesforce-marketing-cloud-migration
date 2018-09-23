@@ -5,7 +5,7 @@ import json
 import collections
 import _mysql
 import smtplib
-import sentry_sdk
+# import sentry_sdk
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse
@@ -21,7 +21,7 @@ parser.add_option("-e", "--extrapush", dest="extrapush", type="string",
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
-sentry_sdk.init("https://8e6ee04ac6b14915a677ced85ab320f0@sentry.io/1286483")
+# sentry_sdk.init("https://8e6ee04ac6b14915a677ced85ab320f0@sentry.io/1286483")
 
 
 def load_config(dir_path):
@@ -228,24 +228,24 @@ def active_campaign_sync(postprocess=False, extrapush=False):
         except Exception as build_err:
             contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
             print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
-
-        try:
-            if contact_data:
-                updated = update_contact_in_crm(
-                    url, auth_header, contact_data, configs, home_venue)
-                if updated == 'success':
-                    contact_count += 1
-                else:
-                    if updated == 'err_list':
-                        contact_err['list'].append(str(contact_info['contacts_mv.email_address']))
-                    elif updated == 'err_add':
-                        contact_err['add'].append(str(contact_info['contacts_mv.email_address']))
-                    elif updated == 'err_update':
-                        contact_err['update'].append(str(contact_info['contacts_mv.email_address']))
+        else:
+            try:
+                if contact_data:
+                    updated = update_contact_in_crm(
+                        url, auth_header, contact_data, configs, home_venue)
+                    if updated == 'success':
+                        contact_count += 1
                     else:
-                        contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
-        except requests.exceptions.SSLError:
-            contact_err["ssl"].append(str(contact_info['contacts_mv.email_address']))
+                        if updated == 'err_list':
+                            contact_err['list'].append(str(contact_info['contacts_mv.email_address']))
+                        elif updated == 'err_add':
+                            contact_err['add'].append(str(contact_info['contacts_mv.email_address']))
+                        elif updated == 'err_update':
+                            contact_err['update'].append(str(contact_info['contacts_mv.email_address']))
+                        else:
+                                contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
+            except requests.exceptions.SSLError:
+                contact_err["ssl"].append(str(contact_info['contacts_mv.email_address']))
 
         if contact_count % 500 == 0:
             print('Check in - #%s' % contact_count)
@@ -290,13 +290,13 @@ def active_campaign_sync(postprocess=False, extrapush=False):
 
 
 if __name__ == '__main__':
-    try:
-        (options, args) = parser.parse_args()
-        if options.postprocess:
-            active_campaign_sync(postprocess=True)
-        if options.extrapush:
-            active_campaign_sync(extrapush=True)
-        else:
-            active_campaign_sync()
-    except Exception as e:
-        sentry_sdk.capture_exception(e)
+    # try:
+    (options, args) = parser.parse_args()
+    if options.postprocess:
+        active_campaign_sync(postprocess=True)
+    if options.extrapush:
+        active_campaign_sync(extrapush=True)
+    else:
+        active_campaign_sync()
+    # except Exception as e:
+        # sentry_sdk.capture_exception(e)

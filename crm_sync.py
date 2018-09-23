@@ -5,14 +5,14 @@ import json
 import collections
 import _mysql
 import smtplib
-import sentry_sdk
+# import sentry_sdk
 
 from datetime import datetime
 
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
-sentry_sdk.init("https://8e6ee04ac6b14915a677ced85ab320f0@sentry.io/1286483")
+# sentry_sdk.init("https://8e6ee04ac6b14915a677ced85ab320f0@sentry.io/1286483")
 
 
 def load_config(dir_path):
@@ -289,7 +289,7 @@ def active_campaign_sync():
 
 
 if __name__ == '__main__':
-    try:
-        active_campaign_sync()
-    except Exception as e:
-        sentry_sdk.capture_exception(e)
+    # try:
+    active_campaign_sync()
+    # except Exception as e:
+    #     sentry_sdk.capture_exception(e)
