@@ -4,6 +4,7 @@ import requests
 import json
 import _mysql
 import smtplib
+import sentry_sdk
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse
@@ -17,6 +18,7 @@ parser.add_option("-s", "--shows_pull", dest="shows_pull", type="string",
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
+sentry_sdk.init("https://8e6ee04ac6b14915a677ced85ab320f0@sentry.io/1286483")
 
 
 def load_config(dir_path):
@@ -427,8 +429,11 @@ def sql_post_processing():
 
 
 if __name__ == '__main__':
-    (options, args) = parser.parse_args()
-    if options.shows_pull:
-        main(shows_pull=True)
-    else:
-        main()
+    try:
+        (options, args) = parser.parse_args()
+        if options.shows_pull:
+            main(shows_pull=True)
+        else:
+            main()
+    except Exception as e:
+        sentry_sdk.capture_exception(e)

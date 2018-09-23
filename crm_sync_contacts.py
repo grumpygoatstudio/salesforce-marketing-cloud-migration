@@ -21,7 +21,7 @@ parser.add_option("-e", "--extrapush", dest="extrapush", type="string",
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
-sentry_sdk.init("https://15a91352bfba4835bd4b1515cee2ab34@sentry.io/195762")
+sentry_sdk.init("https://8e6ee04ac6b14915a677ced85ab320f0@sentry.io/1286483")
 
 
 def load_config(dir_path):
@@ -286,10 +286,13 @@ def active_campaign_sync(postprocess=False, extrapush=False):
 
 
 if __name__ == '__main__':
-    (options, args) = parser.parse_args()
-    if options.postprocess:
-        active_campaign_sync(postprocess=True)
-    if options.extrapush:
-        active_campaign_sync(extrapush=True)
-    else:
-        active_campaign_sync()
+    try:
+        (options, args) = parser.parse_args()
+        if options.postprocess:
+            active_campaign_sync(postprocess=True)
+        if options.extrapush:
+            active_campaign_sync(extrapush=True)
+        else:
+            active_campaign_sync()
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
