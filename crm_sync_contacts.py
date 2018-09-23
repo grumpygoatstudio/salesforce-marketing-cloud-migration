@@ -7,6 +7,7 @@ import _mysql
 import smtplib
 
 from datetime import datetime, timedelta
+from dateutil.parser import parse
 from optparse import OptionParser
 from time import sleep
 
@@ -165,6 +166,8 @@ def active_campaign_sync(postprocess=False, extrapush=False):
     configs = load_config(dir_path)
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
     last_crm_contacts_sync = configs["last_crm_contacts_sync"]
+    if extrapush:
+        last_crm_contacts_sync = (last_crm_contacts_sync - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S")
     url = "https://heliumcomedy.api-us1.com/admin/api.php"
     list_mappings = fetch_crm_list_mapping(configs)
     db = _mysql.connect(user=configs['db_user'],
@@ -175,11 +178,13 @@ def active_campaign_sync(postprocess=False, extrapush=False):
 
     if postprocess:
         print("~~~~~ POST-PROCESSING CONTACTS ~~~~~")
-        d360 = (datetime.now() - timedelta(days=360)).strftime("%Y-%m-%dT%H:%M:%S").replace('T', ' ')
-        d90 = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%dT%H:%M:%S").replace('T', ' ')
+        d361 = (datetime.now() - timedelta(days=361)).strftime("%Y-%m-%dT%H:%M:%S").replace('T', ' ')
+        d359 = (datetime.now() - timedelta(days=359)).strftime("%Y-%m-%dT%H:%M:%S").replace('T', ' ')
+        d91 = (datetime.now() - timedelta(days=91)).strftime("%Y-%m-%dT%H:%M:%S").replace('T', ' ')
+        d89 = (datetime.now() - timedelta(days=89)).strftime("%Y-%m-%dT%H:%M:%S").replace('T', ' ')
         db.query(
-        """SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE orderDate BETWEEN \'%s\' AND \'%s\');"""
-        % (last_crm_contacts_sync.replace('T', ' '), d360, d90))
+        """SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE orderDate BETWEEN \'%s\' AND \'%s\' OR orderDate BETWEEN \'%s\' AND \'%s\');"""
+        % (last_crm_contacts_sync.replace('T', ' '), d361, d359, d91, d89))
     else:
         print("~~~~~ PROCESSING CONTACTS ~~~~~")
         db.query(
