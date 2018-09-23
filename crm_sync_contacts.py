@@ -225,6 +225,11 @@ def active_campaign_sync(postprocess=False, extrapush=False):
             home_venue = ""
         try:
             contact_data = build_contact_data(contact_info, configs["Api-Token"], home_venue, list_mappings)
+        except Exception as build_err:
+            contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
+            print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
+
+        try:
             if contact_data:
                 updated = update_contact_in_crm(
                     url, auth_header, contact_data, configs, home_venue)
@@ -241,9 +246,6 @@ def active_campaign_sync(postprocess=False, extrapush=False):
                         contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
         except requests.exceptions.SSLError:
             contact_err["ssl"].append(str(contact_info['contacts_mv.email_address']))
-        except Exception:
-            contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
-            print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
 
         if contact_count % 500 == 0:
             print('Check in - #%s' % contact_count)
