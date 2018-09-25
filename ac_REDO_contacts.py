@@ -117,6 +117,7 @@ def update_contact_in_crm(url, auth_header, data, configs, last_venue):
     if last_venue not in ["None", ""]:
         if crm_id:
             data['id'] = crm_id
+            data["api_action"] = "contact_edit"
             r = requests.post(url, headers=auth_header, data=data)
             if r.status_code == 200 and r.json()["result_code"] != 0:
                 return "success"
@@ -205,7 +206,7 @@ def active_campaign_sync():
             contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
             print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
 
-        if contact_count % 500 == 0:
+        if contact_count % 1000 == 0:
             print('Check in - #%s' % contact_count)
 
         if contact_count % chunk_size == 0:
@@ -215,7 +216,7 @@ def active_campaign_sync():
 
     # setup a completion email notifying that a push has finished
     sender = "kevin@matsongroup.com"
-    recipients = ['flygeneticist@gmail.com', "jason@matsongroup.com"]
+    recipients = ['flygeneticist@gmail.com'] # , "jason@matsongroup.com"
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Contacts RESYNC to AC - SeatEngine AWS\n'

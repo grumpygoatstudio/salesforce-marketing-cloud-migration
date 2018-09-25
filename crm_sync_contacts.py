@@ -127,6 +127,7 @@ def update_contact_in_crm(url, auth_header, data, configs, last_venue):
     if last_venue not in ["None", ""]:
         if crm_id:
             data['id'] = crm_id
+            data["api_action"] = "contact_edit"
             r = requests.post(url, headers=auth_header, data=data)
             if r.status_code == 200:
                 try:
