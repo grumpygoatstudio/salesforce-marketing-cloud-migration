@@ -5,12 +5,15 @@ import json
 import collections
 import _mysql
 import smtplib
+# import sentry_sdk
 
+from datetime import datetime
 from time import sleep
 
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
+# sentry_sdk.init("https://8e6ee04ac6b14915a677ced85ab320f0@sentry.io/1286483")
 
 
 def load_config(dir_path):
@@ -75,11 +78,10 @@ def build_contact_data(data, api_key, last_venue, list_mappings):
     d["field[%AVERAGE_NUMBER_OF_DAYS_BETWEEN_PURCHASE_AND_EVENT_DATES%,0]"] = str(data['contacts_mv.avg_purchase_to_show_days'])
     d["field[%AVERAGE_TICKETS_PER_ORDER%,0]"] = str(data['contacts_mv.avg_tickets_per_order'])
 
-    if last_venue not in ["None", ""]:
+    if not options.postprocess and last_venue not in ["None", ""]:
         list_id = list_mappings[last_venue]
         field = "p[%s]" % list_id
         d[field] = list_id
-
     return d
 
 
@@ -119,8 +121,16 @@ def update_contact_in_crm(url, auth_header, data, configs, last_venue):
             data['id'] = crm_id
             data["api_action"] = "contact_edit"
             r = requests.post(url, headers=auth_header, data=data)
-            if r.status_code == 200 and r.json()["result_code"] != 0:
-                return "success"
+            if r.status_code == 200:
+                try:
+                    if r.json()["result_code"] != 0:
+                        return "success"
+                    else:
+                        print("ERROR: Updating contact via API failed.", data['email'])
+                        return "err_update"
+                except Exception as e:
+                    print("ERROR: Other error.", data['email'], e)
+                    return 'err_other'
             else:
                 print("ERROR: Updating contact via API failed.", data['email'])
                 return "err_update"
@@ -128,14 +138,21 @@ def update_contact_in_crm(url, auth_header, data, configs, last_venue):
             data["api_action"] = "contact_add"
             data.pop("id", None)
             r = requests.post(url, headers=auth_header, data=data)
-            if r.status_code == 200 and r.json()["result_code"] != 0:
-                return "success"
+            if r.status_code == 200:
+                try:
+                    if r.json()["result_code"] != 0:
+                        return "success"
+                    else:
+                        print("ERROR: Creating contact via API failed.", data['email'])
+                        return "err_add"
+                except Exception as e:
+                    print("ERROR: Other error.", data['email'], e)
+                    return 'err_other'
             else:
                 print("ERROR: Creating contact via API failed.", data['email'])
                 return "err_add"
     else:
-        print("ERROR: Missing list. Create contact via API failed.",
-              data['email'])
+        print("ERROR: Missing list. Create contact via API failed.", data['email'])
         return "err_list"
     return crm_id
 
@@ -152,20 +169,20 @@ def active_campaign_sync():
                         host=configs['db_host'],
                         db=configs['db_name'])
 
-    # venue_target = ("\'1, \'5,\' \'6,\' \'7,\' \'21\', \'23\', \'53\', \'63\', \'131\', \'133\', \'297\'")
+    print("~~~~~ PROCESSING CONTACTS ~~~~~")
+    venue_target = ("\'1, \'5,\' \'6,\' \'7,\' \'21\', \'23\', \'53\', \'63\', \'131\', \'133\', \'297\'")
     # db.query("""SELECT  * FROM contacts_mv WHERE sys_entry_date > '2018-09-16';""")
     db.query("""SELECT  * FROM contacts_mv WHERE email_address != '' AND email_address != 'none' AND email_address IN (SELECT DISTINCT email FROM orders_mv WHERE venue_id = '297');""")
     # % venue_target)
 
     r = db.store_result()
-    more_rows = True
     contacts = []
-
     contact_count = 0
     contact_err = {"list": [], "add": [], "update": [], "ssl": [], "other": []}
     chunk_size = 5000
     chunk_num = 0
 
+    more_rows = True
     while more_rows:
         try:
             contacts.append(r.fetch_row(how=2)[0])
@@ -182,31 +199,31 @@ def active_campaign_sync():
             home_venue = last_venue
         else:
             home_venue = ""
-
         try:
-            contact_data = build_contact_data(
-                contact_info, configs["Api-Token"], home_venue, list_mappings)
-            if contact_data:
-                updated = update_contact_in_crm(
-                    url, auth_header, contact_data, configs, home_venue)
-                if updated == 'success':
-                    contact_count += 1
-                else:
-                    if updated == 'err_list':
-                        contact_err['list'].append(str(contact_info['contacts_mv.email_address']))
-                    elif updated == 'err_add':
-                        contact_err['add'].append(str(contact_info['contacts_mv.email_address']))
-                    elif updated == 'err_update':
-                        contact_err['update'].append(str(contact_info['contacts_mv.email_address']))
-                    else:
-                        contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
-        except requests.exceptions.SSLError:
-            contact_err["ssl"].append(str(contact_info['contacts_mv.email_address']))
-        except Exception:
+            contact_data = build_contact_data(contact_info, configs["Api-Token"], home_venue, list_mappings)
+        except Exception as build_err:
             contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
             print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mv.email_address"]))
+        else:
+            try:
+                if contact_data:
+                    updated = update_contact_in_crm(
+                        url, auth_header, contact_data, configs, home_venue)
+                    if updated == 'success':
+                        contact_count += 1
+                    else:
+                        if updated == 'err_list':
+                            contact_err['list'].append(str(contact_info['contacts_mv.email_address']))
+                        elif updated == 'err_add':
+                            contact_err['add'].append(str(contact_info['contacts_mv.email_address']))
+                        elif updated == 'err_update':
+                            contact_err['update'].append(str(contact_info['contacts_mv.email_address']))
+                        else:
+                                contact_err['other'].append(str(contact_info['contacts_mv.email_address']))
+            except requests.exceptions.SSLError:
+                contact_err["ssl"].append(str(contact_info['contacts_mv.email_address']))
 
-        if contact_count % 1000 == 0:
+        if contact_count % 500 == 0:
             print('Check in - #%s' % contact_count)
 
         if contact_count % chunk_size == 0:
@@ -214,13 +231,18 @@ def active_campaign_sync():
             print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
             sleep(1800) # sleep for 30 min to avoid SSL Errors
 
-    # setup a completion email notifying that a push has finished
+    d = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    print("CRM Contacts Sync Completed - " + configs['last_crm_contacts_sync'] + '\n')
+
+    # setup a completion email notifying that pushes have finished
     sender = "kevin@matsongroup.com"
-    recipients = ['flygeneticist@gmail.com'] # , "jason@matsongroup.com"
+    recipients = ['flygeneticist@gmail.com', "jason@matsongroup.com"]
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Contacts RESYNC to AC - SeatEngine AWS\n'
-    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that a push to REDO Contact syncs have completed:\n\nTARGET VENUE: %s\n\nContacts pushed (SUCCESS qty: %s, ERROR qty: %s)\n" % (venue_target, contact_count, contact_err)
+    msg = header + \
+        "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM Contact syncs have completed:\n\nSUCCESS: %s\nERRORS:\nAdd Errors:%s\nUpdate Errors:%s\nList Errors:%s\nSSL Errors:%s\nOther Errors:%s\n\n" % (
+            contact_count, len(contact_err['add']), len(contact_err['update']), len(contact_err['list']), len(contact_err['ssl']), len(contact_err['other']))
     msg += "\n\n----- ERROR DETAILS -----\nContacts:\nAdd: %s\nUpdate: %s\nList: %s\nSSL: %s\nOther: %s\n" % (
         str(contact_err['add']), str(contact_err['update']), str(contact_err['list']), str(contact_err['ssl']), str(contact_err['other']))
     msg += "\n\n----- END OF REPORT -----"
@@ -233,4 +255,7 @@ def active_campaign_sync():
 
 
 if __name__ == '__main__':
+    # try:
     active_campaign_sync()
+    # except Exception as e:
+    # sentry_sdk.capture_exception(e)
