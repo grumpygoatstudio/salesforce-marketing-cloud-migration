@@ -5,15 +5,6 @@ import json
 import _mysql
 import smtplib
 
-from datetime import datetime, timedelta
-from dateutil.parser import parse
-from optparse import OptionParser
-
-
-parser = OptionParser()
-parser.add_option("-s", "--shows_pull", dest="shows_pull", type="string",
-                  help="Run only script portion for fetching shows", metavar="shows")
-
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -27,6 +18,16 @@ def load_config(dir_path):
 def write_config(config, dir_path):
     with open(os.path.join(dir_path, 'config.json'), 'w') as f:
         json.dump(config, f)
+
+
+def get_show_orders(venue_id, show_id, header):
+    url = "https://api-2.seatengine.com/api/venues/%s/shows/%s/willcall" % (venue_id, show_id)
+    res = requests.get(url, headers=header)
+    if res.status_code == 200:
+        data = json.loads(res.text)
+        return data
+    else:
+        return False
 
 
 def create_objects_from_orders(orders, show_id):
@@ -60,7 +61,7 @@ def sql_insert_contacts(db, contacts):
             )
             db.query(query)
             stats['ok'] += 1
-        except Exception as err:
+        except Exception:
             try:
                 query = '''UPDATE contacts SET
                             name = \'%s\',
@@ -87,7 +88,7 @@ def get_shows_from_db(db, venue_id, pull_limit):
     return db.store_result()
 
 
-def main(shows_pull=None):
+def main():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {e: configs[e] for e in configs if "X-" in e}
@@ -159,6 +160,7 @@ def main(shows_pull=None):
     # TRIGGER POST-PROCESSING FOR SQL TABLES
     sql_post_processing()
 
+
 def sql_post_processing():
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
@@ -175,8 +177,4 @@ def sql_post_processing():
 
 
 if __name__ == '__main__':
-    (options, args) = parser.parse_args()
-    if options.shows_pull:
-        main(shows_pull=True)
-    else:
-        main()
+    main()
