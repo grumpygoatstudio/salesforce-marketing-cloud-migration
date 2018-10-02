@@ -92,16 +92,11 @@ def create_objects_from_orders(orders, show_id):
         temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
         temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
         try:
-            temp_cust['name_first'] = str(order["delivery_data"]["first_name"]).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
-            temp_cust['name_last'] = str(order["delivery_data"]["last_name"]).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
+            temp_cust['name_first'] = str(order["customer"]["first_name"]).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
+            temp_cust['name_last'] = str(order["customer"]["last_name"]).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
         except Exception:
-            try:
-                names = str(order['customer']['name']).strip().split(", ")
-                temp_cust['name_first']=" ".join(names[1:]).replace("\"", "").replace(",", " ").replace('\'','`').strip()
-                temp_cust['name_last'] = names[0].replace("\"", "").replace(",", " ").replace('\'','`').strip()
-            except Exception:
-                temp_cust['name_first'] = ""
-                temp_cust['name_last'] = ""
+            temp_cust['name_first'] = ""
+            temp_cust['name_last'] = ""
         temp_cust['sys_entry_date'] = sys_entry_time
         try:
             payment_method = str(order["payments"][0]['payment_method'])
