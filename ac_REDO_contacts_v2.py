@@ -157,10 +157,10 @@ def active_campaign_sync():
     more_rows = True
     contacts = []
 
-    contact_count = 0
+    contact_count = 1
     contact_err = {"list": [], "add": [], "update": [], "ssl": [], "other": []}
     chunk_size = 5000
-    chunk_num = 0
+    chunk_num = 1
 
     while more_rows:
         try:
