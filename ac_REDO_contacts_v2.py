@@ -208,7 +208,7 @@ def active_campaign_sync():
         if contact_count % chunk_size == 0:
             chunk_num += 1
             print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
-            sleep(1800) # sleep for 30 min to avoid SSL Errors
+            sleep(1800)  # sleep for 30 min to avoid SSL Errors
 
     # setup a completion email notifying that a push has finished
     sender = "kevin@matsongroup.com"
@@ -216,7 +216,7 @@ def active_campaign_sync():
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Contacts RESYNC to AC - SeatEngine AWS\n'
-    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that a push to REDO Contact syncs have completed:\n\nTARGET VENUE: %s\n\nContacts pushed (SUCCESS qty: %s, ERROR qty: %s)\n" % (venue_target, contact_count, contact_err)
+    msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that a push to REDO Contact syncs have completed:\n\nContacts pushed (SUCCESS qty: %s, ERROR qty: %s)\n" % (contact_count, contact_err)
     msg += "\n\n----- ERROR DETAILS -----\nContacts:\nAdd: %s\nUpdate: %s\nList: %s\nSSL: %s\nOther: %s\n" % (
         str(contact_err['add']), str(contact_err['update']), str(contact_err['list']), str(contact_err['ssl']), str(contact_err['other']))
     msg += "\n\n----- END OF REPORT -----"
