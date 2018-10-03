@@ -152,7 +152,7 @@ def active_campaign_sync():
                         host=configs['db_host'],
                         db=configs['db_name'])
 
-    db.query("""SELECT  * FROM contacts_mv WHERE sys_entry_date = '1999-12-31';""")
+    db.query("""SELECT  * FROM contacts_mv WHERE sys_entry_date = '1999-12-31T23:59:59';""")
     r = db.store_result()
     more_rows = True
     contacts = []
