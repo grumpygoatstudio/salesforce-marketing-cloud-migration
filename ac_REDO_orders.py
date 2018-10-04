@@ -291,7 +291,7 @@ def active_campaign_sync():
                         str(i[1][0]["orders_mv.email"]) + "(EMAIL) | " +
                         str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
                     )
-            print("Done a chunk! Sleeping for 60 min to avoid SSL issues...")
+            print("Done a chunk! Sleeping for 30 min to avoid SSL issues...")
 
             # send a post chunk completion email to keep us in loop
             msg += "----- Chunk %s of %s (chunk size: %s) -----\n\nCustomers pushed\nSUCCESS Qty: %s\n\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\n\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
@@ -306,8 +306,8 @@ def active_campaign_sync():
             server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
             server.sendmail(sender, recipients, msg)
             server.quit()
-            print("Done! Sleeping for 1 hour to avoid SSL issues...")
-            sleep(3600)
+            print("Done! Sleeping for 30 minutes to avoid SSL issues...")
+            sleep(1800)
 
 
         # setup a completion email notifying that a Venue push has finished
