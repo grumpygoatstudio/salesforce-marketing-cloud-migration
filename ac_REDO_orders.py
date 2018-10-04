@@ -5,7 +5,7 @@ import json
 import collections
 import _mysql
 import smtplib
-
+from simplejson import JSONDecodeError
 from time import sleep
 from datetime import datetime
 from itertools import islice
@@ -154,7 +154,8 @@ def update_data(url, auth_header, data, configs, connection, obj_type):
         # skip over orders with Unicode Decode errors
         print("ERROR: UnicodeDecodeError while posting (%s): #%s" % (obj_type, data))
         return 'err-unicode'
-
+    except (Exception, JSONDecodeError):
+        return "err-other"
 
 
 def chunks(data, SIZE=10000):

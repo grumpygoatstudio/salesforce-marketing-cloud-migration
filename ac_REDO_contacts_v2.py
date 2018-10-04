@@ -5,7 +5,7 @@ import json
 import collections
 import _mysql
 import smtplib
-
+from simplejson import JSONDecodeError
 from time import sleep
 
 
@@ -115,24 +115,28 @@ def lookup_crm_id_by_api(url, data, auth_header):
 def update_contact_in_crm(url, auth_header, data, configs, last_venue):
     crm_id = lookup_crm_id_by_api(url, data, auth_header)
     if last_venue not in ["None", ""]:
-        if crm_id:
-            data['id'] = crm_id
-            data["api_action"] = "contact_edit"
-            r = requests.post(url, headers=auth_header, data=data)
-            if r.status_code == 200 and r.json()["result_code"] != 0:
-                return "success"
+        try:
+            if crm_id:
+                data['id'] = crm_id
+                data["api_action"] = "contact_edit"
+                r = requests.post(url, headers=auth_header, data=data)
+                if r.status_code == 200 and r.json()["result_code"] != 0:
+                    return "success"
+                else:
+                    print("ERROR: Updating contact via API failed.", data['email'])
+                    return "err_update"
             else:
-                print("ERROR: Updating contact via API failed.", data['email'])
-                return "err_update"
-        else:
-            data["api_action"] = "contact_add"
-            data.pop("id", None)
-            r = requests.post(url, headers=auth_header, data=data)
-            if r.status_code == 200 and r.json()["result_code"] != 0:
-                return "success"
-            else:
-                print("ERROR: Creating contact via API failed.", data['email'])
-                return "err_add"
+                data["api_action"] = "contact_add"
+                data.pop("id", None)
+                r = requests.post(url, headers=auth_header, data=data)
+                if r.status_code == 200 and r.json()["result_code"] != 0:
+                    return "success"
+                else:
+                    print("ERROR: Creating contact via API failed.", data['email'])
+                    return "err_add"
+        except JSONDecodeError:
+            print("JSON DECODE ERROR!", str(data["email"]))
+            return "err_other"
     else:
         print("ERROR: Missing list. Create contact via API failed.",
               data['email'])
