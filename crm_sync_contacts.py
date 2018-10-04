@@ -6,7 +6,7 @@ import collections
 import _mysql
 import smtplib
 # import sentry_sdk
-
+from simplejson import JSONDecodeError
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 from optparse import OptionParser
@@ -136,7 +136,8 @@ def update_contact_in_crm(url, auth_header, data, configs, last_venue):
                     else:
                         print("ERROR: Updating contact via API failed.", data['email'])
                         return "err_update"
-                except Exception as e:
+                    return 'err_other'
+                except (Exception, JSONDecodeError) as e:
                     print("ERROR: Other error.", data['email'], e)
                     return 'err_other'
             else:
