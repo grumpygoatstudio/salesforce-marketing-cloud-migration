@@ -67,14 +67,20 @@ def build_order_json(connection, crm_id, data):
     }
 
 
-def lookup_customer_crm_id(email, url, auth_header, connection):
-    # Looks up a customer's CRM Id from AC API. Returns ID as a string or None.
-    r = requests.get(url+"?filters[email]=%s" % email,headers=auth_header)
-    if r.status_code == 200:
-        for c in r.json()["ecomCustomers"]:
-            if c["connectionid"] == connection:
-                return c["id"]
-    return None
+def lookup_customer_crm_id(email, url, auth_header, connection, redo=False):
+    try:
+        # Looks up a customer's CRM Id from AC API. Returns ID as a string or None.
+        r = requests.get(url+"?filters[email]=%s" % email,headers=auth_header)
+        if r.status_code == 200:
+            for c in r.json()["ecomCustomers"]:
+                if c["connectionid"] == connection:
+                    return c["id"]
+        return None
+    except Exception:
+        if not redo:
+            lookup_customer_crm_id(email, url, auth_header, connection, redo=True)
+        else:
+            return None
 
 
 def get_se_id(data, obj_type):
@@ -103,7 +109,6 @@ def check_api_response(r, obj_type):
             else:
                 return ("err", "other",)
         except JSONDecodeError:
-            print("JSON DECODE ERROR!", str(data["email"]))
             return ("err", "other",)
     else:
         # successful add / update to API

@@ -66,14 +66,20 @@ def build_order_json(connection, crm_id, data):
     }
 
 
-def lookup_customer_crm_id(email, url, auth_header, connection):
-    # Looks up a customer's CRM Id from AC API. Returns ID as a string or None.
-    r = requests.get(url+"?filters[email]=%s" % email,headers=auth_header)
-    if r.status_code == 200:
-        for c in r.json()["ecomCustomers"]:
-            if c["connectionid"] == connection:
-                return c["id"]
-    return None
+def lookup_customer_crm_id(email, url, auth_header, connection, redo=False):
+    try:
+        # Looks up a customer's CRM Id from AC API. Returns ID as a string or None.
+        r = requests.get(url+"?filters[email]=%s" % email,headers=auth_header)
+        if r.status_code == 200:
+            for c in r.json()["ecomCustomers"]:
+                if c["connectionid"] == connection:
+                    return c["id"]
+        return None
+    except Exception:
+        if not redo:
+            lookup_customer_crm_id(email, url, auth_header, connection, redo=True)
+        else:
+            return None
 
 
 def get_se_id(data, obj_type):
@@ -102,7 +108,6 @@ def check_api_response(r, obj_type):
             else:
                 return ("err", "other",)
         except JSONDecodeError:
-            print("JSON DECODE ERROR!", str(data["email"]))
             return ("err", "other",)
     else:
         # successful add / update to API
@@ -123,9 +128,9 @@ def update_data(url, auth_header, data, configs, connection, obj_type):
                     # that out for use elsewhere with orders.
                     return lookup_customer_crm_id(data[obj_type]['email'], url, auth_header, connection)
                 else:
-                    # We have an order that's alreadty in the AC system.
+                    # We have an order that's already in the AC system.
                     # As we have no way to reliably update orders in the
-                    # AC system...yet, we have to let it pass as OK.
+                    # AC system...we have to let it pass as OK.
                     return 'success'
 
                     # Once we DO have a way to update AC Orders...
