@@ -95,10 +95,14 @@ def push_data_to_api(url, auth_header, data, method):
 def check_api_response(r, obj_type):
     if r.status_code != 201:
         # api complained about a duplicate
-        if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
-            return ("err", "duplicate",)
-        # some other type of error occured
-        else:
+        try:
+            if r.status_code == 422 and r.json()['errors'][0]['code'] == 'duplicate':
+                return ("err", "duplicate",)
+            # some other type of error occured
+            else:
+                return ("err", "other",)
+        except JSONDecodeError:
+            print("JSON DECODE ERROR!", str(data["email"]))
             return ("err", "other",)
     else:
         # successful add / update to API

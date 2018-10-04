@@ -116,9 +116,13 @@ def fetch_crm_list_mapping(configs):
 def lookup_crm_id_by_api(url, data, auth_header):
     data["api_action"] = "contact_view_email"
     r = requests.post(url, headers=auth_header, data=data)
-    if r.status_code == 200 and r.json()["result_code"] != 0:
-        return r.json()["id"]
-    else:
+    try:
+        if r.status_code == 200 and r.json()["result_code"] != 0:
+            return r.json()["id"]
+        else:
+            return None
+    except JSONDecodeError:
+        print("JSON DECODE ERROR!", str(data["email"]))
         return None
 
 
