@@ -185,13 +185,6 @@ def active_campaign_sync():
               (131, '9'), (133, '8'), (21, '7'), (1, '3')]  # (297, '2')
 
     for venue_id, connection in venues:
-        # setup a completion email notifying that a Month of Venue pushes has finished
-        sender = "kevin@matsongroup.com"
-        recipients = ['flygeneticist@gmail.com']
-        header = 'From: %s\n' % sender
-        header += 'To: %s\n' % ", ".join(recipients)
-        header += 'Subject: Big Orders RESYNC - Venue %s - SeatEngine AWS\n' % venue_id
-
         print("----- PROCESSING ORDERS FOR VENUE #%s -----" % venue_id )
         # download CSV file from MySQL DB
         db = _mysql.connect(user=configs['db_user'],
@@ -292,27 +285,12 @@ def active_campaign_sync():
                         str(i[1][0]["orders_mv.orderNumber"]) + "(ORDER ID)"
                     )
             print("Done a chunk! Sleeping for 30 min to avoid SSL issues...")
-
-            # send a post chunk completion email to keep us in loop
-            msg += "----- Chunk %s of %s (chunk size: %s) -----\n\nCustomers pushed\nSUCCESS Qty: %s\n\nERROR Qty:\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders pushed\nSUCCESS Qty: %s\n\nERRORS Qty:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
-                chunk_num, total_chunks, chunk_size, cust_count, len(cust_err['build']), len(cust_err['push']), len(cust_err['unicode']), len(cust_err['ssl']), order_count, len(order_err['build']), len(order_err['update']), len(order_err['unicode']), len(order_err['other']), len(order_err['ssl']))
-            msg += "----- ERROR DETAILS FOR VENUE #%s -----\nCustomers\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
-                venue_id, str(cust_err['build']), str(cust_err['push']), str(cust_err['unicode']), str(cust_err['ssl']), str(order_err['build']), str(order_err['update']), str(order_err['unicode']), str(order_err['other']), str(order_err['ssl']))
-            msg += "\nSleeping for 1 hour to avoid SSL issues..."
-            # send a completion email notifying Jason that daily updates have finished
-            server = smtplib.SMTP('smtp.gmail.com', 587)
-            server.ehlo()
-            server.starttls()
-            server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
-            server.sendmail(sender, recipients, msg)
-            server.quit()
-            print("Done! Sleeping for 30 minutes to avoid SSL issues...")
             sleep(1800)
 
 
         # setup a completion email notifying that a Venue push has finished
         sender = "kevin@matsongroup.com"
-        recipients = ['flygeneticist@gmail.com',"jason@matsongroup.com"]
+        recipients = ["jason@matsongroup.com"]
         header = 'From: %s\n' % sender
         header += 'To: %s\n' % ", ".join(recipients)
         header += 'Subject: Orders RESYNC to AC - Venue %s - SeatEngine AWS\n' % venue_id

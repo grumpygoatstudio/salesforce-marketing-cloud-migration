@@ -226,7 +226,7 @@ def active_campaign_sync():
 
     # setup a completion email notifying that a push has finished
     sender = "kevin@matsongroup.com"
-    recipients = ['flygeneticist@gmail.com']  #, "jason@matsongroup.com"]
+    recipients = ["jason@matsongroup.com"]
     header = 'From: %s\n' % sender
     header += 'To: %s\n' % ", ".join(recipients)
     header += 'Subject: Contacts RESYNC to AC - SeatEngine AWS\n'
