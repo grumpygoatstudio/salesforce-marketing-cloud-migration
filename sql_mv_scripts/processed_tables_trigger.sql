@@ -78,6 +78,7 @@ BEGIN
         CALL refresh_orders_mv_now(@rc);
         CALL refresh_calculation_tables_now(@rc);
         CALL refresh_contacts_mv_now(@rc);
+        CALL refresh_contacts_mobile_mv(@rc);
 
   SET rc = 0;
 END;
