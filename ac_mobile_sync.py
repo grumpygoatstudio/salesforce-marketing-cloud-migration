@@ -125,7 +125,7 @@ def update_contact_in_crm(url, auth_header, data, configs):
                 if r.status_code == 200:
                     try:
                         if r.json()["result_code"] != 0:
-                            print("%s - %s" % (crm_id, data['field[%MOBILE_OPTIN%,0]']))
+                            print("%s - %s - %s" % (crm_id, data['field[%MOBILE_NUMBER%,0]'], data['field[%MOBILE_OPTIN%,0]']))
                             return "success"
                         else:
                             print("ERROR: Updating contact via API failed.", data['email'])
@@ -171,6 +171,7 @@ def active_campaign_sync():
         LEFT JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
         WHERE cm.last_message_date BETWEEN \'%s\' AND NOW()
         AND cm.email_address IS NOT NULL
+        AND ((ac.optin_status IS NULL) OR (ac.optin_status = 'Yes' AND cm.mobile_status != 'Subscribed') OR (ac.optin_status = 'No' AND cm.mobile_status = 'Subscribed'))
         ORDER BY cm.email_address, cm.mobile_number, cm.last_message_date;
         """ % (last_ac_mobile_sync.replace('T', ' '))
     )
