@@ -44,16 +44,13 @@ def build_contact_data(data, api_key, mobile_status):
     d["field[%mobile_optin%,0]"] = mobile_status
     return d
 
-def lookup_crm_id_and_last_venue_by_api(url, data, auth_header, redo=False):
+def lookup_crm_id_by_api(url, data, auth_header, redo=False):
     data["api_action"] = "contact_view_email"
     try:
         r = requests.post(url, headers=auth_header, data=data)
         try:
             if r.status_code == 200 and r.json()["result_code"] != 0:
-                venue_id = r.json()["id"]
-                import ipdb; ipdb.set_trace();
-                list_id = '123'
-                return venue_id, list_id
+                return r.json()["id"]
             else:
                 return None
         except JSONDecodeError:
@@ -61,22 +58,72 @@ def lookup_crm_id_and_last_venue_by_api(url, data, auth_header, redo=False):
             return None
     except Exception:
         if not redo:
-            lookup_crm_id_and_last_venue_by_api(url, data, auth_header, redo=True)
+            lookup_crm_id_by_api(url, data, auth_header, redo=True)
         else:
             return None
 
 
-def update_contact_in_crm(url, auth_header, data, configs):
-    crm_id, list_id = lookup_crm_id_and_last_venue_by_api(url, data, auth_header)
-    import ipdb; ipdb.set_trace();
-    if list_id not in [None, "None", ""]:
+def add_tag_to_contact(url, crm_id, tag, api_key, auth_header):
+    d = collections.OrderedDict()
+    d["api_key"] = api_key
+    d["api_action"] = "contact_tag_add"
+    d["api_output"] = "json"
+    d["id"] = crm_id
+    d["tags"] = tag
+    try:
+        r = requests.post(url, headers=auth_header, data=d)
         try:
-            if crm_id:
+            if r.status_code == 200 and r.json()["result_code"] != 0:
+                return True
+            else:
+                return None
+        except JSONDecodeError:
+            print("JSON DECODE ERROR!", str(d["id"]))
+            return None
+    except Exception:
+        return None
+
+
+def lookup_list_by_api(url, crm_id, api_key, auth_header):
+    d = collections.OrderedDict()
+    d["api_key"] = api_key
+    d["api_action"] = "contact_view"
+    d["api_output"] = "json"
+    d["id"] = crm_id
+    try:
+        r = requests.post(url, headers=auth_header, data=d)
+        try:
+            if r.status_code == 200 and r.json()["result_code"] != 0:
+                return r.json()["listid"]
+            else:
+                return None
+        except JSONDecodeError:
+            print("JSON DECODE ERROR!", str(d["id"]))
+            return None
+    except Exception:
+        return None
+
+
+def update_contact_tags(url, auth_header, data, tag, configs):
+    crm_id = lookup_crm_id_by_api(url, data, auth_header)
+    if crm_id:
+        add_tag_to_contact(url, crm_id, tag, data['api_key'], auth_header)
+    else:
+        print("ERROR: Missing CRM ID. Create contact via API failed.", data['email'])
+        return "err_other"
+    return crm_id
+
+
+def update_contact_in_crm(url, auth_header, data, configs):
+    crm_id = lookup_crm_id_by_api(url, data, auth_header)
+    if crm_id:
+        list_id = lookup_list_by_api(url, crm_id, data['api_key'], auth_header)
+        if list_id:
+            try:
                 data['id'] = crm_id
                 field = "p[%s]" % list_id
                 data[field] = list_id
                 data["api_action"] = "contact_edit"
-
                 r = requests.post(url, headers=auth_header, data=data)
                 if r.status_code == 200:
                     try:
@@ -92,12 +139,15 @@ def update_contact_in_crm(url, auth_header, data, configs):
                 else:
                     print("ERROR: Updating contact via API failed.", data['email'])
                     return "err_update"
-        except JSONDecodeError:
-            print("JSON DECODE ERROR!", str(data["email"]))
-            return "err_other"
+            except JSONDecodeError:
+                print("JSON DECODE ERROR!", str(data["email"]))
+                return "err_other"
+        else:
+            print("ERROR: Missing CRM List. Create contact via API failed.", data['email'])
+            return "err_list"
     else:
-        print("ERROR: Missing list. Create contact via API failed.", data['email'])
-        return "err_list"
+        print("ERROR: Missing CRM ID. Create contact via API failed.", data['email'])
+        return "err_other"
     return crm_id
 
 
