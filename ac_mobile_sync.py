@@ -31,17 +31,17 @@ def write_config(config, dir_path):
         json.dump(config, f)
 
 
-def build_contact_data(data, api_key, list_id):
+def build_contact_data(data, api_key, mobile_status):
     d = collections.OrderedDict()
     d["api_key"] = api_key
     d["api_action"] = "contact_edit"
     d["api_output"] = "json"
-    d["email"] = str(data['contacts_mobile_mv.email_address']).replace("\r", "").strip()
+    d["email"] = str(data['cm.email_address']).replace("\r", "").strip()
     d["id"] = None
     d["overwrite"] = "0"
     # all custom contacts fields
-    d["field[%mobile_number%,0]"] = str(data['contacts_mobile_mv.email_address'])
-    d["field[%mobile_optin%,0]"] = str(data['contacts_mobile_mv.email_address'])
+    d["field[%mobile_number%,0]"] = str(data['cm.mobile_number'])
+    d["field[%mobile_optin%,0]"] = mobile_status
 
 
 def lookup_crm_id_and_last_venue_by_api(url, data, auth_header, redo=False):
@@ -106,7 +106,6 @@ def active_campaign_sync():
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
     last_ac_mobile_sync = configs["last_ac_mobile_sync"]
     url = "https://heliumcomedy.api-us1.com/admin/api.php"
-    list_mappings = fetch_crm_list_mapping(configs)
     db = _mysql.connect(user=configs['db_user'],
                         passwd=configs['db_password'],
                         port=configs['db_port'],
@@ -115,8 +114,8 @@ def active_campaign_sync():
 
     print("~~~~~ PROCESSING CONTACTS ~~~~~")
     db.query(
-        """SELECT 
-            cm.email_address, cm.mobile_number, 
+        """SELECT
+            cm.email_address, cm.mobile_number,
             cm.mobile_status as mobile_status, cm.last_message_date as mobile_date,
             ac.optin_status as ac_status, ac.date_last_updated as ac_date
         FROM contacts_mobile_mv cm
@@ -142,13 +141,33 @@ def active_campaign_sync():
     db.close()
 
     for contact_info in contacts:
-        import ipdb; ipdb.set_trace();
-        if bool(contact_info["contacts_mobile_mv.ac_status"]):
+        mobile_status = None
+        mu_status = 'Yes' if contact_info["cm.mobile_status"] == 'Subscribed' else 'No'
+
+        # Check for:
+        # 1. SE Contact w/o AC Mobile Info --> take MU status
+        # 2. Different statuses btwn AC & Mobile Uploads (TO DO!!)
+        #    --> take status from most recent update date
+        if not contact_info["ac.ac_status"]:
+            mobile_status = mu_status
+        elif contact_info["ac.ac_status"]:
+            ac_status = contact_info["ac.ac_status"].capitalize()
+            # ensure statuses are different...
+            if ac_status != mu_status:
+                mu_date = datetime.strptime(contact_info['cm.mobile_date'], '%Y-%m-%d %H:%M:%S')
+                ac_date = datetime.strptime(contact_info['ac.ac_date'], '%Y-%m-%d %H:%M:%S')
+                if ac_date > mu_date:
+                    mobile_status = ac_status
+                elif mu_date > ac_date:
+                    mobile_status = mu_status
+
+        # if we've established a definitive status, move formward
+        if mobile_status:
             try:
-                contact_data = build_contact_data(contact_info, configs["Api-Token"])
-            except Exception as build_err:
-                contact_err['other'].append(str(contact_info['contacts_mobile_mv.email_address']))
-                print("BUILD CONTACT DATA FAILED!", str(contact_info["contacts_mobile_mv.email_address"]))
+                contact_data = build_contact_data(contact_info, configs["Api-Token"], mobile_status)
+            except Exception:
+                contact_err['other'].append(str(contact_info['cm.email_address']))
+                print("BUILD CONTACT DATA FAILED!", str(contact_info["cm.email_address"]))
             else:
                 try:
                     if contact_data:
@@ -158,15 +177,15 @@ def active_campaign_sync():
                             contact_count += 1
                         else:
                             if updated == 'err_list':
-                                contact_err['list'].append(str(contact_info['contacts_mobile_mv.email_address']))
+                                contact_err['list'].append(str(contact_info['cm.email_address']))
                             elif updated == 'err_add':
-                                contact_err['add'].append(str(contact_info['contacts_mobile_mv.email_address']))
+                                contact_err['add'].append(str(contact_info['cm.email_address']))
                             elif updated == 'err_update':
-                                contact_err['update'].append(str(contact_info['contacts_mobile_mv.email_address']))
+                                contact_err['update'].append(str(contact_info['cm.email_address']))
                             else:
-                                    contact_err['other'].append(str(contact_info['contacts_mobile_mv.email_address']))
+                                    contact_err['other'].append(str(contact_info['cm.email_address']))
                 except requests.exceptions.SSLError:
-                    contact_err["ssl"].append(str(contact_info['contacts_mobile_mv.email_address']))
+                    contact_err["ssl"].append(str(contact_info['cm.email_address']))
 
         if contact_count % 500 == 0:
             print('Check in - #%s' % contact_count)
@@ -203,7 +222,7 @@ def active_campaign_sync():
     # server.sendmail(sender, recipients, msg)
     # server.quit()
 
-   
+
 if __name__ == '__main__':
     active_campaign_sync()
-    
+
