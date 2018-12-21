@@ -1,0 +1,26 @@
+{
+  "name": "lambda-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bignumber": "^1.1.0",
+    "core-util-is": "^1.0.2",
+    "http": "0.0.0",
+    "inherits": "^2.0.3",
+    "isarray": "^2.0.4",
+    "mysql": "^2.16.0",
+    "process-nextick-args": "^2.0.0",
+    "readable-stream": "^3.1.0",
+    "safe-buffer": "^5.1.2",
+    "sqlstring": "^2.3.1",
+    "string_decoder": "^1.2.0",
+    "util-deprecate": "^1.0.2"
+  }
+}
