@@ -40,8 +40,8 @@ def build_contact_data(data, api_key, mobile_status):
     d["id"] = None
     d["overwrite"] = "0"
     # all custom contacts fields
-    d["field[%mobile_number%,0]"] = str(data['cm.mobile_number'])
-    d["field[%mobile_optin%,0]"] = mobile_status
+    d["field[%MOBILE_NUMBER%,0]"] = str(data['cm.mobile_number'])
+    d["field[%MOBILE_OPTIN%,0]"] = mobile_status
     return d
 
 def lookup_crm_id_by_api(url, data, auth_header):
@@ -113,10 +113,8 @@ def update_contact_tags(url, auth_header, data, tag, configs):
 
 def update_contact_in_crm(url, auth_header, data, configs):
     crm_id = lookup_crm_id_by_api(url, data, auth_header)
-    import ipdb; ipdb.set_trace();
-    if crm_id:
+        if crm_id:
         list_id = lookup_list_by_api(url, crm_id, data['api_key'], auth_header)
-        import ipdb; ipdb.set_trace();
         if list_id:
             try:
                 data['id'] = crm_id
@@ -127,6 +125,7 @@ def update_contact_in_crm(url, auth_header, data, configs):
                 if r.status_code == 200:
                     try:
                         if r.json()["result_code"] != 0:
+                            print("%s - %s" % (crm_id, data['field[%MOBILE_OPTIN%,0]']))
                             return "success"
                         else:
                             print("ERROR: Updating contact via API failed.", data['email'])
