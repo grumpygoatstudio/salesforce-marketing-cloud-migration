@@ -13,5 +13,8 @@
     "db_user": "",
     "db_password": "",
     "db_name": "",
-    "db_port": ""
+    "db_port": "",
+    "last_crm_sync": "2018-01-01T00:00:01", 
+    "last_crm_contacts_sync": "2018-01-01T00:00:01",
+    "last_ac_mobile_sync": "2018-01-01T00:00:01"
 }
