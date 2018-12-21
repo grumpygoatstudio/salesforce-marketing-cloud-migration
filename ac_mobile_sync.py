@@ -113,8 +113,10 @@ def update_contact_tags(url, auth_header, data, tag, configs):
 
 def update_contact_in_crm(url, auth_header, data, configs):
     crm_id = lookup_crm_id_by_api(url, data, auth_header)
+    import ipdb; ipdb.set_trace();
     if crm_id:
         list_id = lookup_list_by_api(url, crm_id, data['api_key'], auth_header)
+        import ipdb; ipdb.set_trace();
         if list_id:
             try:
                 data['id'] = crm_id
@@ -234,13 +236,13 @@ def active_campaign_sync():
                 except requests.exceptions.SSLError:
                     contact_err["ssl"].append(str(contact_info['cm.email_address']))
 
-        # if contact_count % 500 == 0:
-        #     print('Check in - #%s' % contact_count)
+        if contact_count % 500 == 0:
+            print('Check in - #%s' % contact_count)
 
-        # if contact_count % chunk_size == 0:
-        #     chunk_num += 1
-        #     print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
-        #     sleep(1800) # sleep for 30 min to avoid SSL Errors
+        if contact_count % chunk_size == 0:
+            chunk_num += 1
+            print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
+            sleep(1800) # sleep for 30 min to avoid SSL Errors
 
     d = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     configs['last_ac_mobile_sync'] = d
