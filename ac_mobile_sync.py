@@ -44,7 +44,7 @@ def build_contact_data(data, api_key, mobile_status):
     d["field[%mobile_optin%,0]"] = mobile_status
     return d
 
-def lookup_crm_id_by_api(url, data, auth_header, redo=False):
+def lookup_crm_id_by_api(url, data, auth_header):
     data["api_action"] = "contact_view_email"
     try:
         r = requests.post(url, headers=auth_header, data=data)
@@ -57,10 +57,7 @@ def lookup_crm_id_by_api(url, data, auth_header, redo=False):
             print("JSON DECODE ERROR!", str(data["email"]))
             return None
     except Exception:
-        if not redo:
-            lookup_crm_id_by_api(url, data, auth_header, redo=True)
-        else:
-            return None
+        return None
 
 
 def add_tag_to_contact(url, crm_id, tag, api_key, auth_header):
@@ -216,15 +213,13 @@ def active_campaign_sync():
         if mobile_status:
             try:
                 contact_data = build_contact_data(contact_info, configs["Api-Token"], mobile_status)
-                import ipdb; ipdb.set_trace();
             except Exception:
                 contact_err['other'].append(str(contact_info['cm.email_address']))
                 print("BUILD CONTACT DATA FAILED!", str(contact_info["cm.email_address"]))
             else:
                 try:
                     if contact_data:
-                        updated = update_contact_in_crm(
-                            url, auth_header, contact_data, configs)
+                        updated = update_contact_in_crm(url, auth_header, contact_data, configs)
                         if updated == 'success':
                             contact_count += 1
                         else:
