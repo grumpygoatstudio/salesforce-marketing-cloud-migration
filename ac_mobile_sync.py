@@ -113,7 +113,7 @@ def update_contact_tags(url, auth_header, data, tag, configs):
 
 def update_contact_in_crm(url, auth_header, data, configs):
     crm_id = lookup_crm_id_by_api(url, data, auth_header)
-        if crm_id:
+    if crm_id:
         list_id = lookup_list_by_api(url, crm_id, data['api_key'], auth_header)
         if list_id:
             try:
