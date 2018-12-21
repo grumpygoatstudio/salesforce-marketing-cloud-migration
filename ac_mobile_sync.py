@@ -42,7 +42,7 @@ def build_contact_data(data, api_key, mobile_status):
     # all custom contacts fields
     d["field[%mobile_number%,0]"] = str(data['cm.mobile_number'])
     d["field[%mobile_optin%,0]"] = mobile_status
-
+    return d
 
 def lookup_crm_id_and_last_venue_by_api(url, data, auth_header, redo=False):
     data["api_action"] = "contact_view_email"
@@ -68,6 +68,7 @@ def lookup_crm_id_and_last_venue_by_api(url, data, auth_header, redo=False):
 
 def update_contact_in_crm(url, auth_header, data, configs):
     crm_id, list_id = lookup_crm_id_and_last_venue_by_api(url, data, auth_header)
+    import ipdb; ipdb.set_trace();
     if list_id not in [None, "None", ""]:
         try:
             if crm_id:
@@ -165,6 +166,7 @@ def active_campaign_sync():
         if mobile_status:
             try:
                 contact_data = build_contact_data(contact_info, configs["Api-Token"], mobile_status)
+                import ipdb; ipdb.set_trace();
             except Exception:
                 contact_err['other'].append(str(contact_info['cm.email_address']))
                 print("BUILD CONTACT DATA FAILED!", str(contact_info["cm.email_address"]))
@@ -172,7 +174,7 @@ def active_campaign_sync():
                 try:
                     if contact_data:
                         updated = update_contact_in_crm(
-                            url, auth_header, contact_data, configs, home_venue)
+                            url, auth_header, contact_data, configs)
                         if updated == 'success':
                             contact_count += 1
                         else:
@@ -183,17 +185,17 @@ def active_campaign_sync():
                             elif updated == 'err_update':
                                 contact_err['update'].append(str(contact_info['cm.email_address']))
                             else:
-                                    contact_err['other'].append(str(contact_info['cm.email_address']))
+                                contact_err['other'].append(str(contact_info['cm.email_address']))
                 except requests.exceptions.SSLError:
                     contact_err["ssl"].append(str(contact_info['cm.email_address']))
 
-        if contact_count % 500 == 0:
-            print('Check in - #%s' % contact_count)
+        # if contact_count % 500 == 0:
+        #     print('Check in - #%s' % contact_count)
 
-        if contact_count % chunk_size == 0:
-            chunk_num += 1
-            print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
-            sleep(1800) # sleep for 30 min to avoid SSL Errors
+        # if contact_count % chunk_size == 0:
+        #     chunk_num += 1
+        #     print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
+        #     sleep(1800) # sleep for 30 min to avoid SSL Errors
 
     d = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     configs['last_ac_mobile_sync'] = d
