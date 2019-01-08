@@ -143,7 +143,7 @@ def active_campaign_sync(backlog=False):
             AND cm.email_address IS NOT NULL
             AND ((ac.optin_status IS NULL) OR (ac.optin_status = 'Yes' AND cm.mobile_status != 'Subscribed') OR (ac.optin_status = 'No' AND cm.mobile_status = 'Subscribed'))
             ORDER BY cm.email_address, cm.mobile_number, cm.last_message_date;
-            """ % (last_ac_mobile_sync.replace('T', ' '))
+            """
         )
     else:
         db.query(
@@ -235,7 +235,7 @@ def active_campaign_sync(backlog=False):
     configs['last_ac_mobile_sync'] = d
 
     # WRITE NEW DATETIME FOR LAST CRM SYNC
-    # write_config(configs, dir_path)
+    write_config(configs, dir_path)
 
     print("AC Mobile Sync Completed - " + configs['last_ac_mobile_sync'] + '\n')
 
