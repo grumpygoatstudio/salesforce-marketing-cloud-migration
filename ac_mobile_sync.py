@@ -170,9 +170,6 @@ def active_campaign_sync(backlog=False):
     contacts = []
     contact_count = 0
     contact_err = {"list": [], "add": [], "update": [], "ssl": [], "other": []}
-    chunk_size = 5000
-    chunk_num = 0
-
     more_rows = True
     while more_rows:
         try:
@@ -229,13 +226,13 @@ def active_campaign_sync(backlog=False):
                     except requests.exceptions.SSLError:
                         contact_err["ssl"].append(str(contact_info['cm.email_address']))
 
-        if contact_count % 500 == 0:
-            print('Check in - #%s' % contact_count)
+        # if contact_count % 500 == 0:
+        #     print('Check in - #%s' % contact_count)
 
-        if contact_count % chunk_size == 0:
-            chunk_num += 1
-            print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
-            sleep(1800) # sleep for 30 min to avoid SSL Errors
+        # if contact_count % chunk_size == 0:
+        #     chunk_num += 1
+        #     print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
+        #     sleep(1800) # sleep for 30 min to avoid SSL Errors
 
     d = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     configs['last_ac_mobile_sync'] = d
