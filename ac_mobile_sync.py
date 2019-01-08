@@ -88,7 +88,6 @@ def update_contact_in_crm(url, auth_header, data, configs):
                 data[field] = list_id
                 data["api_action"] = "contact_edit"
                 r = requests.post(url, headers=auth_header, data=data)
-                import ipdb; ipdb.set_trace();
                 if r.status_code == 200:
                     try:
                         if r.json()["result_code"] != 0:
