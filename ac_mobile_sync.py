@@ -88,6 +88,7 @@ def update_contact_in_crm(url, auth_header, data, configs):
                 data[field] = list_id
                 data["api_action"] = "contact_edit"
                 r = requests.post(url, headers=auth_header, data=data)
+                import ipdb; ipdb.set_trace();
                 if r.status_code == 200:
                     try:
                         if r.json()["result_code"] != 0:
@@ -167,7 +168,7 @@ def active_campaign_sync(backlog=False):
     contact_count = 0
     contact_err = {"list": [], "add": [], "update": [], "ssl": [], "other": []}
     chunk_size = 5000
-    chunk_num = 0
+    chunk_num = 1
 
     more_rows = True
     while more_rows:
