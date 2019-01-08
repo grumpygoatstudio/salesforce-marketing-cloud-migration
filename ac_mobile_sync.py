@@ -182,50 +182,52 @@ def active_campaign_sync(backlog=False):
     db.close()
 
     for contact_info in contacts:
-        mobile_status = None
-        mu_status = 'Yes' if contact_info["cm.mobile_status"] == 'Subscribed' else 'No'
+        # verify email address is not null / none
+        if contact_info["cm.email_address"]:
+            mobile_status = None
+            mu_status = 'Yes' if contact_info["cm.mobile_status"] == 'Subscribed' else 'No'
 
-        # Check for:
-        # 1. SE Contact w/o AC Mobile Info --> take MU status
-        # 2. Different statuses btwn AC & Mobile Uploads (TO DO!!)
-        #    --> take status from most recent update date
-        if not contact_info["ac.ac_status"]:
-            mobile_status = mu_status
-        elif contact_info["ac.ac_status"]:
-            ac_status = contact_info["ac.ac_status"].capitalize()
-            # ensure statuses are different...
-            if ac_status != mu_status:
-                mu_date = datetime.strptime(contact_info['cm.mobile_date'], '%Y-%m-%d %H:%M:%S')
-                ac_date = datetime.strptime(contact_info['ac.ac_date'], '%Y-%m-%d %H:%M:%S')
-                if ac_date > mu_date:
-                    mobile_status = ac_status
-                elif mu_date > ac_date:
-                    mobile_status = mu_status
+            # Check for:
+            # 1. SE Contact w/o AC Mobile Info --> take MU status
+            # 2. Different statuses btwn AC & Mobile Uploads (TO DO!!)
+            #    --> take status from most recent update date
+            if not contact_info["ac.ac_status"]:
+                mobile_status = mu_status
+            elif contact_info["ac.ac_status"]:
+                ac_status = contact_info["ac.ac_status"].capitalize()
+                # ensure statuses are different...
+                if ac_status != mu_status:
+                    mu_date = datetime.strptime(contact_info['cm.mobile_date'], '%Y-%m-%d %H:%M:%S')
+                    ac_date = datetime.strptime(contact_info['ac.ac_date'], '%Y-%m-%d %H:%M:%S')
+                    if ac_date > mu_date:
+                        mobile_status = ac_status
+                    elif mu_date > ac_date:
+                        mobile_status = mu_status
 
-        # if we've established a definitive status, move formward
-        if mobile_status:
-            try:
-                contact_data = build_contact_data(contact_info, configs["Api-Token"], mobile_status)
-            except Exception:
-                contact_err['other'].append(str(contact_info['cm.email_address']))
-                print("BUILD CONTACT DATA FAILED!", str(contact_info["cm.email_address"]))
-            else:
+            # if we've established a definitive status, move formward
+            if mobile_status:
                 try:
-                    if contact_data:
-                        updated = update_contact_in_crm(url, auth_header, contact_data, configs)
-                        if updated == 'success':
-                            contact_count += 1
-                        else:
-                            if updated == 'err_list':
-                                contact_err['list'].append(str(contact_info['cm.email_address']))
-                            elif updated == 'err_add':
-                                contact_err['add'].append(str(contact_info['cm.email_address']))
-                            elif updated == 'err_update':
-                                contact_err['update'].append(str(contact_info['cm.email_address']))
+                    contact_data = build_contact_data(contact_info, configs["Api-Token"], mobile_status)
+                except Exception:
+                    contact_err['other'].append(str(contact_info['cm.email_address']))
+                    print("BUILD CONTACT DATA FAILED!", str(contact_info["cm.email_address"]))
+                else:
+                    try:
+                        if contact_data:
+                            updated = update_contact_in_crm(url, auth_header, contact_data, configs)
+                            if updated == 'success':
+                                contact_count += 1
                             else:
-                                contact_err['other'].append(str(contact_info['cm.email_address']))
-                except requests.exceptions.SSLError:
-                    contact_err["ssl"].append(str(contact_info['cm.email_address']))
+                                if updated == 'err_list':
+                                    contact_err['list'].append(str(contact_info['cm.email_address']))
+                                elif updated == 'err_add':
+                                    contact_err['add'].append(str(contact_info['cm.email_address']))
+                                elif updated == 'err_update':
+                                    contact_err['update'].append(str(contact_info['cm.email_address']))
+                                else:
+                                    contact_err['other'].append(str(contact_info['cm.email_address']))
+                    except requests.exceptions.SSLError:
+                        contact_err["ssl"].append(str(contact_info['cm.email_address']))
 
         if contact_count % 500 == 0:
             print('Check in - #%s' % contact_count)
