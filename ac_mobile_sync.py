@@ -28,7 +28,6 @@ def write_config(config, dir_path):
 
 
 def build_contact_data(data, api_key, mobile_status):
-    import ipdb; ipdb.set_trace();
     d = collections.OrderedDict()
     d["api_key"] = api_key
     d["api_action"] = "contact_edit"
@@ -43,7 +42,6 @@ def build_contact_data(data, api_key, mobile_status):
 
 
 def lookup_crm_id_by_api(url, data, auth_header):
-    import ipdb; ipdb.set_trace();
     data["api_action"] = "contact_view_email"
     try:
         r = requests.post(url, headers=auth_header, data=data)
@@ -60,7 +58,6 @@ def lookup_crm_id_by_api(url, data, auth_header):
 
 
 def lookup_list_by_api(url, crm_id, api_key, auth_header):
-    import ipdb; ipdb.set_trace();
     d = collections.OrderedDict()
     d["api_key"] = api_key
     d["api_action"] = "contact_view"
@@ -81,7 +78,6 @@ def lookup_list_by_api(url, crm_id, api_key, auth_header):
 
 
 def update_contact_in_crm(url, auth_header, data, configs):
-    import ipdb; ipdb.set_trace();
     crm_id = lookup_crm_id_by_api(url, data, auth_header)
     if crm_id:
         list_id = lookup_list_by_api(url, crm_id, data['api_key'], auth_header)
@@ -92,6 +88,7 @@ def update_contact_in_crm(url, auth_header, data, configs):
                 data[field] = list_id
                 data["api_action"] = "contact_edit"
                 r = requests.post(url, headers=auth_header, data=data)
+                import ipdb; ipdb.set_trace();
                 if r.status_code == 200:
                     try:
                         if r.json()["result_code"] != 0:
