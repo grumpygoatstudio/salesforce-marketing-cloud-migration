@@ -11,14 +11,10 @@ from time import sleep
 
 
 parser = OptionParser()
-parser.add_option("-p", "--postprocess", dest="postprocess", type="string",
-                  help="Run only postprocessing scripts for show attendees in last 24 hours", metavar="postprocess")
-parser.add_option("-e", "--extrapush", dest="extrapush", type="string",
-                  help="push the contacts to AC again, don't update last_sync date", metavar="extrapush")
-
+parser.add_option("-b", "--backlog", dest="backlog", type="string",
+                  help="Run tag updates for backlog items", metavar="backlog")
 reload(sys)
 sys.setdefaultencoding('utf-8')
-# sentry_sdk.init("https://8e6ee04ac6b14915a677ced85ab320f0@sentry.io/1286483")
 
 
 def load_config(dir_path):
@@ -44,6 +40,7 @@ def build_contact_data(data, api_key, mobile_status):
     d["field[%MOBILE_OPTIN%,0]"] = mobile_status
     return d
 
+
 def lookup_crm_id_by_api(url, data, auth_header):
     data["api_action"] = "contact_view_email"
     try:
@@ -55,27 +52,6 @@ def lookup_crm_id_by_api(url, data, auth_header):
                 return None
         except JSONDecodeError:
             print("JSON DECODE ERROR!", str(data["email"]))
-            return None
-    except Exception:
-        return None
-
-
-def add_tag_to_contact(url, crm_id, tag, api_key, auth_header):
-    d = collections.OrderedDict()
-    d["api_key"] = api_key
-    d["api_action"] = "contact_tag_add"
-    d["api_output"] = "json"
-    d["id"] = crm_id
-    d["tags"] = tag
-    try:
-        r = requests.post(url, headers=auth_header, data=d)
-        try:
-            if r.status_code == 200 and r.json()["result_code"] != 0:
-                return True
-            else:
-                return None
-        except JSONDecodeError:
-            print("JSON DECODE ERROR!", str(d["id"]))
             return None
     except Exception:
         return None
@@ -99,16 +75,6 @@ def lookup_list_by_api(url, crm_id, api_key, auth_header):
             return None
     except Exception:
         return None
-
-
-def update_contact_tags(url, auth_header, data, tag, configs):
-    crm_id = lookup_crm_id_by_api(url, data, auth_header)
-    if crm_id:
-        add_tag_to_contact(url, crm_id, tag, data['api_key'], auth_header)
-    else:
-        print("ERROR: Missing CRM ID. Create contact via API failed.", data['email'])
-        return "err_other"
-    return crm_id
 
 
 def update_contact_in_crm(url, auth_header, data, configs):
@@ -149,7 +115,7 @@ def update_contact_in_crm(url, auth_header, data, configs):
     return crm_id
 
 
-def active_campaign_sync():
+def active_campaign_sync(backlog=False):
     dir_path = os.path.dirname(os.path.abspath(__file__))
     configs = load_config(dir_path)
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -162,19 +128,40 @@ def active_campaign_sync():
                         db=configs['db_name'])
 
     print("~~~~~ PROCESSING CONTACTS ~~~~~")
-    db.query(
-        """SELECT
-            cm.email_address, cm.mobile_number,
-            cm.mobile_status as mobile_status, cm.last_message_date as mobile_date,
-            ac.optin_status as ac_status, ac.date_last_updated as ac_date
-        FROM contacts_mobile_mv cm
-        LEFT JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
-        WHERE cm.last_message_date BETWEEN \'%s\' AND NOW()
-        AND cm.email_address IS NOT NULL
-        AND ((ac.optin_status IS NULL) OR (ac.optin_status = 'Yes' AND cm.mobile_status != 'Subscribed') OR (ac.optin_status = 'No' AND cm.mobile_status = 'Subscribed'))
-        ORDER BY cm.email_address, cm.mobile_number, cm.last_message_date;
-        """ % (last_ac_mobile_sync.replace('T', ' '))
-    )
+
+    if backlog:
+        db.query(
+            """SELECT
+                cm.email_address,
+                cm.mobile_number,
+                cm.mobile_status as mobile_status,
+                cm.last_message_date as mobile_date,
+                ac.optin_status as ac_status,
+                ac.date_last_updated as ac_date
+            FROM contacts_mobile_mv cm
+            LEFT JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
+            AND cm.email_address IS NOT NULL
+            AND ((ac.optin_status IS NULL) OR (ac.optin_status = 'Yes' AND cm.mobile_status != 'Subscribed') OR (ac.optin_status = 'No' AND cm.mobile_status = 'Subscribed'))
+            ORDER BY cm.email_address, cm.mobile_number, cm.last_message_date;
+            """ % (last_ac_mobile_sync.replace('T', ' '))
+        )
+    else:
+        db.query(
+            """SELECT
+                cm.email_address,
+                cm.mobile_number,
+                cm.mobile_status as mobile_status,
+                cm.last_message_date as mobile_date,
+                ac.optin_status as ac_status,
+                ac.date_last_updated as ac_date
+            FROM contacts_mobile_mv cm
+            LEFT JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
+            WHERE cm.last_message_date BETWEEN \'%s\' AND NOW()
+            AND cm.email_address IS NOT NULL
+            AND ((ac.optin_status IS NULL) OR (ac.optin_status = 'Yes' AND cm.mobile_status != 'Subscribed') OR (ac.optin_status = 'No' AND cm.mobile_status = 'Subscribed'))
+            ORDER BY cm.email_address, cm.mobile_number, cm.last_message_date;
+            """ % (last_ac_mobile_sync.replace('T', ' '))
+        )
     r = db.store_result()
     contacts = []
     contact_count = 0
@@ -273,5 +260,8 @@ def active_campaign_sync():
 
 
 if __name__ == '__main__':
-    active_campaign_sync()
-
+    (options, args) = parser.parse_args()
+    if options.backlog:
+        active_campaign_sync(backlog=True)
+    else:
+        active_campaign_sync()
