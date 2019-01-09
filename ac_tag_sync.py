@@ -33,6 +33,7 @@ def get_ac_tags(url, auth_header):
         r = requests.get(url + 'tags', headers=auth_header)
         try:
             if r.status_code == 200:
+                print(r.json()['tags'])
                 return r.json()['tags']
             else:
                 return None
@@ -53,6 +54,7 @@ def create_ac_tag(url, auth_header, title):
         r = requests.post(url + 'tags', headers=auth_header, data=d)
         try:
             if r.status_code == 201:
+                import ipdb; ipdb.set_trace();
                 return r.json()['tags']
             else:
                 return None
@@ -72,6 +74,7 @@ def lookup_crm_id_by_api(auth_header, email):
         d["api_output"] = "json"
         d["email"] = str(email).replace("\r", "").strip()
         r = requests.post(url, headers=auth_header, data=d)
+        import ipdb; ipdb.set_trace();
         try:
             if r.status_code == 200 and r.json()["result_code"] != 0:
                 return r.json()["id"]
@@ -192,11 +195,13 @@ def active_campaign_sync(backlog=False):
 
     # get full list of AC tags
     ac_tags = set([t['tag'] for t in get_ac_tags(url, auth_header)])
+    import ipdb; ipdb.set_trace();
     # update AC with all new tags
     for tag in list(tags.difference(ac_tags)):
         create_ac_tag(url, auth_header, tag)
     # create dict lookup form full list of AC tags
     ac_tags = {t['tag']: t['id'] for t in get_ac_tags(url, auth_header)}
+    import ipdb; ipdb.set_trace();
 
     # assign contact's tags to them in AC
     for contact_info in contacts:
