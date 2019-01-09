@@ -42,6 +42,7 @@ def get_ac_tags(url, auth_header):
         return None
 
 def create_ac_tag(url, auth_header, title):
+    print("Creating a new tag\t", title)
     d = {"tag": {
         "tag": title,
         "tagType": "contact",
@@ -83,6 +84,7 @@ def lookup_crm_id_by_api(auth_header, email):
 
 
 def add_tag_to_contact(url, auth_header, crm_id, tag_id):
+    print("Adding tag(%s) to contact(%s)" % (crm_id, tag_id))
     d = {"contactTag": {
         "contact": crm_id,
         "tag": tag_id
@@ -197,14 +199,6 @@ def active_campaign_sync(backlog=False):
             contact_count += 1
         except requests.exceptions.SSLError:
             contact_err["ssl"].append(str(contact_info['cm.email_address']))
-
-        if contact_count % 500 == 0:
-            print('Check in - #%s' % contact_count)
-
-        if contact_count % chunk_size == 0:
-            chunk_num += 1
-            print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
-            sleep(1800) # sleep for 30 min to avoid SSL Errors
 
     print("AC Tags Sync Completed - " + datetime.now().strftime("%Y-%m-%dT%H:%M:%S") + '\n')
 
