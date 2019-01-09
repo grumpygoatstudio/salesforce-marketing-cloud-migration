@@ -166,10 +166,12 @@ def active_campaign_sync(backlog=False):
         db.query(
             """SELECT
                 cm.email_address as email,
-                mu.campaign as campaign
+                mu.campaign as campaign,
+                tt.tag as tag
             FROM contacts_mobile_mv cm
             LEFT JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
             JOIN mobile_uploads mu ON (mu.mobile_number = cm.mobile_number)
+            LEFT JOIN tag_temp tt ON (tt.campaign = mu.campaign)
             WHERE cm.last_message_date BETWEEN \'%s\' AND NOW()
             AND cm.email_address IS NOT NULL
             ORDER BY cm.email_address, cm.last_message_date;
