@@ -28,6 +28,7 @@ def write_config(config, dir_path):
 
 
 def get_ac_tags(url, auth_header):
+    import ipdb; ipdb.set_trace();
     try:
         r = requests.get(url + 'tags', headers=auth_header)
         try:
@@ -155,8 +156,9 @@ def active_campaign_sync(backlog=False):
         while more_rows:
             try:
                 record = r.fetch_row(how=2)[0]
-                contacts[record['email']].append(record['tag'])
-                tags.append(record['tag'])
+                import ipdb; ipdb.set_trace();
+                # contacts[record['email']].append(record['tag'])
+                # tags.append(record['tag'])
             except IndexError:
                 more_rows = False
         db.close()
@@ -178,8 +180,8 @@ def active_campaign_sync(backlog=False):
         while more_rows:
             try:
                 record = r.fetch_row(how=2)[0]
-                contacts[record['email']].append(record['campaign'])
-                tags.append(record['campaign'])
+                # contacts[record['email']].append(record['campaign'])
+                # tags.append(record['campaign'])
             except IndexError:
                 more_rows = False
         db.close()
