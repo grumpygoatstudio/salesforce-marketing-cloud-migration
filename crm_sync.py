@@ -178,7 +178,7 @@ def active_campaign_sync():
     orders_url = configs['Api-Url'] + 'ecomOrders'
     customers_url = configs['Api-Url'] + 'ecomCustomers'
     venues = [(1, '3'), (5, '4'), (6, '5'), (7, '6'), (21, '7'), (23, '10'),
-              (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2')]
+              (53, '11'), (63, '12'), (131, '9'), (133, '8'), (297, '2'), (335, '16')]
 
     # setup a completion email notifying Jason that a Month of Venue pushes has finished
     sender = "kevin@matsongroup.com"

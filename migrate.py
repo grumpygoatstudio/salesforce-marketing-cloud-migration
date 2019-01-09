@@ -325,7 +325,7 @@ def main(shows_pull=None):
     db.autocommit(True)
 
     # COLLECT AND PROCESS ALL DATA FROM API SOURCE
-    venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297]
+    venues = [1, 5, 6, 7, 21, 23, 53, 63, 131, 133, 297, 335]
     data = {
         "events": [],
         "shows": [],

@@ -222,14 +222,6 @@ def active_campaign_sync(backlog=False):
                     except requests.exceptions.SSLError:
                         contact_err["ssl"].append(str(contact_info['cm.email_address']))
 
-        # if contact_count % 500 == 0:
-        #     print('Check in - #%s' % contact_count)
-
-        # if contact_count % chunk_size == 0:
-        #     chunk_num += 1
-        #     print("Done chunk(#%s)! Sleeping for 30 min to avoid SSL issues..." % chunk_num)
-        #     sleep(1800) # sleep for 30 min to avoid SSL Errors
-
     d = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     configs['last_ac_mobile_sync'] = d
 
@@ -237,26 +229,6 @@ def active_campaign_sync(backlog=False):
     write_config(configs, dir_path)
 
     print("AC Mobile Sync Completed - " + configs['last_ac_mobile_sync'] + '\n')
-
-    # setup a completion email notifying Jason that a Month of Venue pushes has finished
-    # sender = "kevin@matsongroup.com"
-    # recipients = ["jason@matsongroup.com", "flygeneticist@gmail.com"]
-    # header = 'From: %s\n' % sender
-    # header += 'To: %s\n' % ", ".join(recipients)
-    # header += 'Subject: Completed DAILY AC Mobile Push - SeatEngine AWS\n'
-    # msg = header + \
-    #     "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily AC Mobile syncs have completed:\n\nSUCCESS: %s\nERRORS:\nAdd Errors:%s\nUpdate Errors:%s\nList Errors:%s\nSSL Errors:%s\nOther Errors:%s\n\n" % (
-    #         contact_count, len(contact_err['add']), len(contact_err['update']), len(contact_err['list']), len(contact_err['ssl']), len(contact_err['other']))
-    # msg += "\n\n----- ERROR DETAILS -----\nContacts:\nAdd: %s\nUpdate: %s\nList: %s\nSSL: %s\nOther: %s\n" % (
-    #     str(contact_err['add']), str(contact_err['update']), str(contact_err['list']), str(contact_err['ssl']), str(contact_err['other']))
-    # msg += "\n\n----- END OF REPORT -----"
-    # server = smtplib.SMTP('smtp.gmail.com', 587)
-    # server.ehlo()
-    # server.starttls()
-    # server.login(sender, "tie3Quoo!jaeneix2wah5chahchai%bi")
-    # server.sendmail(sender, recipients, msg)
-    # server.quit()
-
 
 if __name__ == '__main__':
     (options, args) = parser.parse_args()
