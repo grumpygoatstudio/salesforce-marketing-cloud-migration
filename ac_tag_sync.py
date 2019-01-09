@@ -140,15 +140,15 @@ def active_campaign_sync(backlog=False):
     if backlog:
         db.query(
             """SELECT
-                cm.email_address as email,
-                tt.tag as tag
-            FROM contacts_mobile_mv cm
-            LEFT JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
-            JOIN mobile_uploads mu ON (mu.mobile_number = cm.mobile_number)
-            JOIN tag_temp tt ON (tt.campaign = mu.campaign)
-            WHERE cm.email_address IS NOT NULL
-            AND tt.tag NOT LIKE 'IGNORE%'
-            ORDER BY cm.email_address, cm.last_message_date;
+                    cm.email_address as email,
+                    tt.tag as tag
+                FROM contacts_mobile_mv cm
+                LEFT JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
+                JOIN mobile_uploads mu ON (mu.mobile_number = cm.mobile_number)
+                JOIN tag_temp tt ON (tt.campaign = mu.campaign)
+                WHERE cm.email_address IS NOT NULL
+                AND tt.tag NOT LIKE 'IGNORE%'
+                ORDER BY cm.email_address;
             """
         )
         r = db.store_result()
@@ -157,8 +157,8 @@ def active_campaign_sync(backlog=False):
             try:
                 record = r.fetch_row(how=2)[0]
                 import ipdb; ipdb.set_trace();
-                # contacts[record['email']].append(record['tag'])
-                # tags.append(record['tag'])
+                contacts[record['email']].append(record['tag'])
+                tags.append(record['tag'])
             except IndexError:
                 more_rows = False
         db.close()
@@ -180,8 +180,9 @@ def active_campaign_sync(backlog=False):
         while more_rows:
             try:
                 record = r.fetch_row(how=2)[0]
-                # contacts[record['email']].append(record['campaign'])
-                # tags.append(record['campaign'])
+                import ipdb; ipdb.set_trace();
+                contacts[record['email']].append(record['campaign'])
+                tags.append(record['campaign'])
             except IndexError:
                 more_rows = False
         db.close()
