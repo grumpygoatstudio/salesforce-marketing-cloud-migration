@@ -156,7 +156,6 @@ def active_campaign_sync(backlog=False):
         while more_rows:
             try:
                 record = r.fetch_row(how=2)[0]
-                import ipdb; ipdb.set_trace();
                 contacts[record['cm.email']].add(record['tt.tag'])
                 tags.add(record['tt.tag'])
             except IndexError:
@@ -182,7 +181,6 @@ def active_campaign_sync(backlog=False):
         while more_rows:
             try:
                 record = r.fetch_row(how=2)[0]
-                import ipdb; ipdb.set_trace();
                 contacts[record['cm.email']].add(record['mu.campaign'])
                 if record['tt.tag'] not in [None, "", "None"]:
                     tags.add(record['tt.tag'])
