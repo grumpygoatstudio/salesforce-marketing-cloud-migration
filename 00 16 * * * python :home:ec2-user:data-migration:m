@@ -1,7 +1,0 @@
-00 16 * * * python /home/ec2-user/data-migration/migrate.py -s true >> /home/ec2-user/seatengine-api-shows-job.log 2>&1
-
-00 6 * * * python /home/ec2-user/data-migration/migrate.py >> /home/ec2-user/seatengine-api-orders-job.log 2>&1
-00 7 * * * python /home/ec2-user/data-migration/crm_sync_contacts.py >> /home/ec2-user/ac-api-contacts-job.log 2>&1 && python /home/ec2-user/data-migration/crm_sync_contacts.py -p true >> /home/ec2-user/ac-api-contacts-postprocess-job.log 2>&1 && python /home/ec2-user/data-migration/crm_sync.py >> /home/ec2-user/ac-api-orders-job.log 2>&1
-
-00 17 * * * python /home/ec2-user/data-migration/migrate.py >> /home/ec2-user/seatengine-api-orders-job.log 2>&1
-00 18 * * * python /home/ec2-user/data-migration/crm_sync_contacts.py -e true >> /home/ec2-user/ac-api-contacts-job.log 2>&1 && python /home/ec2-user/data-migration/crm_sync_contacts.py -p true >> /home/ec2-user/ac-api-contacts-postprocess-job.log 2>&1 && python /home/ec2-user/data-migration/crm_sync.py >> /home/ec2-user/ac-api-orders-job.log 2>&1
