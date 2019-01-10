@@ -27,14 +27,21 @@ def write_config(config, dir_path):
         json.dump(config, f)
 
 
-def get_ac_tags(url, auth_header):
+def get_ac_tags(api_key):
+    # uses the old v2 API due to bugs with v3 tag list retrieval
     import ipdb; ipdb.set_trace();
+    auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
+    url = "https://heliumcomedy.api-us1.com/admin/api.php"
     try:
-        r = requests.get(url + 'tags', headers=auth_header)
+        d = {
+            "api_key": api_key,
+            "api_action": "tag_list",
+            "api_output": "json"
+        }
+        r = requests.post(url + 'tags', headers=auth_header, data=d)
         try:
             if r.status_code == 200:
-                print(r.json()['tags'])
-                return r.json()['tags']
+                return r.json()
             else:
                 return None
         except JSONDecodeError:
@@ -44,6 +51,7 @@ def get_ac_tags(url, auth_header):
         return None
 
 def create_ac_tag(url, auth_header, title):
+    import ipdb; ipdb.set_trace();
     print("Creating a new tag\t", title)
     d = {"tag": {
         "tag": title,
@@ -54,7 +62,6 @@ def create_ac_tag(url, auth_header, title):
         r = requests.post(url + 'tags', headers=auth_header, data=d)
         try:
             if r.status_code == 201:
-                import ipdb; ipdb.set_trace();
                 return r.json()['tags']
             else:
                 return None
@@ -65,18 +72,19 @@ def create_ac_tag(url, auth_header, title):
         return None
 
 
-def lookup_crm_id_by_api(auth_header, email):
+def lookup_crm_id_by_api(api_key, email):
+    auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
     url = "https://heliumcomedy.api-us1.com/admin/api.php"
     try:
-        d = collections.OrderedDict()
-        d["api_key"] = auth_header["Api-Token"]
-        d["api_action"] = "contact_view_email"
-        d["api_output"] = "json"
-        d["email"] = str(email).replace("\r", "").strip()
+        d = {
+            "api_key": api_key,
+            "api_action": "contact_view_email",
+            "api_output": "json",
+            "email": str(email).replace("\r", "").strip()
+        }
         r = requests.post(url, headers=auth_header, data=d)
-        import ipdb; ipdb.set_trace();
         try:
-            if r.status_code == 200 and r.json()["result_code"] != 0:
+            if r.status_code == 200:
                 return r.json()["id"]
             else:
                 return None
@@ -108,7 +116,7 @@ def add_tag_to_contact(url, auth_header, crm_id, tag_id):
 
 
 def update_contact_tags(url, auth_header, email, contact_tags, ac_tags):
-    crm_id = lookup_crm_id_by_api(auth_header, email)
+    crm_id = lookup_crm_id_by_api(auth_header["Api-Token"], email)
     if crm_id:
         for tag in contact_tags:
             add_tag_to_contact(url + 'contactTags', auth_header, crm_id, ac_tags[tag])
@@ -194,13 +202,13 @@ def active_campaign_sync(backlog=False):
         db.close()
 
     # get full list of AC tags
-    ac_tags = set([t['tag'] for t in get_ac_tags(url, auth_header)])
+    ac_tags = set([t['name'] for t in get_ac_tags(auth_header["Api-Token"])])
     import ipdb; ipdb.set_trace();
     # update AC with all new tags
     for tag in list(tags.difference(ac_tags)):
         create_ac_tag(url, auth_header, tag)
-    # create dict lookup form full list of AC tags
-    ac_tags = {t['tag']: t['id'] for t in get_ac_tags(url, auth_header)}
+    # create dict lookup from newly updated list of AC tags
+    ac_tags = {t['name']: t['id'] for t in get_ac_tags(auth_header["Api-Token"])}
     import ipdb; ipdb.set_trace();
 
     # assign contact's tags to them in AC
