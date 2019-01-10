@@ -214,10 +214,10 @@ def active_campaign_sync(backlog=False):
     for contact_info in contacts:
         try:
             update_contact_tags(url, auth_header, contact_info, contacts[contact_info], ac_tags)
+            print("Added %s tags to contact - %s" % (len(contacts[contact_info]), contact_info))
             contact_count += 1
         except requests.exceptions.SSLError:
-            contact_err["ssl"].append(str(contact_info['cm.email_address']))
-
+            print("SSL Error encountered. Skipping contact / tag.", contact_info, contacts[contact_info])
     print("AC Tags Sync Completed - " + datetime.now().strftime("%Y-%m-%dT%H:%M:%S") + '\n')
 
 
