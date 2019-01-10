@@ -7,7 +7,6 @@ import _mysql
 from simplejson import JSONDecodeError
 from datetime import datetime
 from optparse import OptionParser
-from time import sleep
 
 
 parser = OptionParser()

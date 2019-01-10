@@ -85,7 +85,7 @@ def lookup_crm_id_by_api(api_key, email):
         }
         r = requests.post(url, headers=auth_header, data=d)
         try:
-            if r.status_code == 200 and r["result_code"] == 1:
+            if r.status_code == 200 and r.json()["result_code"] == 1:
                 return r.json()["id"]
             else:
                 return None
@@ -97,7 +97,6 @@ def lookup_crm_id_by_api(api_key, email):
 
 
 def add_tag_to_contact(url, auth_header, crm_id, tag_id):
-    import ipdb; ipdb.set_trace();
     d = {
         "contactTag": {
             "contact": str(crm_id),
@@ -146,9 +145,6 @@ def active_campaign_sync(backlog=False):
     print("~~~~~ PROCESSING CONTACTS ~~~~~")
     contacts = collections.defaultdict(set)
     tags = set()
-    contact_count = 0
-    chunk_size = 5000
-    chunk_num = 0
     more_rows = True
 
     if backlog:
@@ -218,9 +214,9 @@ def active_campaign_sync(backlog=False):
             result = update_contact_tags(url, auth_header, contact_info, contacts[contact_info], ac_tags)
             if result:
                 print("Added %s tags to contact - %s" % (len(contacts[contact_info]), contact_info))
-                contact_count += 1
         except requests.exceptions.SSLError:
             print("SSL Error encountered. Skipping contact / tag.", contact_info, contacts[contact_info])
+
     print("AC Tags Sync Completed - " + datetime.now().strftime("%Y-%m-%dT%H:%M:%S") + '\n')
 
 
