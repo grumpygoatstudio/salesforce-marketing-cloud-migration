@@ -35,7 +35,7 @@ def get_ac_tags(api_key):
     try:
         d = {
             "api_key": api_key,
-            "api_action": "tag_list",
+            "api_action": "tags_list",
             "api_output": "json"
         }
         r = requests.post(url, headers=auth_header, data=d)
@@ -50,9 +50,9 @@ def get_ac_tags(api_key):
     except Exception:
         return None
 
+
 def create_ac_tag(url, auth_header, title):
     import ipdb; ipdb.set_trace();
-    print("Creating a new tag\t", title)
     d = {"tag": {
         "tag": title,
         "tagType": "contact",
@@ -62,11 +62,12 @@ def create_ac_tag(url, auth_header, title):
         r = requests.post(url + 'tags', headers=auth_header, data=d)
         try:
             if r.status_code == 201:
+                print("Created a new tag\t", title, r['id'])
                 return r.json()['tags']
             else:
                 return None
         except JSONDecodeError:
-            print("JSON DECODE ERROR!")
+            print("JSON DECODE ERROR!", title)
             return None
     except Exception:
         return None
@@ -84,7 +85,7 @@ def lookup_crm_id_by_api(api_key, email):
         }
         r = requests.post(url, headers=auth_header, data=d)
         try:
-            if r.status_code == 200:
+            if r.status_code == 200 and r["result_code"] == 1:
                 return r.json()["id"]
             else:
                 return None
