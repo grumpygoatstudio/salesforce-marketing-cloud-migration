@@ -209,7 +209,6 @@ def active_campaign_sync(backlog=False):
         create_ac_tag(url, auth_header, tag)
     # create dict lookup from newly updated list of AC tags
     ac_tags = {t['name']: t['id'] for t in get_ac_tags(auth_header["Api-Token"])}
-    import ipdb; ipdb.set_trace();
 
     # assign contact's tags to them in AC
     for contact_info in contacts:
