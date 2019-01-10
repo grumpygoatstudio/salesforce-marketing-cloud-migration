@@ -33,7 +33,7 @@ def get_ac_tags(api_key):
     url = "https://heliumcomedy.api-us1.com/admin/api.php"
     try:
         d = {
-            "api_key": api_key,
+            "api_key": str(api_key),
             "api_action": "tags_list",
             "api_output": "json"
         }
@@ -74,16 +74,17 @@ def create_ac_tag(url, auth_header, title):
 
 
 def lookup_crm_id_by_api(api_key, email):
+    import ipdb; ipdb.set_trace();
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
     url = "https://heliumcomedy.api-us1.com/admin/api.php"
     try:
         d = {
-            "api_key": api_key,
+            "api_key": str(api_key),
             "api_action": "contact_view_email",
             "api_output": "json",
             "email": str(email).replace("\r", "").strip()
         }
-        r = requests.post(url, headers=auth_header, data=d)
+        r = requests.post(url, headers=auth_header, data=json.dumps(d))
         try:
             if r.status_code == 200 and r["result_code"] == 1:
                 return r.json()["id"]
@@ -97,13 +98,13 @@ def lookup_crm_id_by_api(api_key, email):
 
 
 def add_tag_to_contact(url, auth_header, crm_id, tag_id):
-    print("Adding tag(%s) to contact(%s)" % (crm_id, tag_id))
+    import ipdb; ipdb.set_trace();
     d = {"contactTag": {
-        "contact": crm_id,
-        "tag": tag_id
+        "contact": str(crm_id),
+        "tag": str(tag_id)
     }}
     try:
-        r = requests.post(url, headers=auth_header, data=d)
+        r = requests.post(url, headers=auth_header, data=json.dumps(d))
         try:
             if r.status_code == 200:
                 return True
