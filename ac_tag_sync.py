@@ -74,7 +74,6 @@ def create_ac_tag(url, auth_header, title):
 
 
 def lookup_crm_id_by_api(api_key, email):
-    import ipdb; ipdb.set_trace();
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
     url = "https://heliumcomedy.api-us1.com/admin/api.php"
     try:
@@ -84,7 +83,7 @@ def lookup_crm_id_by_api(api_key, email):
             "api_output": "json",
             "email": str(email).replace("\r", "").strip()
         }
-        r = requests.post(url, headers=auth_header, data=json.dumps(d))
+        r = requests.post(url, headers=auth_header, data=d)
         try:
             if r.status_code == 200 and r["result_code"] == 1:
                 return r.json()["id"]
@@ -99,14 +98,16 @@ def lookup_crm_id_by_api(api_key, email):
 
 def add_tag_to_contact(url, auth_header, crm_id, tag_id):
     import ipdb; ipdb.set_trace();
-    d = {"contactTag": {
-        "contact": str(crm_id),
-        "tag": str(tag_id)
-    }}
+    d = {
+        "contactTag": {
+            "contact": str(crm_id),
+            "tag": str(tag_id)
+        }
+    }
     try:
         r = requests.post(url, headers=auth_header, data=json.dumps(d))
         try:
-            if r.status_code == 200:
+            if r.status_code == 201:
                 return True
             else:
                 return None
@@ -214,9 +215,10 @@ def active_campaign_sync(backlog=False):
     # assign contact's tags to them in AC
     for contact_info in contacts:
         try:
-            update_contact_tags(url, auth_header, contact_info, contacts[contact_info], ac_tags)
-            print("Added %s tags to contact - %s" % (len(contacts[contact_info]), contact_info))
-            contact_count += 1
+            result = update_contact_tags(url, auth_header, contact_info, contacts[contact_info], ac_tags)
+            if result:
+                print("Added %s tags to contact - %s" % (len(contacts[contact_info]), contact_info))
+                contact_count += 1
         except requests.exceptions.SSLError:
             print("SSL Error encountered. Skipping contact / tag.", contact_info, contacts[contact_info])
     print("AC Tags Sync Completed - " + datetime.now().strftime("%Y-%m-%dT%H:%M:%S") + '\n')
