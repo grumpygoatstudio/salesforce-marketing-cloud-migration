@@ -38,7 +38,7 @@ def get_ac_tags(api_key):
             "api_action": "tag_list",
             "api_output": "json"
         }
-        r = requests.post(url + 'tags', headers=auth_header, data=d)
+        r = requests.post(url, headers=auth_header, data=d)
         try:
             if r.status_code == 200:
                 return r.json()
