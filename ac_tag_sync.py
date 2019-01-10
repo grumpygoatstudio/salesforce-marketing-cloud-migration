@@ -51,20 +51,19 @@ def get_ac_tags(api_key):
 
 
 def create_ac_tag(url, auth_header, title):
-    import ipdb; ipdb.set_trace();
     d = {
         "tag": {
-            "tag": title,
+            "tag": str(title),
             "tagType": "contact",
-            "description": title
+            "description": str(title)
         }
     }
     try:
-        r = requests.post(url + 'tags', headers=auth_header, data=d)
+        r = requests.post(url + 'tags', headers=auth_header, data=json.dumps(d))
         try:
             if r.status_code == 201:
-                print("Created a new tag\t", title, r['id'])
-                return r.json()['tags']
+                print("Created a new tag\t", title, r['tag']['id'])
+                return r.json()['tag']
             else:
                 return None
         except JSONDecodeError:
@@ -210,6 +209,7 @@ def active_campaign_sync(backlog=False):
         create_ac_tag(url, auth_header, tag)
     # create dict lookup from newly updated list of AC tags
     ac_tags = {t['name']: t['id'] for t in get_ac_tags(auth_header["Api-Token"])}
+    import ipdb; ipdb.set_trace();
 
     # assign contact's tags to them in AC
     for contact_info in contacts:
