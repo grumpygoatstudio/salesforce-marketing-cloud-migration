@@ -29,7 +29,6 @@ def write_config(config, dir_path):
 
 def get_ac_tags(api_key):
     # uses the old v2 API due to bugs with v3 tag list retrieval
-    import ipdb; ipdb.set_trace();
     auth_header = {"Content-Type": "application/x-www-form-urlencoded"}
     url = "https://heliumcomedy.api-us1.com/admin/api.php"
     try:
@@ -53,11 +52,13 @@ def get_ac_tags(api_key):
 
 def create_ac_tag(url, auth_header, title):
     import ipdb; ipdb.set_trace();
-    d = {"tag": {
-        "tag": title,
-        "tagType": "contact",
-        "description": title
-    }}
+    d = {
+        "tag": {
+            "tag": title,
+            "tagType": "contact",
+            "description": title
+        }
+    }
     try:
         r = requests.post(url + 'tags', headers=auth_header, data=d)
         try:
@@ -204,13 +205,11 @@ def active_campaign_sync(backlog=False):
 
     # get full list of AC tags
     ac_tags = set([t['name'] for t in get_ac_tags(auth_header["Api-Token"])])
-    import ipdb; ipdb.set_trace();
-    # update AC with all new tags
-    for tag in list(tags.difference(ac_tags)):
+    # update AC with all new tags_list
+    for tag in tags.difference(ac_tags):
         create_ac_tag(url, auth_header, tag)
     # create dict lookup from newly updated list of AC tags
     ac_tags = {t['name']: t['id'] for t in get_ac_tags(auth_header["Api-Token"])}
-    import ipdb; ipdb.set_trace();
 
     # assign contact's tags to them in AC
     for contact_info in contacts:
