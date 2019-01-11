@@ -191,10 +191,11 @@ def active_campaign_sync(backlog=False):
         while more_rows:
             try:
                 record = r.fetch_row(how=2)[0]
-                contacts[record['cm.email']].add(record['mu.campaign'])
                 if record['tt.tag'] not in [None, "", "None"]:
+                    contacts[record['cm.email']].add(record['tt.tag'])
                     tags.add(record['tt.tag'])
                 else:
+                    contacts[record['cm.email']].add(record['mu.campaign'])
                     tags.add(record['mu.campaign'])
             except IndexError:
                 more_rows = False
