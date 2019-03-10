@@ -80,50 +80,54 @@ def get_show_orders(venue_id, show_id, header):
         return False
 
 
-def create_objects_from_orders(orders, show_id):
+def create_objects_from_orders(willcall_orders, show_id, master_orders):
     customers_info = []
-    orders_info = []
     orderlines_info = []
     sys_entry_time = datetime.today().strftime("%Y-%m-%dT%H:%M:%S")
 
-    for order in orders:
-        temp_cust = {}
-        # temp_cust['subscriber_key'] = str(order['customer']['id'])
-        temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
-        temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
-        try:
-            temp_cust['name_first'] = str(order["customer"]["first_name"]).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
-            temp_cust['name_last'] = str(order["customer"]["last_name"]).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
-        except Exception:
-            temp_cust['name_first'] = ""
-            temp_cust['name_last'] = ""
-        temp_cust['sys_entry_date'] = sys_entry_time
-        try:
-            payment_method = str(order["payments"][0]['payment_method'])
-        except Exception:
-            payment_method = ""
+    for order in willcall_orders:
+        ord_num = str(order['order_number'])
+        if ord_num in master_orders:
+            temp_order = master_orders[ord_num]
+        else:
+            temp_cust = {}
+            temp_cust['email_address'] = str(order['customer']['email']).replace("\r", "").strip().lower()
+            temp_cust['name'] = str(order['customer']['name']).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
+            try:
+                temp_cust['name_first'] = str(order["customer"]["first_name"]).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
+                temp_cust['name_last'] = str(order["customer"]["last_name"]).strip().replace("\"", "").replace(",", " ").replace('\'','`').strip()
+            except Exception:
+                temp_cust['name_first'] = ""
+                temp_cust['name_last'] = ""
+            temp_cust['sys_entry_date'] = sys_entry_time
+            try:
+                payment_method = str(order["payments"][0]['payment_method'])
+            except Exception:
+                payment_method = ""
 
-        temp_order = {}
-        temp_order['id'] = str(order['id'])
-        temp_order['show_id'] = str(show_id)
-        temp_order['order_number'] = str(order['order_number'])
-        temp_order['cust_id'] = str(order['customer']['id'])
-        temp_order['email'] = str(order['customer']['email']).strip().lower()
-        temp_order['phone'] = str(order['customer']['phone'])
-        temp_order['purchase_date'] = str(order['purchase_at'])
-        temp_order['payment_method'] = payment_method
-        temp_order['booking_type'] = str(order['booking_type'])
-        temp_order['order_total'] = 0
-        temp_order['new_customer'] = str(order['customer']['new_customer'])
-        temp_order['sys_entry_date'] = sys_entry_time
-        temp_order['addons'] = "\t".join([str(a['name']) for a in order['addons']]) if order['addons'] != [] else ""
+            temp_order = {}
+            temp_order['id'] = str(order['id'])
+            temp_order['show_id'] = str(show_id)
+            temp_order['order_number'] = ord_num
+            temp_order['cust_id'] = str(order['customer']['id'])
+            temp_order['email'] = str(order['customer']['email']).strip().lower()
+            temp_order['phone'] = str(order['customer']['phone'])
+            temp_order['purchase_date'] = str(order['purchase_at'])
+            temp_order['payment_method'] = payment_method
+            temp_order['booking_type'] = str(order['booking_type'])
+            temp_order['order_total'] = 0
+            temp_order['new_customer'] = str(order['customer']['new_customer'])
+            temp_order['sys_entry_date'] = sys_entry_time
+            temp_order['addons'] = "\t".join([str(a['name']) for a in order['addons']]) if order['addons'] != [] else ""
 
+            customers_info += [temp_cust]
+
+        # append new tickets as orderlines and update order_total
         for tix_type in order['tickets']:
-            c = 1
             for tix in order['tickets'][tix_type]:
                 temp_orderline = {}
-                temp_orderline['id'] = str(order['order_number']) + "-%s" % c
-                temp_orderline['order_number'] = str(order['order_number'])
+                temp_orderline['id'] = ord_num + "-%s" % tix['id']
+                temp_orderline['order_number'] = ord_num
                 temp_orderline['ticket_name'] = str(tix_type).replace(",", " ").replace('\'','`').strip()
                 temp_orderline['ticket_price'] = tix['price']
                 temp_orderline['printed'] = tix['printed']
@@ -131,16 +135,13 @@ def create_objects_from_orders(orders, show_id):
                 temp_orderline['checked_in'] = tix['checked_in']
                 # add tickets purchased to ORDERLINE
                 orderlines_info += [temp_orderline]
-                # add ticket cost to ORDER total
-                try:
-                    temp_order['order_total'] += int(tix['price'])
-                except Exception:
-                    pass
-                c += 1
-        orders_info += [temp_order]
-        customers_info += [temp_cust]
 
-    return (orders_info, orderlines_info, customers_info)
+                # add ticket cost to ORDER total
+                temp_order['order_total'] += int(tix['price'])
+
+        master_orders[temp_order['order_number']] = temp_order
+
+    return (master_orders, orderlines_info, customers_info)
 
 
 def sql_insert_events(db, events):
@@ -229,6 +230,7 @@ def sql_insert_contacts(db, contacts):
 def sql_insert_orders(db, orders):
     stats = {"ok": 0, "err": 0}
     for o in orders:
+        o = orders[o]
         try:
             query = '''INSERT INTO orders (id, show_id, order_number, cust_id, email, phone, purchase_date, payment_method, booking_type, order_total, new_customer, sys_entry_date, addons)
                         VALUES (\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');''' % (
@@ -360,7 +362,7 @@ def main(shows_pull=None):
     else:
         for venue_id in venues:
             # reset the venue data info
-            data['orders'] = []
+            data['orders'] = {}
             data['orderlines'] = []
             data['contacts'] = []
 
@@ -373,8 +375,8 @@ def main(shows_pull=None):
                     show_id = show['shows.id']
                     show_orders = get_show_orders(venue_id, show_id, auth_header)
                     if show_orders:
-                        order_info_objs = create_objects_from_orders(show_orders, show_id)
-                        data['orders'] += order_info_objs[0]
+                        order_info_objs = create_objects_from_orders(show_orders, show_id, data['orders'])
+                        data['orders'] = order_info_objs[0]
                         data['orderlines'] += order_info_objs[1]
                         data['contacts'] += order_info_objs[2]
                 except IndexError:
@@ -424,11 +426,8 @@ def sql_post_processing():
 
 
 if __name__ == '__main__':
-    # try:
     (options, args) = parser.parse_args()
     if options.shows_pull:
         main(shows_pull=True)
     else:
         main()
-    # except Exception as e:
-        # sentry_sdk.capture_exception(e)
