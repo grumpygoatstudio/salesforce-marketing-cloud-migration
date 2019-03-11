@@ -83,6 +83,35 @@ def lookup_customer_crm_id(email, url, auth_header, connection, redo=False):
             return None
 
 
+def link_order_crm_id(order_number, crm_id, db):
+    try:
+        query = '''INSERT INTO order_crm_link (order_number, crm_id)
+                    VALUES (\'%s\',\'%s\');''' % (order_number, crm_id)
+        db.query(query)
+    except Exception as err:
+        try:
+            query = '''UPDATE order_crm_link SET crm_id = \'%s\'
+                        WHERE order_number = \'%s\';''' % (crm_id, order_number)
+            db.query(query)
+        except Exception as err2:
+            print("SQL INSERT & UPDATE FAILED - EVENT: ", order_number, crm_id)
+    db.close()
+
+
+def lookup_order_crm_id(order_number, db):
+    # Looks up an order's CRM Id from SE DB. Returns ID as a string or None.
+    try:
+        query = """SELECT crm_id FROM order_crm_link
+            WHERE order_number = %s LIMIT 1""" % order_number
+        db.query(query)
+        r = db.store_result()
+        order_link = r.fetch_row(how=2)[0]['crm_id']
+    except Exception:
+        order_link = None
+    db.close()
+    return order_link
+
+
 def get_se_id(data, obj_type):
     try:
         return data[obj_type]["externalid"]
@@ -115,7 +144,7 @@ def check_api_response(r, obj_type):
         return ("success", None,)
 
 
-def update_data(url, auth_header, data, configs, connection, obj_type):
+def update_data(url, auth_header, data, db, connection, obj_type):
     try:
         se_id = get_se_id(data, obj_type)
         # try to add the object first
@@ -127,25 +156,26 @@ def update_data(url, auth_header, data, configs, connection, obj_type):
                 if obj_type == 'ecomCustomer':
                     # try to get the CRM id for the customer and return
                     # that out for use elsewhere with orders.
-                    return lookup_customer_crm_id(data[obj_type]['email'],
-                                url, auth_header, connection)
+                    return lookup_customer_crm_id(data[obj_type]['email'], url, auth_header, connection)
                 else:
-                    # We have an order that's alreadty in the AC system.
-                    # As we have no way to reliably update orders in the
-                    # AC system...yet, we have to let it pass as OK.
-                    return 'success'
-
-                    # Once we DO have a way to update AC Orders...
-                    # Here's how we might handle it:
-                    # We should try to PUT update its data.
-                    # r = push_data_to_api(url, auth_header, data, 'update')
-                    # status = check_api_response(r, obj_type)
-                    # if status[0] == 'success':
-                    #     return "success"
-                    # else:
-                    #     # We have an error with the PUT
-                    #     return "err-update"
-
+                    try:
+                        # We have an order that's already in the AC system.
+                        # We should try to PUT update its data.
+                        ac_id = lookup_order_crm_id(data[obj_type]['orderNumber'], db)
+                        if ac_id:
+                            r = push_data_to_api(url + '/%s' % ac_id, auth_header, data, 'update')
+                            status = check_api_response(r, obj_type)
+                            if status[0] == 'success':
+                                return "success"
+                            else:
+                                # We have an error with the PUT
+                                return "err-update"
+                        else:
+                            # no ac id was found can't update it...
+                            return "success"
+                    except Exception:
+                        # still working out a better update method...
+                        return "success"
             else:
                 # another kind of error occured :(
                 # we know the data was not updated
@@ -160,6 +190,11 @@ def update_data(url, auth_header, data, configs, connection, obj_type):
                     # might manifest here and return None
                     return "err-other"
             else:
+                try:
+                    # update SQL linking table for AC and SE order IDs
+                    link_order_crm_id(data['orderNumber'], r['id'], db)
+                except Exception:
+                    pass
                 return "success"
     except UnicodeDecodeError:
         # skip over orders with Unicode Decode errors
@@ -190,7 +225,6 @@ def active_campaign_sync():
 
     for venue_id, connection in venues:
         print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
-        # download CSV file from MySQL DB
         db = _mysql.connect(user=configs['db_user'],
                             passwd=configs['db_password'],
                             port=configs['db_port'],
