@@ -192,7 +192,7 @@ def update_data(url, auth_header, data, db, connection, obj_type):
             else:
                 try:
                     # update SQL linking table for AC and SE order IDs
-                    link_order_crm_id(data['orderNumber'], r.json()[obj_type]["id"], db)
+                    link_order_crm_id(data[obj_type]['orderNumber'], r.json()[obj_type]["id"], db)
                 except Exception:
                     pass
                 return "success"
