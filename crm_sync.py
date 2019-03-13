@@ -83,26 +83,29 @@ def lookup_customer_crm_id(email, url, auth_header, connection, redo=False):
             return None
 
 
-def link_order_crm_id(order_number, crm_id, db):
+def link_order_crm_id(order_data, crm_id, db):
     try:
-        query = '''INSERT INTO order_crm_link (order_number, crm_id)
-                    VALUES (\'%s\',\'%s\');''' % (order_number, crm_id)
+        query = '''INSERT INTO order_crm_link (order_number, connection, crm_id)
+                    VALUES (\'%s\',\'%s\',\'%s\');''' % (order_data['orderNumber'], order_data['connection'], crm_id)
         db.query(query)
     except Exception as err:
         try:
             query = '''UPDATE order_crm_link SET crm_id = \'%s\'
-                        WHERE order_number = \'%s\';''' % (crm_id, order_number)
+                        WHERE connection = \'%s\'
+                        AND order_number = \'%s\';''' % (crm_id, order_data['connection'], order_data['orderNumber'])
             db.query(query)
         except Exception as err2:
-            print("SQL INSERT & UPDATE FAILED - EVENT: ", order_number, crm_id)
+            print("SQL INSERT & UPDATE FAILED - EVENT: ", order_data['orderNumber'], crm_id)
     db.close()
 
 
-def lookup_order_crm_id(order_number, db):
+def lookup_order_crm_id(order_data, db):
     # Looks up an order's CRM Id from SE DB. Returns ID as a string or None.
     try:
         query = """SELECT crm_id FROM order_crm_link
-            WHERE order_number = %s LIMIT 1""" % order_number
+            WHERE order_number = \'%s\'
+            AND connection = \'%s\'
+            LIMIT 1""" % (order_data['orderNumber'], order_data['connection'])
         db.query(query)
         r = db.store_result()
         order_link = r.fetch_row(how=2)[0]['crm_id']
@@ -161,7 +164,7 @@ def update_data(url, auth_header, data, db, connection, obj_type):
                     try:
                         # We have an order that's already in the AC system.
                         # We should try to PUT update its data.
-                        ac_id = lookup_order_crm_id(data[obj_type]['orderNumber'], db)
+                        ac_id = lookup_order_crm_id(data[obj_type], db)
                         if ac_id:
                             r = push_data_to_api(url + '/%s' % ac_id, auth_header, data, 'update')
                             status = check_api_response(r, obj_type)
@@ -192,7 +195,7 @@ def update_data(url, auth_header, data, db, connection, obj_type):
             else:
                 try:
                     # update SQL linking table for AC and SE order IDs
-                    link_order_crm_id(data[obj_type]['orderNumber'], r.json()[obj_type]["id"], db)
+                    link_order_crm_id(data[obj_type], r.json()[obj_type]["id"], db)
                 except Exception:
                     pass
                 return "success"
@@ -258,7 +261,7 @@ def active_campaign_sync():
             try:
                 if customer_json:
                     crm_id = update_data(
-                        customers_url, auth_header, customer_json, configs, connection, 'ecomCustomer')
+                        customers_url, auth_header, customer_json, db, connection, 'ecomCustomer')
                     if crm_id == 'err-unicode':
                         cust_err["unicode"].append(str(ols[0]["orders_mv.email"]))
                     elif crm_id:
@@ -278,7 +281,7 @@ def active_campaign_sync():
         for i in crm_postings:
             try:
                 crm_order = build_order_json(connection, str(i[0]), i[1])
-                updated = update_data(orders_url, auth_header, crm_order, configs, connection, 'ecomOrder')
+                updated = update_data(orders_url, auth_header, crm_order, db, connection, 'ecomOrder')
                 if updated == "success":
                     order_count += 1
                 elif updated == 'err-update':
