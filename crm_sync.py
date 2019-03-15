@@ -85,17 +85,16 @@ def lookup_customer_crm_id(email, url, auth_header, connection, redo=False):
 
 def link_order_crm_id(order_data, crm_id, db):
     try:
-        query = '''INSERT INTO order_crm_link (order_number, connection, crm_id)
-                    VALUES (\'%s\',\'%s\',\'%s\');''' % (order_data['orderNumber'], order_data['connectionid'], str(crm_id))
+        query = """INSERT INTO order_crm_link (`order_number`, `connection`, `crm_id`) VALUES (%s, %s, %s);""" % (order_data['orderNumber'], order_data['connectionid'], crm_id)
         db.query(query)
     except Exception as err:
         try:
-            query = '''UPDATE order_crm_link SET crm_id = \'%s\'
-                        WHERE connection = \'%s\'
-                        AND order_number = \'%s\';''' % (str(crm_id), order_data['connectionid'], order_data['orderNumber'])
+            query = '''UPDATE order_crm_link SET crm_id = %s
+                        WHERE connection = %s
+                        AND order_number = %s;''' % (crm_id, order_data['connectionid'], order_data['orderNumber'])
             db.query(query)
         except Exception as err2:
-            print("SQL INSERT & UPDATE FAILED - EVENT: ", order_data['orderNumber'], str(crm_id))
+            print("SQL INSERT & UPDATE FAILED - EVENT: ", order_data['orderNumber'], order_data['connectionid'], str(crm_id))
     db.close()
 
 
