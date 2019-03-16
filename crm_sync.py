@@ -232,11 +232,15 @@ def active_campaign_sync():
 
     for venue_id, connection in venues:
         print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
+
+        # connect to the AWS database
         db = _mysql.connect(user=configs['db_user'],
                             passwd=configs['db_password'],
                             port=configs['db_port'],
                             host=configs['db_host'],
                             db=configs['db_name'])
+        db.autocommit(True)
+
         sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''""" % (
             str(venue_id), last_crm_sync.replace('T', ' ')
         )
@@ -252,7 +256,6 @@ def active_campaign_sync():
                 orders[hash_id].append(ol)
             except IndexError:
                 more_rows = False
-        db.close()
 
         print("~~ POSTING CUSTOMERS ~~")
         print("TOTAL ORDERS TO PUSH: %s" % len(orders))
@@ -325,6 +328,9 @@ def active_campaign_sync():
         msg += "\n\n----- ERROR DETAILS FOR VENUE #%s -----\nCustomers\nBuild: %s\nPush: %s\nUnicode: %s\nSSL: %s\n\nOrders:\nBuild: %s\nUpdate: %s\nUnicode: %s\nOther: %s\nSSL: %s\n" % (
             venue_id, str(cust_err['build']), str(cust_err['push']), str(cust_err['unicode']), str(cust_err['ssl']), str(order_err['build']), str(order_err['update']), str(order_err['unicode']), str(order_err['other']), str(order_err['ssl']))
         msg += "\n\n----- END OF VENUE REPORT -----"
+
+    # close the db connection
+    db.close()
 
     # send a completion email notifying Jason that daily updates have finished
     server = smtplib.SMTP('smtp.gmail.com', 587)

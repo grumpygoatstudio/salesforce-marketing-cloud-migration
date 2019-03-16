@@ -401,6 +401,9 @@ def main(shows_pull=None):
         # TRIGGER POST-PROCESSING FOR SQL TABLES
         sql_post_processing()
 
+    # close the db connection
+    db.close()
+
     # Send the report email out
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
