@@ -100,7 +100,6 @@ def link_order_crm_id(order_data, crm_id, db):
             db.query(query)
         except Exception as err2:
             print("SQL INSERT & UPDATE FAILED - EVENT: ", order_data['orderNumber'], err, err2)
-    db.close()
 
 
 def lookup_order_crm_id(order_data, db):
@@ -115,7 +114,6 @@ def lookup_order_crm_id(order_data, db):
         order_link = r.fetch_row(how=2)[0]['crm_id']
     except Exception:
         order_link = None
-    db.close()
     return order_link
 
 
@@ -230,22 +228,23 @@ def active_campaign_sync():
     header += 'Subject: Completed DAILY Orders Sync - SeatEngine AWS\n'
     msg = header + "\nThis is the AWS Server for Seatengine.\nThis is a friendly notice that the daily CRM sync updates have completed:\n\n"
 
+    # connect to the AWS database
+    db = _mysql.connect(user=configs['db_user'],
+                        passwd=configs['db_password'],
+                        port=configs['db_port'],
+                        host=configs['db_host'],
+                        db=configs['db_name'])
+    db.autocommit(True)
+
     for venue_id, connection in venues:
         print("~~~~~ PROCESSING ORDERS FOR VENUE #%s ~~~~~" % venue_id )
-
-        # connect to the AWS database
-        db = _mysql.connect(user=configs['db_user'],
-                            passwd=configs['db_password'],
-                            port=configs['db_port'],
-                            host=configs['db_host'],
-                            db=configs['db_name'])
-        db.autocommit(True)
 
         sql = """SELECT * FROM orders_mv WHERE venue_id = %s AND sys_entry_date > \'%s\' AND email != ''""" % (
             str(venue_id), last_crm_sync.replace('T', ' ')
         )
         db.query(sql)
         r = db.store_result()
+
         # group the orderlines into orders
         orders = collections.defaultdict(list)
         more_rows = True
@@ -261,6 +260,7 @@ def active_campaign_sync():
         print("TOTAL ORDERS TO PUSH: %s" % len(orders))
         crm_postings = []
         cust_err = {'build': [], 'push': [], 'unicode': [], 'ssl': []}
+
         for o in orders:
             ols = orders[o]
             # build order and customer JSON and POST the JSON objects to AC server
@@ -285,6 +285,7 @@ def active_campaign_sync():
         print("TOTAL ORDERS TO PUSH: %s" % len(crm_postings))
         order_count = 0
         order_err = {'build': [], 'update': [], 'unicode': [], 'other': [], 'ssl': []}
+
         for i in crm_postings:
             try:
                 crm_order = build_order_json(connection, str(i[0]), i[1])
