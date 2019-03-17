@@ -329,8 +329,6 @@ def active_campaign_sync():
             venue_id, str(cust_err['build']), str(cust_err['push']), str(cust_err['unicode']), str(cust_err['ssl']), str(order_err['build']), str(order_err['update']), str(order_err['unicode']), str(order_err['other']), str(order_err['ssl']))
         msg += "\n\n----- END OF VENUE REPORT -----"
 
-        # close the db connection
-        db.close()
 
     # send a completion email notifying Jason that daily updates have finished
     server = smtplib.SMTP('smtp.gmail.com', 587)
