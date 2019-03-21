@@ -83,6 +83,7 @@ def lookup_customer_crm_id(email, url, auth_header, connection, redo=False):
             return None
 
 
+
 def link_order_crm_id(order_data, crm_id, db):
     try:
         query = '''INSERT INTO order_crm_link (order_number, connection, crm_id)
@@ -100,6 +101,22 @@ def link_order_crm_id(order_data, crm_id, db):
             db.query(query)
         except Exception as err2:
             print("SQL INSERT & UPDATE FAILED - EVENT: ", order_data['orderNumber'], err, err2)
+
+
+def lookup_order_crm_id_by_api(order_data, url, auth_header, connection, redo=False):
+    try:
+        # Looks up an Order's CRM ID from AC API. Returns ID as a string or None.
+        r = requests.get(url+"?filters[email]=%s&filters[connectionid]=%s" % (order_data['email'], connection), headers=auth_header)
+        if r.status_code == 200:
+            for o in r.json()["ecomOrders"]:
+                if o["orderNumber"] == order_data['orderNumber']:
+                    return o["id"]
+        return None
+    except Exception:
+        if not redo:
+            lookup_order_crm_id_by_api(order_data, url, auth_header, connection, redo=True)
+        else:
+            return None
 
 
 def lookup_order_crm_id(order_data, db):
@@ -167,6 +184,11 @@ def update_data(url, auth_header, data, db, connection, obj_type):
                         # We have an order that's already in the AC system.
                         # We should try to PUT update its data.
                         ac_id = lookup_order_crm_id(data[obj_type], db)
+                        if not ac_id:
+                            ac_id = lookup_order_crm_id_by_api(data[obj_type], url, auth_header, connection)
+                            if ac_id:
+                                # for faster future lookups, update SQL linking table for AC and SE order IDs
+                                link_order_crm_id(data[obj_type], ac_id, db)
                         if ac_id:
                             r = push_data_to_api(url + '/%s' % ac_id, auth_header, data, 'update')
                             status = check_api_response(r, obj_type)
