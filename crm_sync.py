@@ -50,8 +50,8 @@ def build_order_json(connection, crm_id, data):
           {
             # name is a placeholder for the "<show number> - <event name> - <ticket type>"
             "name": str(ol["orders_mv.orderproduct_category"]) + " - " + str(unicode(ol["orders_mv.event_name"], errors='ignore')) + " - " + ol["orders_mv.orderproduct_name"],
-            "price": int(ol["orders_mv.orderproduct_price"]),
-            "quantity": 1,
+            "price": str(ol["orders_mv.orderproduct_price"]),
+            "quantity": "1",
             # category is a placeholder for ticket type
             "category": str(ol["orders_mv.orderproduct_name"]).replace('\x92', '\'').replace('\xe2\x80\x99', '\'')
           } for ol in data
@@ -81,7 +81,6 @@ def lookup_customer_crm_id(email, url, auth_header, connection, redo=False):
             lookup_customer_crm_id(email, url, auth_header, connection, redo=True)
         else:
             return None
-
 
 
 def link_order_crm_id(order_data, crm_id, db):
