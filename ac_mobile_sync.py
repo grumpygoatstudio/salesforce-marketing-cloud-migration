@@ -138,7 +138,7 @@ def active_campaign_sync(backlog=False):
                 ac.optin_status as ac_status,
                 ac.date_last_updated as ac_date
             FROM contacts_mobile_mv cm
-            LEFT JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
+            JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
             AND cm.email_address IS NOT NULL
             AND ((ac.optin_status IS NULL) OR (ac.optin_status = 'Yes' AND cm.mobile_status != 'Subscribed') OR (ac.optin_status = 'No' AND cm.mobile_status = 'Subscribed'))
             ORDER BY cm.email_address, cm.mobile_number, cm.last_message_date;
@@ -154,7 +154,7 @@ def active_campaign_sync(backlog=False):
                 ac.optin_status as ac_status,
                 ac.date_last_updated as ac_date
             FROM contacts_mobile_mv cm
-            LEFT JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
+            JOIN ac_mobile_contacts ac ON (ac.email = cm.email_address)
             WHERE cm.last_message_date BETWEEN \'%s\' AND NOW()
             AND cm.email_address IS NOT NULL
             AND ((ac.optin_status IS NULL) OR (ac.optin_status = 'Yes' AND cm.mobile_status != 'Subscribed') OR (ac.optin_status = 'No' AND cm.mobile_status = 'Subscribed'))
